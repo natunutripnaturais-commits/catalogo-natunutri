@@ -122,6 +122,32 @@
   }
 
   footer{max-width:720px; margin:0 auto; padding:6px 16px 40px; font-size:11.5px; color:var(--texto-suave);}
+
+  .tabs{display:flex; gap:6px; padding:0 16px; margin-top:14px;}
+  .tab-btn{
+    background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
+    border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .tab-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
+  .tabpanel{display:none;}
+  .tabpanel.ativo{display:block;}
+
+  .pasta-row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+  .pasta-status{font-size:12px; color:var(--texto-suave); margin-top:2px;}
+  .estoque-row{
+    display:flex; align-items:center; gap:8px; padding:8px 0; border-top:1px solid var(--linha);
+  }
+  .estoque-row:first-child{border-top:none;}
+  .estoque-row input[type="text"]{flex:1; min-width:0;}
+  .estoque-row input[type="number"]{width:90px;}
+  .estoque-row input{
+    border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; color:var(--texto);
+    font-family:inherit;
+  }
+  .estoque-row .estoque-del{
+    background:none; border:none; cursor:pointer; font-size:15px; padding:6px; color:var(--alerta);
+  }
+  .estoque-vazio{font-size:12.5px; color:var(--texto-suave); padding:6px 0;}
 </style>
 </head>
 <body>
@@ -131,41 +157,72 @@
   <p>Agrupa as etiquetas de envio por produto e variação antes de imprimir</p>
 </header>
 
+<div class="tabs">
+  <button class="tab-btn ativo" data-tab="organizar">Organizar etiquetas</button>
+  <button class="tab-btn" data-tab="estoque">Estoque</button>
+</div>
+
 <main>
-  <div class="card">
-    <div id="dropzone">
-      <strong>Toque para escolher o PDF de etiquetas</strong>
-      <span>Exportado do Shopee (uma etiqueta por página)</span>
+  <div id="tabOrganizar" class="tabpanel ativo">
+    <div class="card">
+      <div id="dropzone">
+        <strong>Toque para escolher o PDF de etiquetas</strong>
+        <span>Exportado do Shopee (uma etiqueta por página)</span>
+      </div>
+      <input type="file" id="fileInput" accept="application/pdf,.pdf">
+      <div id="status"></div>
     </div>
-    <input type="file" id="fileInput" accept="application/pdf,.pdf">
-    <div id="status"></div>
+
+    <div id="resultado">
+      <div class="card">
+        <div class="stats">
+          <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">etiquetas</div></div>
+          <div class="stat"><div class="num" id="statGrupos">0</div><div class="lbl">produtos</div></div>
+          <div class="stat"><div class="num" id="statKits">0</div><div class="lbl">kits</div></div>
+          <div class="stat"><div class="num" id="statMulti">0</div><div class="lbl">pedidos combinados</div></div>
+          <div class="stat"><div class="num" id="statUnmatched">0</div><div class="lbl">não identificadas</div></div>
+        </div>
+        <div class="actions">
+          <button class="primary" id="btnBaixarPdf">⬇ Baixar PDF organizado</button>
+          <button class="secondary" id="btnBaixarTxt">Lista de conferência (.txt)</button>
+          <button class="secondary" id="btnDescontarEstoque">📦 Descontar do estoque</button>
+        </div>
+      </div>
+
+      <div id="avisoUnmatched" style="display:none" class="aviso"></div>
+
+      <h2 class="section">Produtos · do mais vendido ao menos vendido</h2>
+      <div id="listaGrupos"></div>
+
+      <h2 class="section" id="tituloKits" style="display:none">Kits (cadastros de kit)</h2>
+      <div id="listaKits"></div>
+
+      <h2 class="section" id="tituloMulti" style="display:none">Pedidos com mais de um produto</h2>
+      <div id="listaMulti"></div>
+    </div>
   </div>
 
-  <div id="resultado">
+  <div id="tabEstoque" class="tabpanel">
     <div class="card">
-      <div class="stats">
-        <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">etiquetas</div></div>
-        <div class="stat"><div class="num" id="statGrupos">0</div><div class="lbl">produtos</div></div>
-        <div class="stat"><div class="num" id="statKits">0</div><div class="lbl">kits</div></div>
-        <div class="stat"><div class="num" id="statMulti">0</div><div class="lbl">pedidos combinados</div></div>
-        <div class="stat"><div class="num" id="statUnmatched">0</div><div class="lbl">não identificadas</div></div>
-      </div>
-      <div class="actions">
-        <button class="primary" id="btnBaixarPdf">⬇ Baixar PDF organizado</button>
-        <button class="secondary" id="btnBaixarTxt">Lista de conferência (.txt)</button>
+      <div class="pasta-row">
+        <div>
+          <strong style="font-size:13.5px">Pasta do estoque</strong>
+          <div class="pasta-status" id="pastaStatus">Nenhuma pasta conectada</div>
+        </div>
+        <button class="secondary" id="btnConectarPasta">📁 Escolher/reconectar pasta</button>
       </div>
     </div>
 
-    <div id="avisoUnmatched" style="display:none" class="aviso"></div>
-
-    <h2 class="section">Produtos · do mais vendido ao menos vendido</h2>
-    <div id="listaGrupos"></div>
-
-    <h2 class="section" id="tituloKits" style="display:none">Kits (cadastros de kit)</h2>
-    <div id="listaKits"></div>
-
-    <h2 class="section" id="tituloMulti" style="display:none">Pedidos com mais de um produto</h2>
-    <div id="listaMulti"></div>
+    <div class="card">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
+        <h2 class="section" style="margin:0 0 4px">Produtos em estoque (kg)</h2>
+        <button class="secondary" id="btnAddEstoqueItem">+ Produto</button>
+      </div>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Use o mesmo nome que aparece na lista organizada (ex: "Camomila Flor").
+      </div>
+      <div id="listaEstoque"></div>
+    </div>
   </div>
 </main>
 
@@ -585,6 +642,215 @@ function blobToBase64(blob) {
     reader.readAsDataURL(blob);
   });
 }
+
+// ──────────────────────────────────────────────
+// ABAS
+// ──────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
+    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    document.getElementById('tab' + btn.dataset.tab[0].toUpperCase() + btn.dataset.tab.slice(1)).classList.add('ativo');
+  });
+});
+
+// ──────────────────────────────────────────────
+// ESTOQUE — guardado como estoque.json numa pasta escolhida pelo usuário
+// (File System Access API: só funciona no Chrome/Edge desktop)
+// ──────────────────────────────────────────────
+const SUPORTA_PASTA = 'showDirectoryPicker' in window;
+let estoqueDirHandle = null;
+let estoque = []; // [{ nome, kg }]
+
+function idbAbrir() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open('natunutri-etiquetas', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('handles');
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGet(key) {
+  const db = await idbAbrir();
+  return new Promise((resolve, reject) => {
+    const req = db.transaction('handles', 'readonly').objectStore('handles').get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbSet(key, val) {
+  const db = await idbAbrir();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('handles', 'readwrite');
+    tx.objectStore('handles').put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function acharEstoque(nomeProduto) {
+  return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
+}
+
+function atualizarPastaStatus() {
+  const el = document.getElementById('pastaStatus');
+  if (!SUPORTA_PASTA) {
+    el.textContent = 'Esse navegador não suporta salvar numa pasta do computador (use Chrome ou Edge no desktop).';
+  } else if (estoqueDirHandle) {
+    el.textContent = 'Conectada: "' + estoqueDirHandle.name + '" — salvando automaticamente aqui.';
+  } else {
+    el.textContent = 'Nenhuma pasta conectada. Escolha uma pasta para guardar o estoque.';
+  }
+}
+
+async function garantirPermissaoPasta(pedirSeNecessario) {
+  if (!estoqueDirHandle) return false;
+  let perm = await estoqueDirHandle.queryPermission({ mode: 'readwrite' });
+  if (perm !== 'granted' && pedirSeNecessario) {
+    perm = await estoqueDirHandle.requestPermission({ mode: 'readwrite' });
+  }
+  return perm === 'granted';
+}
+
+async function carregarEstoqueDaPasta() {
+  try {
+    const fileHandle = await estoqueDirHandle.getFileHandle('estoque.json');
+    const file = await fileHandle.getFile();
+    estoque = JSON.parse(await file.text());
+  } catch (err) {
+    estoque = []; // arquivo ainda não existe nessa pasta
+  }
+}
+
+async function salvarEstoqueNaPasta() {
+  if (!(await garantirPermissaoPasta(true))) {
+    alert('Sem permissão de escrita na pasta. Toque em "Escolher/reconectar pasta".');
+    return false;
+  }
+  const fileHandle = await estoqueDirHandle.getFileHandle('estoque.json', { create: true });
+  const writable = await fileHandle.createWritable();
+  await writable.write(JSON.stringify(estoque, null, 2));
+  await writable.close();
+  return true;
+}
+
+document.getElementById('btnConectarPasta').addEventListener('click', async () => {
+  if (!SUPORTA_PASTA) { alert('Esse navegador não suporta essa função. Use Chrome ou Edge no computador.'); return; }
+  try {
+    estoqueDirHandle = await window.showDirectoryPicker();
+    await idbSet('estoqueDir', estoqueDirHandle);
+    await carregarEstoqueDaPasta();
+    atualizarPastaStatus();
+    renderEstoqueLista();
+  } catch (err) {
+    if (err.name !== 'AbortError') alert('Não consegui abrir a pasta: ' + err.message);
+  }
+});
+
+async function tentarReconectarPasta() {
+  if (!SUPORTA_PASTA) { atualizarPastaStatus(); return; }
+  try {
+    const handle = await idbGet('estoqueDir');
+    if (!handle) return;
+    estoqueDirHandle = handle;
+    if (await garantirPermissaoPasta(false)) {
+      await carregarEstoqueDaPasta();
+    }
+  } catch (err) { /* handle inválido/revogado — ignora, usuário reconecta manualmente */ }
+  atualizarPastaStatus();
+  renderEstoqueLista();
+}
+
+function renderEstoqueLista() {
+  const el = document.getElementById('listaEstoque');
+  el.innerHTML = '';
+  if (estoque.length === 0) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum produto cadastrado ainda.</div>';
+    return;
+  }
+  estoque.forEach((item, i) => {
+    const row = document.createElement('div');
+    row.className = 'estoque-row';
+    row.innerHTML = `
+      <input type="text" value="${escapeHtml(item.nome)}" data-i="${i}" data-f="nome">
+      <input type="number" step="0.001" min="0" value="${item.kg}" data-i="${i}" data-f="kg">
+      <button class="estoque-del" data-i="${i}" title="Remover">🗑</button>
+    `;
+    el.appendChild(row);
+  });
+}
+
+document.getElementById('btnAddEstoqueItem').addEventListener('click', () => {
+  estoque.push({ nome: '', kg: 0 });
+  renderEstoqueLista();
+  salvarEstoqueNaPasta();
+});
+
+document.getElementById('listaEstoque').addEventListener('change', e => {
+  const i = e.target.dataset.i, f = e.target.dataset.f;
+  if (i === undefined) return;
+  if (f === 'nome') estoque[i].nome = e.target.value;
+  if (f === 'kg') estoque[i].kg = parseFloat(e.target.value) || 0;
+  salvarEstoqueNaPasta();
+});
+
+document.getElementById('listaEstoque').addEventListener('click', e => {
+  if (!e.target.classList.contains('estoque-del')) return;
+  estoque.splice(e.target.dataset.i, 1);
+  renderEstoqueLista();
+  salvarEstoqueNaPasta();
+});
+
+function calcularConsumoEstoque() {
+  const { produtos = [], kits = [] } = groupsForExport;
+  const consumo = {}; // nome do produto -> kg vendidos
+  [...produtos, ...kits].forEach(pm => {
+    pm.variacoesSorted.forEach(v => {
+      const g = parseGramas(v.variacao);
+      if (!isFinite(g)) return; // variação sem peso reconhecível (ex: "Único") não entra no cálculo
+      consumo[pm.produto] = (consumo[pm.produto] || 0) + (g * v.totalQtd) / 1000;
+    });
+  });
+  return consumo;
+}
+
+document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
+  if (!SUPORTA_PASTA) { alert('Esse navegador não suporta o controle de estoque. Use Chrome ou Edge no computador.'); return; }
+  if (!estoqueDirHandle) { alert('Conecte a pasta do estoque primeiro, na aba "Estoque".'); return; }
+
+  const consumo = calcularConsumoEstoque();
+  const aplicaveis = [];
+  const semCadastro = [];
+  Object.keys(consumo).forEach(nome => {
+    const item = acharEstoque(nome);
+    if (item) aplicaveis.push({ item, kg: consumo[nome] });
+    else semCadastro.push(nome);
+  });
+
+  if (aplicaveis.length === 0 && semCadastro.length === 0) {
+    alert('Nenhum produto com variação em peso (kg/g) pra descontar.');
+    return;
+  }
+
+  let msg = 'Confirma o desconto no estoque?\n\n';
+  aplicaveis.forEach(({ item, kg }) => {
+    msg += `${item.nome}: -${kg.toFixed(3)} kg  (${item.kg.toFixed(3)} → ${(item.kg - kg).toFixed(3)} kg)\n`;
+  });
+  if (semCadastro.length) {
+    msg += `\nSem cadastro no estoque (ignorados):\n- ${semCadastro.join('\n- ')}`;
+  }
+  if (aplicaveis.length === 0) { alert(msg); return; }
+  if (!confirm(msg)) return;
+
+  aplicaveis.forEach(({ item, kg }) => { item.kg = Math.round((item.kg - kg) * 1000) / 1000; });
+  if (await salvarEstoqueNaPasta()) {
+    renderEstoqueLista();
+    alert('Estoque atualizado.');
+  }
+});
+
+tentarReconectarPasta();
 
 async function downloadBlob(blob, filename, iosWin) {
   if (window.Capacitor && window.Capacitor.isNativePlatform()) {
