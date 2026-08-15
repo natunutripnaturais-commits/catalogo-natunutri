@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>NatuNutri · Organizador de Etiquetas</title>
+<link rel="icon" href="data:,">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+  :root{
+    --verde-900:#1b3a2b;
+    --verde-700:#2c5a3f;
+    --verde-500:#4a7c59;
+    --verde-100:#e8f0e9;
+    --terra:#a8763e;
+    --bg:#faf9f6;
+    --card:#ffffff;
+    --linha:#e2e0d8;
+    --texto:#22261f;
+    --texto-suave:#6b6f63;
+    --alerta:#b3541e;
+    --alerta-bg:#fbeee2;
+    --mono: 'SF Mono', 'Roboto Mono', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--texto); line-height:1.4;
+  }
+  header{
+    background:var(--verde-900); color:#fff; padding:20px 16px 22px;
+  }
+  header h1{margin:0 0 2px; font-size:19px; font-weight:700; letter-spacing:.2px;}
+  header p{margin:0; font-size:13px; color:#c7d8cb;}
+  main{max-width:720px; margin:0 auto; padding:16px;}
+
+  .card{
+    background:var(--card); border:1px solid var(--linha); border-radius:10px;
+    padding:16px; margin-bottom:14px;
+  }
+
+  #dropzone{
+    border:2px dashed #b9c9bd; border-radius:10px; padding:28px 16px;
+    text-align:center; cursor:pointer; background:var(--verde-100);
+    transition:border-color .15s, background .15s;
+  }
+  #dropzone.drag{border-color:var(--verde-500); background:#dcebe0;}
+  #dropzone strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
+  #dropzone span{font-size:12.5px; color:var(--texto-suave);}
+  #fileInput{display:none;}
+
+  #status{font-size:13px; color:var(--texto-suave); margin-top:10px; display:none;}
+  #status.show{display:block;}
+  .spinner{
+    display:inline-block; width:12px; height:12px; border:2px solid #cfd9d1;
+    border-top-color:var(--verde-700); border-radius:50%; animation:spin .7s linear infinite;
+    margin-right:6px; vertical-align:-1px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  #resultado{display:none;}
+  #resultado.show{display:block;}
+
+  .stats{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;}
+  .stat{
+    flex:1; min-width:120px; background:var(--verde-100); border-radius:8px;
+    padding:10px 12px;
+  }
+  .stat .num{font-family:var(--mono); font-size:20px; font-weight:700; color:var(--verde-900);}
+  .stat .lbl{font-size:11.5px; color:var(--texto-suave); margin-top:1px;}
+
+  .actions{display:flex; gap:8px; margin:14px 0 4px; flex-wrap:wrap;}
+  button.primary{
+    background:var(--verde-700); color:#fff; border:none; border-radius:8px;
+    padding:12px 16px; font-size:14px; font-weight:600; cursor:pointer; flex:1; min-width:180px;
+  }
+  button.primary:active{background:var(--verde-900);}
+  button.secondary{
+    background:#fff; color:var(--verde-700); border:1px solid var(--verde-500);
+    border-radius:8px; padding:12px 16px; font-size:13.5px; font-weight:600; cursor:pointer;
+  }
+  button:disabled{opacity:.45; cursor:not-allowed;}
+
+  h2.section{font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--texto-suave); margin:20px 0 8px;}
+
+  .grupo{
+    border:1px solid var(--linha); border-radius:8px; margin-bottom:6px; overflow:hidden;
+  }
+  .grupo summary{
+    list-style:none; cursor:pointer; padding:10px 12px; display:flex; align-items:center;
+    justify-content:space-between; gap:10px;
+  }
+  .grupo summary::-webkit-details-marker{display:none;}
+  .grupo .nome{font-size:13.5px; font-weight:600; color:var(--texto);}
+  .grupo .rank{
+    display:inline-block; font-family:var(--mono); font-size:10.5px; color:var(--verde-700);
+    background:var(--verde-100); border-radius:4px; padding:1px 5px; margin-right:6px;
+  }
+  .grupo .var{font-size:12px; color:var(--texto-suave); font-weight:400;}
+  .grupo .qtd{
+    font-family:var(--mono); font-size:12.5px; background:var(--verde-100); color:var(--verde-900);
+    border-radius:20px; padding:2px 9px; white-space:nowrap; font-weight:700;
+  }
+  .grupo .paginas{
+    padding:0 12px 10px; font-size:11.5px; color:var(--texto-suave); font-family:var(--mono);
+    border-top:1px solid var(--linha); margin-top:0; padding-top:8px;
+  }
+  .subvariacao{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:7px 12px 7px 30px; font-size:12.5px; border-top:1px solid var(--linha);
+  }
+  .subvariacao .qtd{font-size:11.5px; padding:1px 8px;}
+
+  .grupo.multi .qtd{background:#fdeecd; color:var(--terra);}
+  .grupo.kit .qtd{background:#eee6d8; color:var(--terra);}
+  .grupo.unmatched{border-color:var(--alerta);}
+  .grupo.unmatched .qtd{background:var(--alerta-bg); color:var(--alerta);}
+  .aviso{
+    background:var(--alerta-bg); border:1px solid #e6c3a3; color:var(--alerta);
+    border-radius:8px; padding:10px 12px; font-size:12.5px; margin-bottom:10px;
+  }
+
+  footer{max-width:720px; margin:0 auto; padding:6px 16px 40px; font-size:11.5px; color:var(--texto-suave);}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Organizador de Etiquetas · NatuNutri</h1>
+  <p>Agrupa as etiquetas de envio por produto e variação antes de imprimir</p>
+</header>
+
+<main>
+  <div class="card">
+    <div id="dropzone">
+      <strong>Toque para escolher o PDF de etiquetas</strong>
+      <span>Exportado do Shopee (uma etiqueta por página)</span>
+    </div>
+    <input type="file" id="fileInput" accept="application/pdf">
+    <div id="status"></div>
+  </div>
+
+  <div id="resultado">
+    <div class="card">
+      <div class="stats">
+        <div class="stat"><div class="num" id="statTotal">0</div><div class="lbl">etiquetas</div></div>
+        <div class="stat"><div class="num" id="statGrupos">0</div><div class="lbl">produtos</div></div>
+        <div class="stat"><div class="num" id="statKits">0</div><div class="lbl">kits</div></div>
+        <div class="stat"><div class="num" id="statMulti">0</div><div class="lbl">pedidos combinados</div></div>
+        <div class="stat"><div class="num" id="statUnmatched">0</div><div class="lbl">não identificadas</div></div>
+      </div>
+      <div class="actions">
+        <button class="primary" id="btnBaixarPdf">⬇ Baixar PDF organizado</button>
+        <button class="secondary" id="btnBaixarTxt">Lista de conferência (.txt)</button>
+      </div>
+    </div>
+
+    <div id="avisoUnmatched" style="display:none" class="aviso"></div>
+
+    <h2 class="section">Produtos · do mais vendido ao menos vendido</h2>
+    <div id="listaGrupos"></div>
+
+    <h2 class="section" id="tituloKits" style="display:none">Kits (cadastros de kit)</h2>
+    <div id="listaKits"></div>
+
+    <h2 class="section" id="tituloMulti" style="display:none">Pedidos com mais de um produto</h2>
+    <div id="listaMulti"></div>
+  </div>
+</main>
+
+<footer>
+  Tudo é processado no seu celular/computador — o PDF não é enviado a nenhum servidor.
+</footer>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const statusEl = document.getElementById('status');
+const resultadoEl = document.getElementById('resultado');
+
+dropzone.addEventListener('click', () => fileInput.click());
+['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+dropzone.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+let originalBytes = null;   // ArrayBuffer for pdf-lib
+let orderedIndices = [];    // final page order (0-based, original PDF)
+let groupsForExport = [];   // for txt list
+
+function setStatus(msg, spinning) {
+  statusEl.classList.add('show');
+  statusEl.innerHTML = (spinning ? '<span class="spinner"></span>' : '') + msg;
+}
+
+async function handleFile(file) {
+  resultadoEl.classList.remove('show');
+  setStatus('Lendo o PDF…', true);
+  const buf = await file.arrayBuffer();
+  originalBytes = buf.slice(0); // keep a pristine copy for pdf-lib later
+
+  let pdfDoc;
+  try {
+    pdfDoc = await pdfjsLib.getDocument({ data: buf.slice(0) }).promise;
+  } catch (err) {
+    setStatus('Não consegui abrir esse PDF. Confirme se é o arquivo de etiquetas exportado do Shopee.', false);
+    return;
+  }
+
+  const totalPages = pdfDoc.numPages;
+  const pages = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    setStatus(`Lendo etiqueta ${i} de ${totalPages}…`, true);
+    const page = await pdfDoc.getPage(i);
+    const textContent = await page.getTextContent();
+    const text = buildPageText(textContent);
+    pages.push(parsePage(text, i));
+  }
+
+  setStatus('Organizando…', true);
+  const units = buildUnits(pages);
+  const { produtos, kits, combos, unmatched } = groupUnits(units);
+  render(produtos, kits, combos, unmatched, totalPages);
+  setStatus('', false);
+  statusEl.classList.remove('show');
+  resultadoEl.classList.add('show');
+}
+
+// ---- Reconstrói o texto da página respeitando a posição (linhas/colunas) ----
+function buildPageText(textContent) {
+  const lines = [];
+  textContent.items.forEach(it => {
+    if (!it.str) return;
+    const x = it.transform[4];
+    const y = it.transform[5];
+    let line = lines.find(l => Math.abs(l.y - y) < 2.5);
+    if (!line) { line = { y, items: [] }; lines.push(line); }
+    line.items.push({ x, str: it.str, width: it.width || (it.str.length * 4) });
+  });
+  lines.sort((a, b) => b.y - a.y);
+  return lines.map(line => {
+    line.items.sort((a, b) => a.x - b.x);
+    let text = '';
+    let prevEnd = null;
+    line.items.forEach(it => {
+      if (prevEnd !== null && (it.x - prevEnd) > 1) text += ' ';
+      text += it.str;
+      prevEnd = it.x + it.width;
+    });
+    return text;
+  }).join('\n');
+}
+
+// ---- Extrai pedido + itens (produto/variação/qtd) do texto de uma página ----
+const RE_ITEM_COM_VARIACAO = /^\d+\.\s*\(([^)]+)\)\s*\/\s*(.+?)\s*\(?\s*\*(\d+)\s*\)?\s*$/;
+const RE_ITEM_SEM_VARIACAO = /^\d+\.\s*(.+?)\s*\(?\s*\*(\d+)\s*\)?\s*$/;
+const RE_PEDIDO = /Pedido:\s*([A-Z0-9]+)/;
+
+function norm(s) { return s.replace(/\s+/g, ' ').trim(); }
+
+function parsePage(text, pageNumber) {
+  const lines = text.split('\n').map(l => l.trim());
+  const items = [];
+  for (const ln of lines) {
+    if (!/^\d+\./.test(ln)) continue;
+    let m = ln.match(RE_ITEM_COM_VARIACAO);
+    if (m) {
+      items.push({ variacao: norm(m[1]), produto: norm(m[2]), qtd: parseInt(m[3], 10) });
+      continue;
+    }
+    m = ln.match(RE_ITEM_SEM_VARIACAO);
+    if (m) {
+      items.push({ variacao: 'Único', produto: norm(m[1]), qtd: parseInt(m[2], 10) });
+    }
+  }
+  const pedidoMatch = text.match(RE_PEDIDO);
+  return {
+    pageIndex: pageNumber - 1,
+    pageNumber,
+    pedido: pedidoMatch ? pedidoMatch[1] : null,
+    items,
+    rawText: text
+  };
+}
+
+function parseGramas(variacao) {
+  const m = variacao.match(/([\d.,]+)\s*(kg|g)\b/i);
+  if (!m) return Infinity;
+  const val = parseFloat(m[1].replace(',', '.'));
+  return m[2].toLowerCase() === 'kg' ? val * 1000 : val;
+}
+
+// ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
+// (cobre o caso de uma etiqueta com vários produtos que ocupa 2+ páginas seguidas)
+function buildUnits(pages) {
+  const units = [];
+  let current = null;
+  pages.forEach(p => {
+    if (current && p.pedido && current.pedido === p.pedido) {
+      current.pages.push(p);
+    } else {
+      current = { pedido: p.pedido, pages: [p] };
+      units.push(current);
+    }
+  });
+  units.forEach(u => {
+    u.items = [];
+    u.pages.forEach(p => u.items.push(...p.items));
+    u.pageIndexes = u.pages.map(p => p.pageIndex);
+    u.pageNumbers = u.pages.map(p => p.pageNumber);
+  });
+  return units;
+}
+
+function groupUnits(units) {
+  const unmatched = [];
+  const produtoMap = {};
+  const kitMap = {};
+  const comboMap = {};
+
+  units.forEach(u => {
+    if (u.items.length === 0) {
+      unmatched.push(u);
+      return;
+    }
+    if (u.items.length === 1) {
+      const it = u.items[0];
+      const isKit = /^kit\b/i.test(it.produto);
+      const map = isKit ? kitMap : produtoMap;
+      if (!map[it.produto]) map[it.produto] = { produto: it.produto, totalQtd: 0, totalEtiquetas: 0, variacoes: {} };
+      const pm = map[it.produto];
+      pm.totalQtd += it.qtd;
+      pm.totalEtiquetas += u.pages.length;
+      if (!pm.variacoes[it.variacao]) pm.variacoes[it.variacao] = { variacao: it.variacao, totalQtd: 0, units: [] };
+      pm.variacoes[it.variacao].totalQtd += it.qtd;
+      pm.variacoes[it.variacao].units.push(u);
+    } else {
+      const key = u.items.map(it => it.produto + ' (' + it.variacao + ')').sort().join(' + ');
+      if (!comboMap[key]) comboMap[key] = { label: key, items: u.items, units: [] };
+      comboMap[key].units.push(u);
+    }
+  });
+
+  function toSortedList(map) {
+    const list = Object.values(map).map(pm => {
+      pm.variacoesSorted = Object.values(pm.variacoes).sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
+      return pm;
+    });
+    list.sort((a, b) => b.totalQtd - a.totalQtd || a.produto.localeCompare(b.produto, 'pt-BR'));
+    return list;
+  }
+
+  const produtos = toSortedList(produtoMap);
+  const kits = toSortedList(kitMap);
+  const combos = Object.values(comboMap).sort((a, b) => b.units.length - a.units.length || a.label.localeCompare(b.label, 'pt-BR'));
+
+  return { produtos, kits, combos, unmatched };
+}
+
+function render(produtos, kits, combos, unmatched, totalPages) {
+  // ---- monta a ordem final de páginas do PDF de saída ----
+  orderedIndices = [];
+  produtos.forEach(pm => pm.variacoesSorted.forEach(v => v.units.forEach(u => orderedIndices.push(...u.pageIndexes))));
+  kits.forEach(pm => pm.variacoesSorted.forEach(v => v.units.forEach(u => orderedIndices.push(...u.pageIndexes))));
+  combos.forEach(c => c.units.forEach(u => orderedIndices.push(...u.pageIndexes)));
+  unmatched.forEach(u => orderedIndices.push(...u.pageIndexes));
+
+  groupsForExport = { produtos, kits, combos, unmatched };
+
+  // ---- estatísticas ----
+  const totalMultiPages = combos.reduce((s, c) => s + c.units.reduce((s2, u) => s2 + u.pages.length, 0), 0);
+  const totalUnmatchedPages = unmatched.reduce((s, u) => s + u.pages.length, 0);
+  document.getElementById('statTotal').textContent = totalPages;
+  document.getElementById('statGrupos').textContent = produtos.length;
+  document.getElementById('statKits').textContent = kits.length;
+  document.getElementById('statMulti').textContent = totalMultiPages;
+  document.getElementById('statUnmatched').textContent = totalUnmatchedPages;
+
+  const avisoEl = document.getElementById('avisoUnmatched');
+  if (unmatched.length > 0) {
+    const pgs = unmatched.flatMap(u => u.pageNumbers);
+    avisoEl.style.display = 'block';
+    avisoEl.innerHTML = `⚠ ${pgs.length} etiqueta(s) não reconhecida(s) automaticamente (páginas ${pgs.join(', ')}). Foram mantidas no final do PDF organizado — confira manualmente.`;
+  } else {
+    avisoEl.style.display = 'none';
+  }
+
+  // ---- produtos (ranqueados por unidades vendidas) ----
+  renderProdutoLista(document.getElementById('listaGrupos'), produtos, '');
+
+  // ---- kits ----
+  const tituloKits = document.getElementById('tituloKits');
+  const listaKitsEl = document.getElementById('listaKits');
+  listaKitsEl.innerHTML = '';
+  if (kits.length > 0) {
+    tituloKits.style.display = 'block';
+    renderProdutoLista(listaKitsEl, kits, 'kit');
+  } else {
+    tituloKits.style.display = 'none';
+  }
+
+  // ---- pedidos combinados (mais de um produto na mesma compra) ----
+  const tituloMulti = document.getElementById('tituloMulti');
+  const listaMultiEl = document.getElementById('listaMulti');
+  listaMultiEl.innerHTML = '';
+  if (combos.length > 0) {
+    tituloMulti.style.display = 'block';
+    combos.forEach(c => {
+      const totalPag = c.units.reduce((s, u) => s + u.pages.length, 0);
+      const det = document.createElement('details');
+      det.className = 'grupo multi';
+      const nomes = c.items.map(it => `${escapeHtml(it.produto)} (${escapeHtml(it.variacao)}) ×${it.qtd}`).join('<br>');
+      const paginasTxt = c.units.map(u => u.pageNumbers.length > 1 ? `${u.pageNumbers[0]}–${u.pageNumbers[u.pageNumbers.length - 1]}` : `${u.pageNumbers[0]}`).join(', ');
+      det.innerHTML = `
+        <summary>
+          <div><span class="nome">Pedido combinado</span><br><span class="var">${nomes}</span></div>
+          <span class="qtd">${totalPag}</span>
+        </summary>
+        <div class="paginas">Etiquetas nº ${paginasTxt}</div>
+      `;
+      listaMultiEl.appendChild(det);
+    });
+  } else {
+    tituloMulti.style.display = 'none';
+  }
+
+  // ---- não identificadas ----
+  if (unmatched.length > 0) {
+    unmatched.forEach(u => {
+      const det = document.createElement('details');
+      det.className = 'grupo unmatched';
+      det.innerHTML = `
+        <summary>
+          <div><span class="nome">Não identificada</span><br><span class="var">Pedido ${u.pedido || '—'}</span></div>
+          <span class="qtd">pág. ${u.pageNumbers.join(',')}</span>
+        </summary>
+        <div class="paginas">Confira essa etiqueta manualmente no PDF original.</div>
+      `;
+      listaMultiEl.appendChild(det);
+    });
+  }
+}
+
+function renderProdutoLista(container, list, extraClass) {
+  container.innerHTML = '';
+  list.forEach((pm, idx) => {
+    const det = document.createElement('details');
+    det.className = 'grupo' + (extraClass ? ' ' + extraClass : '');
+    const subvars = pm.variacoesSorted.map(v => {
+      const paginasTxt = v.units.map(u => u.pageNumbers.length > 1 ? `${u.pageNumbers[0]}–${u.pageNumbers[u.pageNumbers.length - 1]}` : `${u.pageNumbers[0]}`).join(', ');
+      const totalEtq = v.units.reduce((s, u) => s + u.pages.length, 0);
+      return `<div class="subvariacao">
+        <span>${escapeHtml(v.variacao)} <span style="color:var(--texto-suave)">· páginas ${paginasTxt}</span></span>
+        <span class="qtd">${totalEtq} etq · ${v.totalQtd} un</span>
+      </div>`;
+    }).join('');
+    det.innerHTML = `
+      <summary>
+        <div><span class="rank">#${idx + 1}</span><span class="nome">${escapeHtml(pm.produto)}</span><br><span class="var">${pm.totalQtd} unidades vendidas · ${pm.totalEtiquetas} etiquetas · ${pm.variacoesSorted.length} variação(ões)</span></div>
+        <span class="qtd">${pm.totalEtiquetas}</span>
+      </summary>
+      ${subvars}
+    `;
+    container.appendChild(det);
+  });
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ---- Baixar PDF reorganizado ----
+document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
+  const btn = document.getElementById('btnBaixarPdf');
+  btn.disabled = true;
+  btn.textContent = 'Gerando PDF…';
+  try {
+    const { PDFDocument } = PDFLib;
+    const srcDoc = await PDFDocument.load(originalBytes.slice(0));
+    const newDoc = await PDFDocument.create();
+    const copiedPages = await newDoc.copyPages(srcDoc, orderedIndices);
+    copiedPages.forEach(p => newDoc.addPage(p));
+    const bytes = await newDoc.save();
+    downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'));
+  } catch (err) {
+    alert('Não consegui gerar o PDF: ' + err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = '⬇ Baixar PDF organizado';
+});
+
+// ---- Baixar lista de conferência em texto ----
+document.getElementById('btnBaixarTxt').addEventListener('click', () => {
+  const { produtos, kits, combos, unmatched } = groupsForExport;
+  let out = 'NATUNUTRI — LISTA DE CONFERÊNCIA DE ETIQUETAS\n';
+  out += new Date().toLocaleString('pt-BR') + '\n\n';
+
+  out += '== PRODUTOS (do mais vendido ao menos vendido) ==\n';
+  produtos.forEach((pm, i) => {
+    out += `#${i + 1}  ${pm.produto} — ${pm.totalQtd} unidades / ${pm.totalEtiquetas} etiquetas\n`;
+    pm.variacoesSorted.forEach(v => {
+      const paginas = v.units.flatMap(u => u.pageNumbers).join(',');
+      out += `      ${v.variacao}: ${v.totalQtd} un  (páginas: ${paginas})\n`;
+    });
+  });
+
+  if (kits.length) {
+    out += '\n== KITS ==\n';
+    kits.forEach((pm, i) => {
+      out += `#${i + 1}  ${pm.produto} — ${pm.totalQtd} unidades / ${pm.totalEtiquetas} etiquetas\n`;
+      pm.variacoesSorted.forEach(v => {
+        const paginas = v.units.flatMap(u => u.pageNumbers).join(',');
+        out += `      ${v.variacao}: ${v.totalQtd} un  (páginas: ${paginas})\n`;
+      });
+    });
+  }
+
+  if (combos.length) {
+    out += '\n== PEDIDOS COM MAIS DE UM PRODUTO ==\n';
+    combos.forEach(c => {
+      const totalPag = c.units.reduce((s, u) => s + u.pages.length, 0);
+      const paginas = c.units.map(u => u.pageNumbers.join('-')).join(', ');
+      out += `${String(totalPag).padStart(3)}x  ${c.items.map(it => it.produto + ' (' + it.variacao + ') x' + it.qtd).join(' + ')}  (páginas: ${paginas})\n`;
+    });
+  }
+
+  if (unmatched.length) {
+    out += '\n== NÃO IDENTIFICADAS (conferir manualmente) ==\n';
+    unmatched.forEach(u => { out += `página(s) ${u.pageNumbers.join(',')} — pedido ${u.pedido || '?'}\n`; });
+  }
+
+  downloadBlob(new Blob([out], { type: 'text/plain' }), nomeArquivo('txt'));
+});
+
+function nomeArquivo(ext) {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `natunutri-etiquetas-organizadas-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+</script>
+</body>
+</html>
