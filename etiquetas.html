@@ -690,7 +690,8 @@ function renderProdutoLista(container, list, extraClass) {
 }
 
 function escapeHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 // ---- Baixar PDF reorganizado ----
@@ -1052,7 +1053,7 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
   if (diff === 0) { alert('Esse valor já é o que está registrado — nada a ajustar.'); return; }
   if (!confirm(`Ajustar "${item.nome}" de ${item.kg.toFixed(3)} kg para ${novoValor.toFixed(3)} kg (diferença: ${diff > 0 ? '+' : ''}${diff.toFixed(3)} kg)?\nMotivo: ${motivo}`)) return;
 
-  item.kg = novoValor;
+  item.kg = Math.round(novoValor * 1000) / 1000;
   movimentos.push({ data: hoje(), tipo: 'ajuste', produto: item.nome, kg: diff, motivo });
 
   const ok1 = await salvarEstoqueNaPasta();
