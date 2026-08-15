@@ -484,6 +484,10 @@ function escapeHtml(s) {
 // ---- Baixar PDF reorganizado ----
 document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
   const btn = document.getElementById('btnBaixarPdf');
+  // No Safari/iOS, uma aba só pode ser aberta sem bloqueio de pop-up se isso
+  // acontecer *dentro* do gesto de toque do usuário — por isso abrimos a aba
+  // (em branco) aqui, antes de qualquer `await`, e só preenchemos depois.
+  const iosWin = isIOS() ? window.open('', '_blank') : null;
   btn.disabled = true;
   btn.textContent = 'Gerando PDF…';
   try {
@@ -493,8 +497,9 @@ document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
     const copiedPages = await newDoc.copyPages(srcDoc, orderedIndices);
     copiedPages.forEach(p => newDoc.addPage(p));
     const bytes = await newDoc.save();
-    downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'));
+    downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'), iosWin);
   } catch (err) {
+    if (iosWin) iosWin.close();
     alert('Não consegui gerar o PDF: ' + err.message);
   }
   btn.disabled = false;
@@ -564,7 +569,7 @@ function blobToBase64(blob) {
   });
 }
 
-async function downloadBlob(blob, filename) {
+async function downloadBlob(blob, filename, iosWin) {
   if (window.Capacitor && window.Capacitor.isNativePlatform()) {
     const { Filesystem, Directory, Share } = window.Capacitor.Plugins;
     try {
@@ -579,9 +584,14 @@ async function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   if (isIOS()) {
     // iOS Safari ignores the `download` attribute for blob URLs; open it
-    // instead so the user can save it via the Share Sheet.
-    window.open(url, '_blank');
-    alert('Arquivo aberto em nova aba. Toque no ícone de compartilhar e escolha "Salvar em Arquivos".');
+    // instead so the user can save it via the Share Sheet. Reuse a tab that
+    // was opened synchronously with the click if we have one — opening a
+    // new tab this late (after async work) gets silently blocked as a pop-up.
+    const target = iosWin || window.open(url, '_blank');
+    if (target) target.location.href = url;
+    alert(target
+      ? 'Arquivo aberto em nova aba. Toque no ícone de compartilhar e escolha "Salvar em Arquivos".'
+      : 'O Safari bloqueou a abertura da aba. Toque em "aA" na barra de endereço → Configurações do Site → permita pop-ups para este site e tente novamente.');
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   } else {
     const a = document.createElement('a');
