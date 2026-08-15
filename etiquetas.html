@@ -270,6 +270,23 @@ const RE_PEDIDO = /Pedido:\s*([A-Z0-9-]+)/;
 
 function norm(s) { return s.replace(/\s+/g, ' ').trim(); }
 
+// Nomes que o Shopee às vezes exporta diferente (título mudou, ordem das
+// palavras trocada etc.) mas que são o mesmo produto — o primeiro nome de
+// cada grupo é o que aparece na lista organizada. Adicione outros pares aqui
+// conforme forem aparecendo.
+const ALIASES_PRODUTO = [
+  ['Semente de Linhaça Dourada', 'Linhaça Dourada Semente'],
+  ['Camomila Flor', 'Chá de Camomila Flor'],
+];
+
+function normalizeProdutoNome(nome) {
+  const alvo = norm(nome).toLowerCase();
+  for (const grupo of ALIASES_PRODUTO) {
+    if (grupo.some(n => n.toLowerCase() === alvo)) return grupo[0];
+  }
+  return norm(nome);
+}
+
 function parsePage(text, pageNumber) {
   const lines = text.split('\n').map(l => l.trim());
   const items = [];
@@ -277,12 +294,12 @@ function parsePage(text, pageNumber) {
     if (!/^\d+\./.test(ln)) continue;
     let m = ln.match(RE_ITEM_COM_VARIACAO);
     if (m) {
-      items.push({ variacao: norm(m[1]), produto: norm(m[2]), qtd: parseInt(m[3], 10) });
+      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(m[2]), qtd: parseInt(m[3], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_SEM_VARIACAO);
     if (m) {
-      items.push({ variacao: 'Único', produto: norm(m[1]), qtd: parseInt(m[2], 10) });
+      items.push({ variacao: 'Único', produto: normalizeProdutoNome(m[1]), qtd: parseInt(m[2], 10) });
     }
   }
   const pedidoMatch = text.match(RE_PEDIDO);
