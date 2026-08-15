@@ -9,18 +9,18 @@
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap');
 
   :root {
-    --verde:   #1A5E1F;
-    --verde-m: #2E8B25;
-    --verde-l: #E8F5E4;
-    --terra:   #E8762C;
-    --areia:   #F4F9F1;
+    --verde:   #1B3A2B;
+    --verde-m: #2C5A3F;
+    --verde-l: #EBF1EA;
+    --terra:   #A8763E;
+    --areia:   #FAF7F0;
     --branco:  #FFFFFF;
-    --cinza1:  #1A1A1A;
-    --cinza2:  #4A4A4A;
-    --cinza3:  #8A8A8A;
-    --cinza4:  #D4D4D4;
-    --sombra:  0 2px 12px rgba(0,0,0,0.08);
-    --sombra2: 0 6px 28px rgba(0,0,0,0.14);
+    --cinza1:  #22261F;
+    --cinza2:  #5B5C4E;
+    --cinza3:  #8B8A78;
+    --cinza4:  #E2DFD3;
+    --sombra:  0 2px 12px rgba(27,58,43,0.07);
+    --sombra2: 0 10px 32px rgba(27,58,43,0.14);
     --r: 14px;
   }
 
@@ -35,11 +35,11 @@
 
   /* ─── HEADER ─── */
   header {
-    background: linear-gradient(135deg, #1A5E1F 0%, #2E8B25 60%, #3DAA2A 100%);
+    background: var(--verde);
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 4px 20px rgba(26,94,31,0.35);
+    box-shadow: 0 2px 16px rgba(27,58,43,0.25);
   }
   .header-inner {
     max-width: 900px;
@@ -93,15 +93,18 @@
     background: #fff;
     border: none;
     border-radius: 12px;
-    padding: 11px 16px;
+    padding: 10px 14px;
     color: var(--verde);
     cursor: pointer;
-    font-size: 22px;
     flex-shrink: 0;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
     transition: transform .15s, background .15s;
   }
-  .cart-btn:hover { background: #f0f0f0; transform: scale(1.05); }
+  .cart-btn svg { width: 20px; height: 20px; }
+  .cart-btn:hover { background: #f4f2ec; transform: scale(1.05); }
   .cart-badge {
     position: absolute;
     top: -7px; right: -7px;
@@ -323,6 +326,7 @@
     transition: background .15s;
   }
   .modal-close:hover { background: rgba(0,0,0,0.7); }
+  .modal-close svg, .cart-header-close svg { width: 16px; height: 16px; }
 
   .modal-body { padding: 20px; }
   .modal-cat {
@@ -463,7 +467,7 @@
   .cart-overlay.open .cart-drawer { right: 0; }
 
   .cart-header {
-    background: linear-gradient(135deg, #1A5E1F 0%, #2E8B25 100%);
+    background: var(--verde);
     color: #fff;
     padding: 18px 20px;
     display: flex;
@@ -474,7 +478,11 @@
     font-family: 'Fraunces', serif;
     font-size: 18px;
     font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .cart-header h2 svg { width: 18px; height: 18px; flex-shrink: 0; }
   .cart-header-close {
     background: rgba(255,255,255,0.2);
     border: none;
@@ -502,7 +510,7 @@
     padding: 60px 20px;
     color: var(--cinza3);
   }
-  .cart-empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .cart-empty-icon { width: 44px; height: 44px; margin: 0 auto 14px; color: var(--cinza4); }
 
   .cart-item {
     display: flex;
@@ -654,7 +662,11 @@
     font-size: 20px;
     font-weight: 500;
     margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
+  .pedido-modal-header h3 svg { width: 19px; height: 19px; flex-shrink: 0; }
   .pedido-modal-header p {
     font-size: 13px;
     opacity: .85;
@@ -787,7 +799,6 @@
     border: none;
     border-radius: 50%;
     width: 34px; height: 34px;
-    font-size: 14px;
     cursor: pointer;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     z-index: 50;
@@ -798,6 +809,7 @@
     opacity: 0.45;
   }
   .admin-fab:hover { opacity: 1; transform: scale(1.1); }
+  .admin-fab svg { width: 15px; height: 15px; }
 
   .admin-login-overlay {
     display: none;
@@ -822,8 +834,9 @@
     animation: slideUp .25s ease;
   }
   .admin-login-icon {
-    font-size: 36px;
-    margin-bottom: 10px;
+    width: 40px; height: 40px;
+    margin: 0 auto 12px;
+    color: var(--verde);
   }
   .admin-login-modal h3 {
     font-family: 'Fraunces', serif;
@@ -894,6 +907,7 @@
     align-items: center;
     gap: 8px;
   }
+  .admin-modal h2 svg { width: 19px; height: 19px; flex-shrink: 0; }
 
   .form-row {
     display: grid;
@@ -945,6 +959,7 @@
     text-align: center;
   }
   .btn-upload-foto:hover { background: #ddeed8; }
+  .btn-upload-foto svg { width: 16px; height: 16px; flex-shrink: 0; }
   input[type=text], input[type=number], textarea, select {
     width: 100%;
     padding: 10px 12px;
@@ -985,7 +1000,12 @@
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     transition: background .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
+  .btn-exportar svg { width: 16px; height: 16px; flex-shrink: 0; }
   .btn-exportar:hover { background: #e6b800; }
 
   .vars-editor { margin-bottom: 12px; }
@@ -1009,9 +1029,12 @@
     border-radius: 8px;
     padding: 8px 10px;
     cursor: pointer;
-    font-size: 14px;
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .var-del svg { width: 15px; height: 15px; }
   .btn-add-var {
     background: var(--verde-l);
     border: 1.5px dashed var(--verde-m);
@@ -1042,7 +1065,12 @@
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     transition: background .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
   }
+  .btn-save svg { width: 16px; height: 16px; flex-shrink: 0; }
   .btn-save:hover { background: var(--verde-m); }
   .btn-cancel-admin {
     background: var(--areia);
@@ -1084,36 +1112,46 @@
   .btn-edit-prod, .btn-del-prod {
     border: none;
     border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 13px;
+    padding: 7px 10px;
     cursor: pointer;
     transition: opacity .15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
+  .btn-edit-prod svg, .btn-del-prod svg { width: 15px; height: 15px; }
   .btn-edit-prod { background: var(--verde-l); color: var(--verde); }
   .btn-del-prod { background: #fee2e2; color: #dc2626; }
 
   .hero-banner {
-    background: linear-gradient(135deg, #1A5E1F 0%, #2E8B25 60%, #3DAA2A 100%);
-    border-radius: 18px;
-    padding: 28px 20px 20px;
-    text-align: center;
-    margin-bottom: 24px;
-    box-shadow: 0 4px 20px rgba(26,94,31,0.3);
+    background: var(--branco);
+    border: 1px solid var(--cinza4);
+    border-left: 4px solid var(--terra);
+    border-radius: var(--r);
+    padding: 22px 24px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
   }
-  .hero-logo {
-    height: 80px;
-    width: auto;
-    object-fit: contain;
-    margin-bottom: 8px;
-    filter: brightness(0) invert(1);
+  .hero-title {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    font-weight: 500;
+    font-size: 19px;
+    color: var(--verde);
+    line-height: 1.3;
+    margin: 0;
   }
   .hero-sub {
-    color: rgba(255,255,255,0.9);
-    font-size: 13px;
+    color: var(--cinza3);
+    font-size: 12.5px;
     font-weight: 600;
-    letter-spacing: 0.8px;
+    letter-spacing: 0.6px;
     text-transform: uppercase;
-    margin: 0;
+    margin: 4px 0 0;
   }
 
   @media (max-width: 480px) {
@@ -1139,7 +1177,7 @@
       </svg>
     </div>
     <button class="cart-btn" onclick="abrirCarrinho()">
-      🛒
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
       <span class="cart-badge" id="cartBadge">0</span>
     </button>
   </div>
@@ -1151,8 +1189,10 @@
 
 <main>
   <div class="hero-banner">
-    <img src="logo.png" alt="NatuNutri" class="hero-logo">
-    <p class="hero-sub">Produtos naturais de qualidade</p>
+    <div>
+      <p class="hero-title">Comprado a granel, fracionado com cuidado.</p>
+      <p class="hero-sub">Produtos naturais direto da fábrica</p>
+    </div>
   </div>
   <div class="section-title" id="sectionTitle">Todos os produtos</div>
   <div class="grid" id="prodGrid"></div>
@@ -1162,7 +1202,7 @@
 <div class="overlay" id="prodOverlay" onclick="fecharProd(event)">
   <div class="modal" id="prodModal">
     <div class="modal-img" id="modalImg">
-      <button class="modal-close" onclick="fecharProdForce()">✕</button>
+      <button class="modal-close" onclick="fecharProdForce()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="modal-body">
       <div class="modal-cat" id="modalCat"></div>
@@ -1179,7 +1219,8 @@
         </div>
       </div>
       <button class="btn-add-cart" onclick="addToCart()">
-        🛒 Adicionar ao carrinho
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+        Adicionar ao carrinho
       </button>
     </div>
   </div>
@@ -1189,8 +1230,8 @@
 <div class="cart-overlay" id="cartOverlay" onclick="fecharCarrinhoOverlay(event)">
   <div class="cart-drawer">
     <div class="cart-header">
-      <h2>🛒 Meu carrinho</h2>
-      <button class="cart-header-close" onclick="fecharCarrinho()">✕</button>
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg> Meu carrinho</h2>
+      <button class="cart-header-close" onclick="fecharCarrinho()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
     </div>
     <div class="cart-items" id="cartItems"></div>
     <div class="cart-footer" id="cartFooter" style="display:none">
@@ -1213,7 +1254,7 @@
 <div class="pedido-overlay" id="pedidoOverlay" onclick="fecharModalPedidoOverlay(event)">
   <div class="pedido-modal">
     <div class="pedido-modal-header">
-      <h3>📋 Finalizar pedido</h3>
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 10h6M9 14h6M9 18h3"/></svg> Finalizar pedido</h3>
       <p>Informe seu nome para enviarmos pelo WhatsApp</p>
     </div>
     <div class="pedido-modal-body">
@@ -1245,12 +1286,12 @@
 <div class="toast" id="toast"></div>
 
 <!-- ADMIN FAB (discreto) -->
-<button class="admin-fab" onclick="abrirAdmin()" title="Área restrita">🔒</button>
+<button class="admin-fab" onclick="abrirAdmin()" title="Área restrita"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></button>
 
 <!-- LOGIN ADMIN -->
 <div class="admin-login-overlay" id="adminLoginOverlay" onclick="if(event.target===this)fecharLoginAdmin()">
   <div class="admin-login-modal">
-    <div class="admin-login-icon">🔒</div>
+    <div class="admin-login-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></div>
     <h3>Área do Administrador</h3>
     <p>Digite a senha para gerenciar produtos, fotos e preços.</p>
     <input type="password" id="adminSenhaInput" class="admin-login-input"
@@ -1267,7 +1308,7 @@
 <!-- ADMIN MODAL -->
 <div class="admin-overlay" id="adminOverlay" onclick="fecharAdminOverlay(event)">
   <div class="admin-modal" onclick="e=>e.stopPropagation()">
-    <h2>⚙️ Gerenciar Produtos</h2>
+    <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg> Gerenciar Produtos</h2>
 
     <div class="form-row">
       <div>
@@ -1289,7 +1330,8 @@
         <div class="img-preview" id="aImgPreview">🌿</div>
         <div class="img-upload-actions">
           <label class="btn-upload-foto">
-            📷 Enviar foto da galeria
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8a2 2 0 0 1 2-2h1l1.5-2h7L17 6h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Enviar foto da galeria
             <input type="file" id="aImgFile" accept="image/*" onchange="onFotoSelecionada(event)" style="display:none">
           </label>
           <input type="text" id="aImg" placeholder="ou cole um emoji: 🌿" oninput="atualizarPreviewImg()">
@@ -1310,12 +1352,12 @@
 
     <div class="admin-actions">
       <button class="btn-cancel-admin" onclick="fecharAdmin()">Cancelar</button>
-      <button class="btn-save" onclick="salvarProd()">💾 Salvar produto</button>
+      <button class="btn-save" onclick="salvarProd()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg> Salvar produto</button>
     </div>
 
     <div class="export-box">
       <p class="export-info">💡 Ao salvar um produto, o catálogo atualizado é baixado automaticamente. Substitua o arquivo antigo pelo novo para não perder as alterações.</p>
-      <button class="btn-exportar" onclick="exportarHTML()">⬇️ Baixar catálogo atualizado</button>
+      <button class="btn-exportar" onclick="exportarHTML()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg> Baixar catálogo atualizado</button>
     </div>
 
     <div class="prod-list-admin">
@@ -1470,7 +1512,7 @@ function abrirProd(id) {
   document.getElementById('modalDesc').textContent = prodAtual.desc||'';
 
   const imgEl = document.getElementById('modalImg');
-  const closeBtn = '<button class="modal-close" onclick="fecharProdForce()">✕</button>';
+  const closeBtn = '<button class="modal-close" onclick="fecharProdForce()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>';
   const url = (prodAtual.img||'').trim();
   if ((url.startsWith('http')||url.startsWith('data:image'))) {
     imgEl.innerHTML = `<img src="${url}" alt="${prodAtual.nome}" onerror="this.parentElement.innerHTML='<span style=font-size:90px>🌿</span>'+'${closeBtn.replace(/'/g, "\\'")}'">` + closeBtn;
@@ -1556,7 +1598,7 @@ function renderCarrinho() {
   const ft = document.getElementById('cartFooter');
 
   if (!carrinho.length) {
-    el.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon">🛒</div>Seu carrinho está vazio</div>`;
+    el.innerHTML = `<div class="cart-empty"><div class="cart-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></div>Seu carrinho está vazio</div>`;
     ft.style.display='none';
     return;
   }
@@ -1807,7 +1849,7 @@ function addVarRow(label='', preco='') {
   d.innerHTML=`
     <input type="text" placeholder="Ex: 500g" value="${label}" style="flex:1">
     <input type="number" placeholder="Preço" value="${preco}" style="width:110px" step="0.01" min="0">
-    <button class="var-del" onclick="this.parentElement.remove()">🗑</button>
+    <button class="var-del" onclick="this.parentElement.remove()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></button>
   `;
   document.getElementById('varsEditor').appendChild(d);
 }
@@ -1905,8 +1947,8 @@ function renderAdminList() {
         <div class="prod-admin-price">a partir de ${fmtPreco(minP)} · ${p.vars.length} variações</div>
       </div>
       <div class="prod-admin-btns">
-        <button class="btn-edit-prod" onclick="editarProd(${i})">✏️</button>
-        <button class="btn-del-prod"  onclick="deletarProd(${i})">🗑</button>
+        <button class="btn-edit-prod" onclick="editarProd(${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18.5 9.5a2.121 2.121 0 0 0-3-3L5 17v3Z"/><path d="M13.5 6.5l4 4"/></svg></button>
+        <button class="btn-del-prod"  onclick="deletarProd(${i})"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/></svg></button>
       </div>
     </div>`;
   }).join('');
