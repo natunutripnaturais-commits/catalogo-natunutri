@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>NatuNutri · Organizador de Etiquetas</title>
 <link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" onerror="window.__cdnFail=true"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" onerror="window.__cdnFail=true"></script>
 <style>
   :root{
     --verde-900:#1b3a2b;
@@ -137,7 +137,7 @@
       <strong>Toque para escolher o PDF de etiquetas</strong>
       <span>Exportado do Shopee (uma etiqueta por página)</span>
     </div>
-    <input type="file" id="fileInput" accept="application/pdf">
+    <input type="file" id="fileInput" accept="application/pdf,.pdf">
     <div id="status"></div>
   </div>
 
@@ -174,23 +174,10 @@
 </footer>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
 const statusEl = document.getElementById('status');
 const resultadoEl = document.getElementById('resultado');
-
-dropzone.addEventListener('click', () => fileInput.click());
-['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
-['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
-dropzone.addEventListener('drop', e => {
-  const f = e.dataTransfer.files[0];
-  if (f) handleFile(f);
-});
-fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) handleFile(e.target.files[0]);
-});
 
 let originalBytes = null;   // ArrayBuffer for pdf-lib
 let orderedIndices = [];    // final page order (0-based, original PDF)
@@ -199,6 +186,22 @@ let groupsForExport = [];   // for txt list
 function setStatus(msg, spinning) {
   statusEl.classList.add('show');
   statusEl.innerHTML = (spinning ? '<span class="spinner"></span>' : '') + msg;
+}
+
+if (window.__cdnFail || typeof pdfjsLib === 'undefined' || typeof PDFLib === 'undefined') {
+  setStatus('Não consegui carregar os componentes necessários (sem internet ou conexão bloqueada). Verifique sua conexão e recarregue a página.', false);
+} else {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  dropzone.addEventListener('click', () => fileInput.click());
+  ['dragover','dragenter'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.add('drag'); }));
+  ['dragleave','drop'].forEach(ev => dropzone.addEventListener(ev, e => { e.preventDefault(); dropzone.classList.remove('drag'); }));
+  dropzone.addEventListener('drop', e => {
+    const f = e.dataTransfer.files[0];
+    if (f) handleFile(f);
+  });
+  fileInput.addEventListener('change', e => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
 }
 
 async function handleFile(file) {
@@ -263,7 +266,7 @@ function buildPageText(textContent) {
 // ---- Extrai pedido + itens (produto/variação/qtd) do texto de uma página ----
 const RE_ITEM_COM_VARIACAO = /^\d+\.\s*\(([^)]+)\)\s*\/\s*(.+?)\s*\(?\s*\*(\d+)\s*\)?\s*$/;
 const RE_ITEM_SEM_VARIACAO = /^\d+\.\s*(.+?)\s*\(?\s*\*(\d+)\s*\)?\s*$/;
-const RE_PEDIDO = /Pedido:\s*([A-Z0-9]+)/;
+const RE_PEDIDO = /Pedido:\s*([A-Z0-9-]+)/;
 
 function norm(s) { return s.replace(/\s+/g, ' ').trim(); }
 
@@ -547,12 +550,45 @@ function nomeArquivo(ext) {
   return `natunutri-etiquetas-organizadas-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
 }
 
-function downloadBlob(blob, filename) {
+function isIOS() {
+  return /iP(hone|od|ad)/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function blobToBase64(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function downloadBlob(blob, filename) {
+  if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+    const { Filesystem, Directory, Share } = window.Capacitor.Plugins;
+    try {
+      const base64 = await blobToBase64(blob);
+      const result = await Filesystem.writeFile({ path: filename, data: base64, directory: Directory.Cache });
+      await Share.share({ title: filename, url: result.uri });
+    } catch (err) {
+      alert('Não consegui salvar o arquivo: ' + err.message);
+    }
+    return;
+  }
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  if (isIOS()) {
+    // iOS Safari ignores the `download` attribute for blob URLs; open it
+    // instead so the user can save it via the Share Sheet.
+    window.open(url, '_blank');
+    alert('Arquivo aberto em nova aba. Toque no ícone de compartilhar e escolha "Salvar em Arquivos".');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } else {
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
 }
 </script>
 </body>
