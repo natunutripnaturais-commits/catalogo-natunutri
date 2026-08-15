@@ -214,6 +214,17 @@
     </div>
 
     <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Importar vários produtos de uma vez</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Cole um nome de produto por linha. Os que ainda não existem são criados com estoque 0 kg — depois é só preencher a quantidade.
+      </div>
+      <textarea id="txtImportarEstoque" rows="4" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; resize:vertical;" placeholder="Camomila Flor&#10;Erva Baleeira&#10;Capim Limão"></textarea>
+      <div class="actions" style="margin-bottom:0">
+        <button class="secondary" id="btnImportarEstoque">⬆ Importar lista</button>
+      </div>
+    </div>
+
+    <div class="card">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;">
         <h2 class="section" style="margin:0 0 4px">Produtos em estoque (kg)</h2>
         <button class="secondary" id="btnAddEstoqueItem">+ Produto</button>
@@ -332,8 +343,16 @@ function norm(s) { return s.replace(/\s+/g, ' ').trim(); }
 // cada grupo é o que aparece na lista organizada. Adicione outros pares aqui
 // conforme forem aparecendo.
 const ALIASES_PRODUTO = [
-  ['Semente de Linhaça Dourada', 'Linhaça Dourada Semente'],
-  ['Camomila Flor', 'Chá de Camomila Flor'],
+  ['Semente de Linhaça Dourada', 'Linhaça Dourada Semente', 'Linhaça Dourada', 'Semente Linhaça Dourada'],
+  ['Camomila Flor', 'Chá de Camomila Flor', 'Chá de Camomila Natural', 'Camomila Flor Premium', 'Chá Camomila Flor Premium'],
+  ['Semente de Girassol Sem Casca', 'Semente de Girassol Sem Casca Pepita', 'Semente de Girassol Pepita Sem Casca', 'Semente de Girassol'],
+  ['Semente de Linhaça Marrom', 'Linhaça Marrom Semente', 'Linhaça Marrom'],
+  ['Semente de Chia', 'Chia Semente', 'Chia Preta'],
+  ['Semente de Abóbora Sem Casca', 'Semente de Abóbora', 'Semente Abóbora'],
+  ['Gergelim Branco', 'Gergelim Branco Natural', 'Gergelim Branco Natural Sem Casca'],
+  ['Gergelim Preto', 'Gergelim Preto Importado', 'Gergelim Preto Importado Premium'],
+  ['Calêndula Flor', 'Calêndula Flores Desidratadas', 'Calêndula Flor Desidratada'],
+  ['Psyllium Husk', 'Psyllium'],
 ];
 
 function normalizeProdutoNome(nome) {
@@ -374,6 +393,25 @@ function parseGramas(variacao) {
   if (!m) return Infinity;
   const val = parseFloat(m[1].replace(',', '.'));
   return m[2].toLowerCase() === 'kg' ? val * 1000 : val;
+}
+
+// ---- Kits ("Kit A + B + C") contam o peso vendido em cada produto individual
+// que os compõe, e não num item de estoque à parte — "1 pacote de cada" no
+// kit vira 1 pacote daquele peso em cada componente.
+function limparParteKit(s) {
+  return norm(s)
+    .replace(/\d+[.,]?\d*\s*(kg|g)\b/gi, '')
+    .replace(/\bpacote(s)?\s+de\s+cada\b/gi, '')
+    .replace(/[-–]\s*natunutri\w*/gi, '')
+    .trim();
+}
+
+function decomporKit(nomeProduto) {
+  if (!/^kit\b/i.test(nomeProduto)) return null;
+  const semPrefixo = nomeProduto.replace(/^kit\s*\d*\s*[-–:]?\s*/i, '');
+  const partes = semPrefixo.split(/\s*\+\s*/).map(limparParteKit).filter(Boolean);
+  if (partes.length < 2) return null;
+  return partes.map(normalizeProdutoNome);
 }
 
 // ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
@@ -787,6 +825,22 @@ document.getElementById('btnAddEstoqueItem').addEventListener('click', () => {
   salvarEstoqueNaPasta();
 });
 
+document.getElementById('btnImportarEstoque').addEventListener('click', async () => {
+  if (!estoqueDirHandle) { alert('Conecte a pasta do estoque primeiro (botão no topo desta aba).'); return; }
+  const txt = document.getElementById('txtImportarEstoque');
+  const nomes = txt.value.split('\n').map(norm).filter(Boolean);
+  if (nomes.length === 0) return;
+  let adicionados = 0;
+  nomes.forEach(nome => {
+    if (!acharEstoque(nome)) { estoque.push({ nome, kg: 0 }); adicionados++; }
+  });
+  renderEstoqueLista();
+  if (await salvarEstoqueNaPasta()) {
+    txt.value = '';
+    alert(`${adicionados} produto(s) novo(s) importado(s). ${nomes.length - adicionados} já existiam e foram ignorados.`);
+  }
+});
+
 document.getElementById('listaEstoque').addEventListener('change', e => {
   const i = e.target.dataset.i, f = e.target.dataset.f;
   if (i === undefined) return;
@@ -804,12 +858,16 @@ document.getElementById('listaEstoque').addEventListener('click', e => {
 
 function calcularConsumoEstoque() {
   const { produtos = [], kits = [] } = groupsForExport;
-  const consumo = {}; // nome do produto -> kg vendidos
+  const consumo = {}; // nome do produto individual -> kg vendidos
+  function somar(nome, kg) { consumo[nome] = (consumo[nome] || 0) + kg; }
   [...produtos, ...kits].forEach(pm => {
     pm.variacoesSorted.forEach(v => {
       const g = parseGramas(v.variacao);
       if (!isFinite(g)) return; // variação sem peso reconhecível (ex: "Único") não entra no cálculo
-      consumo[pm.produto] = (consumo[pm.produto] || 0) + (g * v.totalQtd) / 1000;
+      const kg = (g * v.totalQtd) / 1000;
+      const componentes = decomporKit(pm.produto);
+      if (componentes) componentes.forEach(nome => somar(nome, kg));
+      else somar(pm.produto, kg);
     });
   });
   return consumo;
