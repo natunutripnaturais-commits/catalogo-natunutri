@@ -160,11 +160,16 @@
   .compra-form select{flex:1; min-width:160px;}
   .compra-form input[type="number"]{width:110px;}
 
+  .painel-item{border-top:1px solid var(--linha);}
+  .painel-item:first-child{border-top:none;}
+  .painel-item summary{list-style:none; cursor:pointer;}
+  .painel-item summary::-webkit-details-marker{display:none;}
   .painel-row{
     display:flex; align-items:center; justify-content:space-between; gap:10px;
-    padding:10px 0; border-top:1px solid var(--linha);
+    padding:10px 0;
   }
-  .painel-row:first-child{border-top:none;}
+  .painel-grafico{padding:0 0 12px;}
+  .painel-grafico .painel-detalhe{margin-top:4px;}
   .painel-nome{font-size:13.5px; font-weight:600;}
   .painel-detalhe{font-size:11.5px; color:var(--texto-suave); margin-top:1px;}
   .painel-badge{
@@ -282,6 +287,8 @@
         <select id="selCompraProduto"></select>
         <input type="number" id="inputCompraKg" step="0.001" min="0" placeholder="kg comprados">
         <input type="date" id="inputCompraData">
+        <input type="text" id="inputCompraFornecedor" placeholder="Fornecedor (opcional)">
+        <input type="number" id="inputCompraCusto" step="0.01" min="0" placeholder="Custo total R$ (opcional)">
         <button class="secondary" id="btnRegistrarCompra">➕ Registrar entrada</button>
       </div>
     </div>
@@ -302,11 +309,25 @@
 
   <div id="tabPainel" class="tabpanel">
     <div class="card">
-      <h2 class="section" style="margin:0 0 4px">O que comprar</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:4px;">
+        <h2 class="section" style="margin:0">O que comprar</h2>
+        <div style="display:flex; gap:6px;">
+          <button class="secondary" id="btnExportarEstoqueCsv" style="padding:6px 10px; font-size:12px;">⬇ Estoque (.csv)</button>
+          <button class="secondary" id="btnExportarMovimentosCsv" style="padding:6px 10px; font-size:12px;">⬇ Movimentações (.csv)</button>
+        </div>
+      </div>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Estimativa a partir da média de vendas dos últimos 30 dias. Colchão mínimo: 15 dias de estoque.
+        Estimativa a partir da média de vendas dos últimos 30 dias. Colchão mínimo: 15 dias de estoque. Toque num produto pra ver o gráfico de vendas.
       </div>
       <div id="painelLista"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 4px">Estoque parado</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Produtos com estoque mas sem nenhuma venda registrada nos últimos 30 dias.
+      </div>
+      <div id="painelParado"></div>
     </div>
 
     <div class="card">
@@ -844,16 +865,36 @@ async function carregarEstoqueDaPasta() {
   }
 }
 
-async function salvarEstoqueNaPasta() {
+// Grava o arquivo principal na pasta e, junto, atualiza uma cópia datada em
+// "backups/" (uma por dia — se salvar várias vezes no mesmo dia, sobrescreve
+// só a cópia do dia, não acumula uma por clique). Protege contra o arquivo
+// principal corromper ou ser editado errado, mas ainda mora no mesmo HD —
+// vale copiar a pasta pra um pendrive/nuvem de vez em quando.
+async function salvarArquivoNaPasta(nomeArquivo, dados) {
   if (!(await garantirPermissaoPasta(true))) {
     alert('Sem permissão de escrita na pasta. Toque em "Escolher/reconectar pasta".');
     return false;
   }
-  const fileHandle = await estoqueDirHandle.getFileHandle('estoque.json', { create: true });
+  const texto = JSON.stringify(dados, null, 2);
+  const fileHandle = await estoqueDirHandle.getFileHandle(nomeArquivo, { create: true });
   const writable = await fileHandle.createWritable();
-  await writable.write(JSON.stringify(estoque, null, 2));
+  await writable.write(texto);
   await writable.close();
+
+  try {
+    const backupsDir = await estoqueDirHandle.getDirectoryHandle('backups', { create: true });
+    const nomeBackup = nomeArquivo.replace('.json', `-${hoje()}.json`);
+    const backupHandle = await backupsDir.getFileHandle(nomeBackup, { create: true });
+    const backupWritable = await backupHandle.createWritable();
+    await backupWritable.write(texto);
+    await backupWritable.close();
+  } catch (err) { /* backup é bônus — nunca bloqueia o salvamento principal */ }
+
   return true;
+}
+
+async function salvarEstoqueNaPasta() {
+  return salvarArquivoNaPasta('estoque.json', estoque);
 }
 
 async function carregarMovimentosDaPasta() {
@@ -867,12 +908,7 @@ async function carregarMovimentosDaPasta() {
 }
 
 async function salvarMovimentosNaPasta() {
-  if (!(await garantirPermissaoPasta(true))) return false;
-  const fileHandle = await estoqueDirHandle.getFileHandle('movimentos.json', { create: true });
-  const writable = await fileHandle.createWritable();
-  await writable.write(JSON.stringify(movimentos, null, 2));
-  await writable.close();
-  return true;
+  return salvarArquivoNaPasta('movimentos.json', movimentos);
 }
 
 document.getElementById('btnConectarPasta').addEventListener('click', async () => {
@@ -979,18 +1015,25 @@ document.getElementById('btnRegistrarCompra').addEventListener('click', async ()
   const nome = document.getElementById('selCompraProduto').value;
   const kg = parseFloat(document.getElementById('inputCompraKg').value);
   const data = document.getElementById('inputCompraData').value || hoje();
+  const fornecedor = norm(document.getElementById('inputCompraFornecedor').value);
+  const custoTotal = parseFloat(document.getElementById('inputCompraCusto').value);
   if (!nome) { alert('Cadastre pelo menos um produto no estoque antes de registrar uma compra.'); return; }
   if (!kg || kg <= 0) { alert('Informe quantos kg você comprou.'); return; }
 
   const item = acharEstoque(nome);
   item.kg = Math.round((item.kg + kg) * 1000) / 1000;
-  movimentos.push({ data, tipo: 'compra', produto: item.nome, kg });
+  const mov = { data, tipo: 'compra', produto: item.nome, kg };
+  if (fornecedor) mov.fornecedor = fornecedor;
+  if (!isNaN(custoTotal) && custoTotal > 0) mov.custoTotal = custoTotal;
+  movimentos.push(mov);
 
   const ok1 = await salvarEstoqueNaPasta();
   const ok2 = await salvarMovimentosNaPasta();
   if (ok1 && ok2) {
     renderEstoqueLista();
     document.getElementById('inputCompraKg').value = '';
+    document.getElementById('inputCompraFornecedor').value = '';
+    document.getElementById('inputCompraCusto').value = '';
     alert(`Compra registrada: +${kg} kg de ${item.nome} (estoque agora: ${item.kg} kg).`);
   }
 });
@@ -1095,6 +1138,8 @@ function calcularPainel() {
     : hojeMs;
   const diasComHistorico = Math.max(1, Math.min(30, Math.round((hojeMs - primeiraVendaMs) / 86400000) + 1));
 
+  const compras = movimentos.filter(m => m.tipo === 'compra' && m.custoTotal);
+
   return estoque.map(item => {
     const vendas30 = vendas
       .filter(m => m.produto.toLowerCase() === item.nome.toLowerCase() && new Date(m.data).getTime() >= desdeMs)
@@ -1102,42 +1147,135 @@ function calcularPainel() {
     const mediaDia = vendas30 / diasComHistorico;
     const diasRestantes = mediaDia > 0 ? item.kg / mediaDia : Infinity;
     const sugestaoCompra = mediaDia > 0 ? Math.max(0, mediaDia * ALVO_DIAS_REPOSICAO - item.kg) : 0;
-    return { nome: item.nome, estoqueKg: item.kg, mediaDia, diasRestantes, sugestaoCompra };
+
+    const comprasProduto = compras.filter(m => m.produto.toLowerCase() === item.nome.toLowerCase());
+    const custoTotalAcum = comprasProduto.reduce((s, m) => s + m.custoTotal, 0);
+    const kgComCusto = comprasProduto.reduce((s, m) => s + m.kg, 0);
+    const custoMedioKg = kgComCusto > 0 ? custoTotalAcum / kgComCusto : null;
+
+    return { nome: item.nome, estoqueKg: item.kg, mediaDia, diasRestantes, sugestaoCompra, custoMedioKg };
   }).sort((a, b) => a.diasRestantes - b.diasRestantes);
+}
+
+function serieDiaria(nomeProduto, dias) {
+  const hoje0 = new Date();
+  hoje0.setHours(0, 0, 0, 0);
+  const serie = [];
+  for (let i = dias - 1; i >= 0; i--) {
+    const dStr = new Date(hoje0.getTime() - i * 86400000).toISOString().slice(0, 10);
+    const total = movimentos
+      .filter(m => m.tipo === 'venda' && m.produto.toLowerCase() === nomeProduto.toLowerCase() && m.data === dStr)
+      .reduce((s, m) => s + m.kg, 0);
+    serie.push(total);
+  }
+  return serie;
+}
+
+function svgSparkline(serie) {
+  const w = 240, h = 40;
+  const barW = w / serie.length;
+  const max = Math.max(...serie, 0.0001);
+  const bars = serie.map((v, i) => {
+    const bh = Math.max(1, (v / max) * (h - 2));
+    const x = (i * barW).toFixed(1);
+    const y = (h - bh).toFixed(1);
+    return `<rect x="${x}" y="${y}" width="${Math.max(1, barW - 1).toFixed(1)}" height="${bh.toFixed(1)}" fill="var(--verde-500)"></rect>`;
+  }).join('');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="display:block; max-width:100%;">${bars}</svg>`;
 }
 
 function renderPainel() {
   const el = document.getElementById('painelLista');
+  const elParado = document.getElementById('painelParado');
   el.innerHTML = '';
+  elParado.innerHTML = '';
   if (estoque.length === 0) {
     el.innerHTML = '<div class="estoque-vazio">Cadastre produtos na aba Estoque pra ver o painel.</div>';
+    elParado.innerHTML = '<div class="estoque-vazio">Cadastre produtos na aba Estoque pra ver o painel.</div>';
   } else {
-    calcularPainel().forEach(p => {
+    const painel = calcularPainel();
+
+    painel.forEach(p => {
       let badgeClasse, badgeTexto;
       if (!isFinite(p.diasRestantes)) { badgeClasse = 'semdados'; badgeTexto = 'sem vendas em 30d'; }
       else if (p.diasRestantes < BUFFER_DIAS_MINIMO) { badgeClasse = 'urgente'; badgeTexto = 'comprar urgente'; }
       else if (p.diasRestantes < ALVO_DIAS_REPOSICAO) { badgeClasse = 'atencao'; badgeTexto = 'de olho'; }
       else { badgeClasse = 'ok'; badgeTexto = 'ok'; }
 
-      const detalhe = isFinite(p.diasRestantes)
+      let detalhe = isFinite(p.diasRestantes)
         ? `${p.estoqueKg.toFixed(1)} kg em estoque · ${p.mediaDia.toFixed(2)} kg/dia (média) · ~${Math.floor(p.diasRestantes)} dia(s) restante(s)`
             + (p.sugestaoCompra > 0 ? ` · sugestão: comprar ~${p.sugestaoCompra.toFixed(0)} kg` : '')
         : `${p.estoqueKg.toFixed(1)} kg em estoque · nenhuma venda registrada nos últimos 30 dias`;
+      if (p.custoMedioKg) detalhe += ` · custo médio: R$ ${p.custoMedioKg.toFixed(2)}/kg`;
 
-      const row = document.createElement('div');
-      row.className = 'painel-row';
-      row.innerHTML = `
-        <div>
-          <div class="painel-nome">${escapeHtml(p.nome)}</div>
-          <div class="painel-detalhe">${detalhe}</div>
+      const det = document.createElement('details');
+      det.className = 'painel-item';
+      det.innerHTML = `
+        <summary class="painel-row">
+          <div>
+            <div class="painel-nome">${escapeHtml(p.nome)}</div>
+            <div class="painel-detalhe">${detalhe}</div>
+          </div>
+          <span class="painel-badge ${badgeClasse}">${badgeTexto}</span>
+        </summary>
+        <div class="painel-grafico">
+          ${svgSparkline(serieDiaria(p.nome, 30))}
+          <div class="painel-detalhe">Vendas por dia — últimos 30 dias</div>
         </div>
-        <span class="painel-badge ${badgeClasse}">${badgeTexto}</span>
       `;
-      el.appendChild(row);
+      el.appendChild(det);
     });
+
+    const parados = painel
+      .filter(p => !isFinite(p.diasRestantes) && p.estoqueKg > 0)
+      .sort((a, b) => b.estoqueKg - a.estoqueKg);
+    if (parados.length === 0) {
+      elParado.innerHTML = '<div class="estoque-vazio">Nenhum produto parado no momento.</div>';
+    } else {
+      parados.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'painel-row';
+        row.innerHTML = `
+          <div class="painel-nome">${escapeHtml(p.nome)}</div>
+          <span class="painel-badge semdados">${p.estoqueKg.toFixed(1)} kg parado</span>
+        `;
+        elParado.appendChild(row);
+      });
+    }
   }
   renderMovimentos();
 }
+
+function csvEscape(v) {
+  const s = String(v);
+  return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+
+document.getElementById('btnExportarEstoqueCsv').addEventListener('click', () => {
+  const linhas = ['Produto;Estoque (kg);Média venda/dia (kg);Dias restantes;Sugestão de compra (kg);Custo médio (R$/kg)'];
+  calcularPainel().forEach(p => {
+    linhas.push([
+      csvEscape(p.nome),
+      p.estoqueKg.toFixed(3),
+      p.mediaDia.toFixed(3),
+      isFinite(p.diasRestantes) ? Math.floor(p.diasRestantes) : '',
+      p.sugestaoCompra > 0 ? p.sugestaoCompra.toFixed(1) : '',
+      p.custoMedioKg ? p.custoMedioKg.toFixed(2) : '',
+    ].join(';'));
+  });
+  downloadBlob(new Blob([linhas.join('\n')], { type: 'text/csv' }), `natunutri-estoque-${hoje()}.csv`);
+});
+
+document.getElementById('btnExportarMovimentosCsv').addEventListener('click', () => {
+  const linhas = ['Data;Tipo;Produto;Kg;Fornecedor;Custo total (R$);Motivo'];
+  [...movimentos].sort((a, b) => a.data.localeCompare(b.data)).forEach(m => {
+    linhas.push([
+      m.data, m.tipo, csvEscape(m.produto), m.kg.toFixed(3),
+      csvEscape(m.fornecedor || ''), m.custoTotal ? m.custoTotal.toFixed(2) : '', csvEscape(m.motivo || ''),
+    ].join(';'));
+  });
+  downloadBlob(new Blob([linhas.join('\n')], { type: 'text/csv' }), `natunutri-movimentacoes-${hoje()}.csv`);
+});
 
 function renderMovimentos() {
   const el = document.getElementById('painelMovimentos');
@@ -1152,9 +1290,16 @@ function renderMovimentos() {
     row.className = 'mov-row';
     const sinalKg = m.tipo === 'venda' ? -Math.abs(m.kg) : m.kg;
     const sinalTxt = (sinalKg >= 0 ? '+' : '') + sinalKg.toFixed(3);
-    const motivoTxt = m.tipo === 'ajuste' && m.motivo ? ` (${escapeHtml(m.motivo)})` : '';
+    let extraTxt = '';
+    if (m.tipo === 'ajuste' && m.motivo) extraTxt = ` (${escapeHtml(m.motivo)})`;
+    if (m.tipo === 'compra' && (m.fornecedor || m.custoTotal)) {
+      const partes = [];
+      if (m.fornecedor) partes.push(escapeHtml(m.fornecedor));
+      if (m.custoTotal) partes.push('R$ ' + m.custoTotal.toFixed(2));
+      extraTxt = ` (${partes.join(' · ')})`;
+    }
     row.innerHTML = `
-      <span>${m.data} — ${escapeHtml(m.produto)}${motivoTxt}</span>
+      <span>${m.data} — ${escapeHtml(m.produto)}${extraTxt}</span>
       <span><span class="mov-tipo ${m.tipo}">${sinalTxt} kg</span></span>
     `;
     el.appendChild(row);
