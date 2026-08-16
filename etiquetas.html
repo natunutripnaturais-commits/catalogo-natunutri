@@ -318,30 +318,46 @@
 </div>
 
 <div id="areaAdministrativo" class="area">
-  <p class="area-sub">Controle de estoque, compras e relatórios — separado do uso diário.</p>
-  <div class="tabs">
-    <button class="tab-btn ativo" data-tab="estoque">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
-      Estoque
-    </button>
-    <button class="tab-btn" data-tab="painel">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
-      Painel
-    </button>
+  <p class="area-sub">Controle de estoque, compras e relatórios — separado do uso diário. Salvo na nuvem e sincronizado entre celular e computador.</p>
+
+  <div id="loginGate" class="card" style="display:none">
+    <h2 class="section" style="margin:0 0 8px">Entrar</h2>
+    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:10px;">
+      Entre com o login da conta administrativa pra acessar estoque e painel — fica conectado neste aparelho até você sair.
+    </div>
+    <div class="compra-form">
+      <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="username" style="flex:1; min-width:180px;">
+      <input type="password" id="loginSenha" placeholder="Senha" autocomplete="current-password" style="flex:1; min-width:140px;">
+      <button class="primary" id="btnLogin">Entrar</button>
+    </div>
+    <div class="pasta-status" id="loginStatus"></div>
   </div>
 
-  <main>
-  <div id="tabEstoque" class="tabpanel ativo">
-    <div class="card">
-      <div class="pasta-row">
-        <div>
-          <strong style="font-size:13.5px">Pasta do estoque</strong>
-          <div class="pasta-status" id="pastaStatus">Nenhuma pasta conectada</div>
-        </div>
-        <button class="secondary" id="btnConectarPasta">📁 Escolher/reconectar pasta</button>
+  <div id="areaAdminConteudo" style="display:none">
+    <div class="card pasta-row">
+      <div>
+        <strong style="font-size:13.5px">Conta</strong>
+        <div class="pasta-status" id="contaStatus">—</div>
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="secondary" id="btnBackup">⬇ Baixar backup (.json)</button>
+        <button class="secondary" id="btnLogout">Sair</button>
       </div>
     </div>
 
+    <div class="tabs">
+      <button class="tab-btn ativo" data-tab="estoque">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+        Estoque
+      </button>
+      <button class="tab-btn" data-tab="painel">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+        Painel
+      </button>
+    </div>
+
+  <main>
+  <div id="tabEstoque" class="tabpanel ativo">
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Importar vários produtos de uma vez</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
@@ -422,13 +438,53 @@
     </div>
   </div>
   </main>
+  </div>
 </div>
 
 <footer>
   Tudo é processado no seu celular/computador — o PDF não é enviado a nenhum servidor.
 </footer>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+  connectAuthEmulator,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
+  addDoc, updateDoc, deleteDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// ──────────────────────────────────────────────
+// FIREBASE — dados da área administrativa (estoque, compras, ajustes e as
+// identidades de produto/kit aprendidas das etiquetas) ficam salvos na nuvem
+// e sincronizam entre celular e computador. Pra ligar: crie um projeto
+// grátis em https://console.firebase.google.com, ative Firestore Database e
+// Authentication (provedor E-mail/senha), cadastre seu login em
+// Authentication → Users, e cole aqui os dados do app (Configurações do
+// projeto → Geral → Seus apps → SDK do Firebase).
+// ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI",
+};
+const FIREBASE_CONFIGURADO = !!(firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('COLE_AQUI'));
+let auth, db;
+if (FIREBASE_CONFIGURADO) {
+  const firebaseApp = initializeApp(firebaseConfig);
+  auth = getAuth(firebaseApp);
+  db = getFirestore(firebaseApp);
+  if (window.__firebaseEmulator) {
+    connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+    connectFirestoreEmulator(db, 'localhost', 8080);
+  }
+}
+
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.getElementById('fileInput');
 const statusEl = document.getElementById('status');
@@ -1448,190 +1504,133 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 // ──────────────────────────────────────────────
-// ESTOQUE — guardado como estoque.json numa pasta escolhida pelo usuário
-// (File System Access API: só funciona no Chrome/Edge desktop)
+// ESTOQUE — salvo no Firestore (nuvem), sincronizado em tempo real entre
+// todos os aparelhos logados na mesma conta.
 // ──────────────────────────────────────────────
-const SUPORTA_PASTA = 'showDirectoryPicker' in window;
 const BUFFER_DIAS_MINIMO = 15;   // abaixo disso, o painel marca "comprar urgente"
 const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tanto de estoque
-let estoqueDirHandle = null;
-let estoque = []; // [{ nome, kg }]
-let movimentos = []; // [{ data: 'AAAA-MM-DD', tipo: 'venda'|'compra', produto, kg }]
+let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
+let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
 // Nomes completos (sem corte) já vistos e identificados nas etiquetas de envio,
 // aprendidos automaticamente conforme o dia a dia — chave = nome bruto em
 // minúsculas como aparece na etiqueta, valor = identidade já resolvida.
 // { "kit semente linhaça dourada + semente de chia": { tipo:'kit', valor:[...] } }
 let identidadesAprendidas = {};
 
-function idbAbrir() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('natunutri-etiquetas', 1);
-    req.onupgradeneeded = () => req.result.createObjectStore('handles');
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbGet(key) {
-  const db = await idbAbrir();
-  return new Promise((resolve, reject) => {
-    const req = db.transaction('handles', 'readonly').objectStore('handles').get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-async function idbSet(key, val) {
-  const db = await idbAbrir();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').put(val, key);
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
 }
 
-function atualizarPastaStatus() {
-  const el = document.getElementById('pastaStatus');
-  if (!SUPORTA_PASTA) {
-    el.textContent = 'Esse navegador não suporta salvar numa pasta do computador (use Chrome ou Edge no desktop).';
-  } else if (estoqueDirHandle) {
-    el.textContent = 'Conectada: "' + estoqueDirHandle.name + '" — salvando automaticamente aqui.';
-  } else {
-    el.textContent = 'Nenhuma pasta conectada. Escolha uma pasta para guardar o estoque.';
-  }
+let unsubEstoque = null, unsubMovimentos = null, unsubIdentidades = null;
+
+function painelAtivo() {
+  const el = document.getElementById('tabPainel');
+  return el && el.classList.contains('ativo');
 }
 
-async function garantirPermissaoPasta(pedirSeNecessario) {
-  if (!estoqueDirHandle) return false;
-  let perm = await estoqueDirHandle.queryPermission({ mode: 'readwrite' });
-  if (perm !== 'granted' && pedirSeNecessario) {
-    perm = await estoqueDirHandle.requestPermission({ mode: 'readwrite' });
-  }
-  return perm === 'granted';
+// Liga os "ouvintes" em tempo real: qualquer alteração feita neste ou em
+// outro aparelho logado na mesma conta aparece aqui em poucos instantes,
+// sem precisar recarregar a página.
+function iniciarSincronizacao() {
+  unsubEstoque = onSnapshot(collection(db, 'estoque'), snap => {
+    estoque = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    renderEstoqueLista();
+    if (painelAtivo()) renderPainel();
+  }, () => { document.getElementById('contaStatus').textContent = 'Conectado, mas sem conseguir ler o estoque agora (verifique sua internet).'; });
+
+  unsubMovimentos = onSnapshot(collection(db, 'movimentos'), snap => {
+    movimentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (painelAtivo()) renderPainel();
+  });
+
+  unsubIdentidades = onSnapshot(collection(db, 'identidades'), snap => {
+    const nova = {};
+    snap.docs.forEach(d => { nova[d.id] = d.data(); });
+    identidadesAprendidas = nova;
+  });
 }
 
-async function carregarEstoqueDaPasta() {
-  try {
-    const fileHandle = await estoqueDirHandle.getFileHandle('estoque.json');
-    const file = await fileHandle.getFile();
-    estoque = JSON.parse(await file.text());
-  } catch (err) {
-    estoque = []; // arquivo ainda não existe nessa pasta
-  }
+function pararSincronizacao() {
+  [unsubEstoque, unsubMovimentos, unsubIdentidades].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubIdentidades = null;
+  estoque = [];
+  movimentos = [];
+  identidadesAprendidas = {};
 }
 
-// Grava o arquivo principal na pasta e, junto, atualiza uma cópia datada em
-// "backups/" (uma por dia — se salvar várias vezes no mesmo dia, sobrescreve
-// só a cópia do dia, não acumula uma por clique). Protege contra o arquivo
-// principal corromper ou ser editado errado, mas ainda mora no mesmo HD —
-// vale copiar a pasta pra um pendrive/nuvem de vez em quando.
-async function salvarArquivoNaPasta(nomeArquivo, dados) {
-  if (!(await garantirPermissaoPasta(true))) {
-    alert('Sem permissão de escrita na pasta. Toque em "Escolher/reconectar pasta".');
-    return false;
-  }
-  const texto = JSON.stringify(dados, null, 2);
-  const fileHandle = await estoqueDirHandle.getFileHandle(nomeArquivo, { create: true });
-  const writable = await fileHandle.createWritable();
-  await writable.write(texto);
-  await writable.close();
-
-  try {
-    const backupsDir = await estoqueDirHandle.getDirectoryHandle('backups', { create: true });
-    const nomeBackup = nomeArquivo.replace('.json', `-${hoje()}.json`);
-    const backupHandle = await backupsDir.getFileHandle(nomeBackup, { create: true });
-    const backupWritable = await backupHandle.createWritable();
-    await backupWritable.write(texto);
-    await backupWritable.close();
-  } catch (err) { /* backup é bônus — nunca bloqueia o salvamento principal */ }
-
-  return true;
+function traduzErroAuth(code) {
+  const mapa = {
+    'auth/invalid-email': 'e-mail inválido.',
+    'auth/user-not-found': 'usuário não encontrado.',
+    'auth/wrong-password': 'senha incorreta.',
+    'auth/invalid-credential': 'e-mail ou senha incorretos.',
+    'auth/too-many-requests': 'muitas tentativas — aguarde um pouco e tente de novo.',
+    'auth/network-request-failed': 'sem conexão com a internet.',
+  };
+  return mapa[code] || ('erro: ' + code);
 }
 
-async function salvarEstoqueNaPasta() {
-  return salvarArquivoNaPasta('estoque.json', estoque);
-}
+if (FIREBASE_CONFIGURADO) {
+  document.getElementById('btnLogin').addEventListener('click', async () => {
+    const email = document.getElementById('loginEmail').value.trim();
+    const senha = document.getElementById('loginSenha').value;
+    const status = document.getElementById('loginStatus');
+    if (!email || !senha) { status.textContent = 'Preencha e-mail e senha.'; return; }
+    status.textContent = 'Entrando…';
+    try {
+      await signInWithEmailAndPassword(auth, email, senha);
+      status.textContent = '';
+    } catch (err) {
+      status.textContent = 'Não consegui entrar: ' + traduzErroAuth(err.code);
+    }
+  });
 
-async function carregarMovimentosDaPasta() {
-  try {
-    const fileHandle = await estoqueDirHandle.getFileHandle('movimentos.json');
-    const file = await fileHandle.getFile();
-    movimentos = JSON.parse(await file.text());
-  } catch (err) {
-    movimentos = []; // arquivo ainda não existe nessa pasta
-  }
-}
+  document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
-async function salvarMovimentosNaPasta() {
-  return salvarArquivoNaPasta('movimentos.json', movimentos);
-}
+  document.getElementById('btnBackup').addEventListener('click', () => {
+    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, identidadesAprendidas };
+    downloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), `natunutri-backup-${hoje()}.json`);
+  });
 
-async function carregarIdentidadesDaPasta() {
-  try {
-    const fileHandle = await estoqueDirHandle.getFileHandle('identidades.json');
-    const file = await fileHandle.getFile();
-    identidadesAprendidas = JSON.parse(await file.text());
-  } catch (err) {
-    identidadesAprendidas = {}; // arquivo ainda não existe nessa pasta
-  }
-}
-
-async function salvarIdentidadesNaPasta() {
-  return salvarArquivoNaPasta('identidades.json', identidadesAprendidas);
+  onAuthStateChanged(auth, user => {
+    document.getElementById('loginGate').style.display = user ? 'none' : 'block';
+    document.getElementById('areaAdminConteudo').style.display = user ? 'block' : 'none';
+    document.getElementById('contaStatus').textContent = user ? `Conectado: ${user.email}` : 'Não conectado.';
+    if (user) {
+      iniciarSincronizacao();
+    } else {
+      pararSincronizacao();
+      renderEstoqueLista();
+    }
+  });
+} else {
+  document.getElementById('loginGate').style.display = 'block';
+  document.getElementById('loginGate').innerHTML = '<div class="pasta-status">Configuração da nuvem ainda não concluída neste site.</div>';
 }
 
 // Aprende, a partir de uma etiqueta já lida (nome sempre completo, nunca
-// cortado), a identidade de cada item — e persiste na pasta só se algo novo
-// apareceu, pra não gravar toda hora à toa. Esse histórico depois ajuda a
-// resolver nomes cortados na Lista de Resumo (aba separada, PDF diferente).
-function aprenderIdentidades(pares) {
-  let mudou = false;
+// cortado), a identidade de cada item. Sem login, ainda vale aprender em
+// memória (ajuda a própria Lista de Resumo nesta sessão), mas não tenta
+// salvar na nuvem — organizar etiquetas é o uso do dia a dia e não deve
+// depender da área administrativa.
+async function aprenderIdentidades(pares) {
+  const novos = [];
   pares.forEach(({ nomeBruto, tipo, valor }) => {
     const chave = norm(nomeBruto).toLowerCase();
     if (!chave || chave.length < 4) return;
     const atual = identidadesAprendidas[chave];
     if (atual && atual.tipo === tipo && JSON.stringify(atual.valor) === JSON.stringify(valor)) return;
     identidadesAprendidas[chave] = { tipo, valor };
-    mudou = true;
+    novos.push({ chave, tipo, valor });
   });
-  // Sem pasta conectada, ainda vale aprender em memória (ajuda a própria
-  // Lista de Resumo na mesma sessão), mas não tenta salvar nem pede permissão —
-  // organizar etiquetas é o uso do dia a dia e não deve depender da área admin.
-  if (mudou && estoqueDirHandle) salvarIdentidadesNaPasta();
-}
-
-document.getElementById('btnConectarPasta').addEventListener('click', async () => {
-  if (!SUPORTA_PASTA) { alert('Esse navegador não suporta essa função. Use Chrome ou Edge no computador.'); return; }
+  if (!novos.length || !auth?.currentUser) return;
   try {
-    estoqueDirHandle = await window.showDirectoryPicker();
-    await idbSet('estoqueDir', estoqueDirHandle);
-    await carregarEstoqueDaPasta();
-    await carregarMovimentosDaPasta();
-    await carregarIdentidadesDaPasta();
-    atualizarPastaStatus();
-    renderEstoqueLista();
-  } catch (err) {
-    if (err.name !== 'AbortError') alert('Não consegui abrir a pasta: ' + err.message);
-  }
-});
-
-async function tentarReconectarPasta() {
-  if (!SUPORTA_PASTA) { atualizarPastaStatus(); return; }
-  try {
-    const handle = await idbGet('estoqueDir');
-    if (!handle) return;
-    estoqueDirHandle = handle;
-    if (await garantirPermissaoPasta(false)) {
-      await carregarEstoqueDaPasta();
-      await carregarMovimentosDaPasta();
-      await carregarIdentidadesDaPasta();
-    }
-  } catch (err) { /* handle inválido/revogado — ignora, usuário reconecta manualmente */ }
-  atualizarPastaStatus();
-  renderEstoqueLista();
+    const batch = writeBatch(db);
+    novos.forEach(({ chave, tipo, valor }) => batch.set(doc(db, 'identidades', chave), { tipo, valor }));
+    await batch.commit();
+  } catch (err) { /* falha de rede não deve travar o uso do dia a dia */ }
 }
 
 function renderEstoqueLista() {
@@ -1665,47 +1664,40 @@ function preencherSelects() {
   });
 }
 
-document.getElementById('btnAddEstoqueItem').addEventListener('click', () => {
-  estoque.push({ nome: '', kg: 0 });
-  renderEstoqueLista();
-  salvarEstoqueNaPasta();
+document.getElementById('btnAddEstoqueItem').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  await addDoc(collection(db, 'estoque'), { nome: '', kg: 0 });
 });
 
 document.getElementById('btnImportarEstoque').addEventListener('click', async () => {
-  if (!estoqueDirHandle) { alert('Conecte a pasta do estoque primeiro (botão no topo desta aba).'); return; }
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
   const txt = document.getElementById('txtImportarEstoque');
   const nomes = txt.value.split('\n').map(norm).filter(Boolean);
   if (nomes.length === 0) return;
-  let adicionados = 0;
-  nomes.forEach(nome => {
-    if (!acharEstoque(nome)) { estoque.push({ nome, kg: 0 }); adicionados++; }
-  });
-  renderEstoqueLista();
-  if (await salvarEstoqueNaPasta()) {
-    txt.value = '';
-    alert(`${adicionados} produto(s) novo(s) importado(s). ${nomes.length - adicionados} já existiam e foram ignorados.`);
-  }
+  const novos = nomes.filter(nome => !acharEstoque(nome));
+  const batch = writeBatch(db);
+  novos.forEach(nome => batch.set(doc(collection(db, 'estoque')), { nome, kg: 0 }));
+  await batch.commit();
+  txt.value = '';
+  alert(`${novos.length} produto(s) novo(s) importado(s). ${nomes.length - novos.length} já existiam e foram ignorados.`);
 });
 
-document.getElementById('listaEstoque').addEventListener('change', e => {
+document.getElementById('listaEstoque').addEventListener('change', async e => {
   const i = e.target.dataset.i, f = e.target.dataset.f;
   if (i === undefined || f !== 'nome') return;
-  estoque[i].nome = e.target.value;
-  salvarEstoqueNaPasta();
+  await updateDoc(doc(db, 'estoque', estoque[i].id), { nome: e.target.value });
 });
 
-document.getElementById('listaEstoque').addEventListener('click', e => {
+document.getElementById('listaEstoque').addEventListener('click', async e => {
   if (!e.target.classList.contains('estoque-del')) return;
-  estoque.splice(e.target.dataset.i, 1);
-  renderEstoqueLista();
-  salvarEstoqueNaPasta();
+  await deleteDoc(doc(db, 'estoque', estoque[e.target.dataset.i].id));
 });
 
 function hoje() { return new Date().toISOString().slice(0, 10); }
 document.getElementById('inputCompraData').value = hoje();
 
 document.getElementById('btnRegistrarCompra').addEventListener('click', async () => {
-  if (!estoqueDirHandle) { alert('Conecte a pasta do estoque primeiro.'); return; }
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
   const nome = document.getElementById('selCompraProduto').value;
   const kg = parseFloat(document.getElementById('inputCompraKg').value);
   const data = document.getElementById('inputCompraData').value || hoje();
@@ -1715,25 +1707,24 @@ document.getElementById('btnRegistrarCompra').addEventListener('click', async ()
   if (!kg || kg <= 0) { alert('Informe quantos kg você comprou.'); return; }
 
   const item = acharEstoque(nome);
-  item.kg = Math.round((item.kg + kg) * 1000) / 1000;
+  const novoKg = Math.round((item.kg + kg) * 1000) / 1000;
   const mov = { data, tipo: 'compra', produto: item.nome, kg };
   if (fornecedor) mov.fornecedor = fornecedor;
   if (!isNaN(custoTotal) && custoTotal > 0) mov.custoTotal = custoTotal;
-  movimentos.push(mov);
 
-  const ok1 = await salvarEstoqueNaPasta();
-  const ok2 = await salvarMovimentosNaPasta();
-  if (ok1 && ok2) {
-    renderEstoqueLista();
-    document.getElementById('inputCompraKg').value = '';
-    document.getElementById('inputCompraFornecedor').value = '';
-    document.getElementById('inputCompraCusto').value = '';
-    alert(`Compra registrada: +${kg} kg de ${item.nome} (estoque agora: ${item.kg} kg).`);
-  }
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'estoque', item.id), { kg: novoKg });
+  batch.set(doc(collection(db, 'movimentos')), mov);
+  await batch.commit();
+
+  document.getElementById('inputCompraKg').value = '';
+  document.getElementById('inputCompraFornecedor').value = '';
+  document.getElementById('inputCompraCusto').value = '';
+  alert(`Compra registrada: +${kg} kg de ${item.nome} (estoque agora: ${novoKg} kg).`);
 });
 
 document.getElementById('btnRegistrarAjuste').addEventListener('click', async () => {
-  if (!estoqueDirHandle) { alert('Conecte a pasta do estoque primeiro.'); return; }
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
   const nome = document.getElementById('selAjusteProduto').value;
   const novoValor = parseFloat(document.getElementById('inputAjusteKg').value);
   const motivo = norm(document.getElementById('inputAjusteMotivo').value);
@@ -1746,17 +1737,15 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
   if (diff === 0) { alert('Esse valor já é o que está registrado — nada a ajustar.'); return; }
   if (!confirm(`Ajustar "${item.nome}" de ${item.kg.toFixed(3)} kg para ${novoValor.toFixed(3)} kg (diferença: ${diff > 0 ? '+' : ''}${diff.toFixed(3)} kg)?\nMotivo: ${motivo}`)) return;
 
-  item.kg = Math.round(novoValor * 1000) / 1000;
-  movimentos.push({ data: hoje(), tipo: 'ajuste', produto: item.nome, kg: diff, motivo });
+  const kgFinal = Math.round(novoValor * 1000) / 1000;
+  const batch = writeBatch(db);
+  batch.update(doc(db, 'estoque', item.id), { kg: kgFinal });
+  batch.set(doc(collection(db, 'movimentos')), { data: hoje(), tipo: 'ajuste', produto: item.nome, kg: diff, motivo });
+  await batch.commit();
 
-  const ok1 = await salvarEstoqueNaPasta();
-  const ok2 = await salvarMovimentosNaPasta();
-  if (ok1 && ok2) {
-    renderEstoqueLista();
-    document.getElementById('inputAjusteKg').value = '';
-    document.getElementById('inputAjusteMotivo').value = '';
-    alert('Ajuste registrado.');
-  }
+  document.getElementById('inputAjusteKg').value = '';
+  document.getElementById('inputAjusteMotivo').value = '';
+  alert('Ajuste registrado.');
 });
 
 function calcularConsumoEstoque() {
@@ -1777,8 +1766,7 @@ function calcularConsumoEstoque() {
 }
 
 document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
-  if (!SUPORTA_PASTA) { alert('Esse navegador não suporta o controle de estoque. Use Chrome ou Edge no computador.'); return; }
-  if (!estoqueDirHandle) { alert('Conecte a pasta do estoque primeiro, na aba "Estoque".'); return; }
+  if (!auth?.currentUser) { alert('Entre na conta administrativa primeiro (aba Administrativo) pra descontar do estoque.'); return; }
 
   const consumo = calcularConsumoEstoque();
   const aplicaveis = [];
@@ -1805,16 +1793,14 @@ document.getElementById('btnDescontarEstoque').addEventListener('click', async (
   if (!confirm(msg)) return;
 
   const data = hoje();
+  const batch = writeBatch(db);
   aplicaveis.forEach(({ item, kg }) => {
-    item.kg = Math.round((item.kg - kg) * 1000) / 1000;
-    movimentos.push({ data, tipo: 'venda', produto: item.nome, kg });
+    const novoKg = Math.round((item.kg - kg) * 1000) / 1000;
+    batch.update(doc(db, 'estoque', item.id), { kg: novoKg });
+    batch.set(doc(collection(db, 'movimentos')), { data, tipo: 'venda', produto: item.nome, kg });
   });
-  const ok1 = await salvarEstoqueNaPasta();
-  const ok2 = await salvarMovimentosNaPasta();
-  if (ok1 && ok2) {
-    renderEstoqueLista();
-    alert('Estoque atualizado.');
-  }
+  await batch.commit();
+  alert('Estoque atualizado.');
 });
 
 // ──────────────────────────────────────────────
@@ -1999,8 +1985,6 @@ function renderMovimentos() {
     el.appendChild(row);
   });
 }
-
-tentarReconectarPasta();
 
 async function downloadBlob(blob, filename, iosWin) {
   if (window.Capacitor && window.Capacitor.isNativePlatform()) {
