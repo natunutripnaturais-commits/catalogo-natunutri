@@ -669,6 +669,95 @@ function resolverKitTruncado(nomeAnuncio) {
   return fallback ? { componentes: fallback, ambiguo: false } : null;
 }
 
+// SKU do Anúncio nunca vem cortado (ao contrário do nome) e não muda entre
+// relatórios diferentes (30 dias, 90 dias, etc) — é o mesmo SKU sempre que o
+// mesmo anúncio+variação é vendido. Por isso ele é a PRIMEIRA tentativa de
+// identificação na Lista de Resumo; o nome cortado só entra como plano B
+// pra SKU que ainda não apareceu aqui. Lista aprendida a partir dos
+// relatórios já enviados — quando aparecer um SKU novo, ele cai como "não
+// identificado" (produto) ou usa o prefixo do nome (kit) até ser adicionado.
+const SKU_CONHECIDOS = {
+  "109727354308": { tipo: "produto", valor: "Açúcar Mascavo" },
+  "139655679429": { tipo: "produto", valor: "Alfazema" },
+  "139655679430": { tipo: "produto", valor: "Alfazema" },
+  "149553066049": { tipo: "produto", valor: "Melissa (Erva Cidreira)" },
+  "159788601037": { tipo: "kit", valor: ["Uva Passa Preta", "Uva Passa Branca"] },
+  "169409465538": { tipo: "produto", valor: "Aveia Flocos Grossos" },
+  "179410098413": { tipo: "produto", valor: "Açúcar Demerara" },
+  "179415338484": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
+  "179415338485": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
+  "179415338486": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
+  // ⚠ ambíguo — pode ser Girassol+Abóbora ou Girassol+Chia, usei a mais comum. Confirmar.
+  "189183864082": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Abóbora Sem Casca"] },
+  "189183864083": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Abóbora Sem Casca"] },
+  "189188251871": { tipo: "produto", valor: "Erva Doce" },
+  "189188251872": { tipo: "produto", valor: "Erva Doce" },
+  "189613452624": { tipo: "produto", valor: "Aveia Flocos Finos" },
+  "199184614878": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
+  "199184614879": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
+  "199184614880": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
+  "199186096378": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
+  "199186096379": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
+  "199190269400": { tipo: "produto", valor: "Semente de Chia" },
+  "199190269401": { tipo: "produto", valor: "Semente de Chia" },
+  "199190269402": { tipo: "produto", valor: "Semente de Chia" },
+  "199190445214": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
+  "199190445215": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
+  "199190445216": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
+  "209186734188": { tipo: "produto", valor: "Capim Limão" },
+  "209186734189": { tipo: "produto", valor: "Capim Limão" },
+  "209186734190": { tipo: "produto", valor: "Capim Limão" },
+  "209619286572": { tipo: "produto", valor: "Arruda" },
+  "209619286573": { tipo: "produto", valor: "Arruda" },
+  "209625438919": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia"] },
+  "209625438920": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia"] },
+  "219189835828": { tipo: "produto", valor: "Alfazema" },
+  "219613300049": { tipo: "produto", valor: "Batata Doce em Pó" },
+  "219617352637": { tipo: "kit", valor: ["Açúcar Mascavo", "Açúcar Demerara"] },
+  "219618491538": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
+  "219618491539": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
+  "219618491540": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
+  "22699447817": { tipo: "produto", valor: "Arruda" },
+  "228801991869": { tipo: "produto", valor: "Mulungu Rasura" },
+  "228801991870": { tipo: "produto", valor: "Mulungu Rasura" },
+  "228801991871": { tipo: "produto", valor: "Mulungu Rasura" },
+  "229432903910": { tipo: "produto", valor: "Farinha de Linhaça Dourada" },
+  "229432903911": { tipo: "produto", valor: "Farinha de Linhaça Dourada" },
+  "229434884094": { tipo: "kit", valor: ["Quinoa Branca", "Amaranto em Grão"] },
+  "229434884095": { tipo: "kit", valor: ["Quinoa Branca", "Amaranto em Grão"] },
+  "239446460658": { tipo: "produto", valor: "Erva Baleeira" },
+  "239446460659": { tipo: "produto", valor: "Erva Baleeira" },
+  "239446460660": { tipo: "produto", valor: "Erva Baleeira" },
+  "ACA250": { tipo: "produto", valor: "Amendoim Crocante Tradicional" },
+  "AMARG1K": { tipo: "produto", valor: "Amaranto em Grão" },
+  "ART500": { tipo: "produto", valor: "Artemísia" },
+  "AVGROSSOS1K": { tipo: "produto", valor: "Aveia Flocos Grossos" },
+  "AÇUMASC1K": { tipo: "produto", valor: "Açúcar Mascavo" },
+  "AÇUMASC500": { tipo: "produto", valor: "Açúcar Mascavo" },
+  "BANCHÁ": { tipo: "produto", valor: "Banchá Chá Verde" },
+  "CAMOMILA 250G": { tipo: "produto", valor: "Camomila Flor" },
+  "CAMOMILA 500G": { tipo: "produto", valor: "Camomila Flor" },
+  "CARQUEJA": { tipo: "produto", valor: "Carqueja Amarga" },
+  "CENTELLA250": { tipo: "produto", valor: "Centella Asiática" },
+  "CENTELLA500": { tipo: "produto", valor: "Centella Asiática" },
+  "COCOG250": { tipo: "produto", valor: "Coco Chips" },
+  "FARCHIA1K": { tipo: "produto", valor: "Farinha de Chia" },
+  "FARCHIA500": { tipo: "produto", valor: "Farinha de Chia" },
+  "GERGP250": { tipo: "produto", valor: "Gergelim Preto" },
+  "GERGP500": { tipo: "produto", valor: "Gergelim Preto" },
+  "Hort": { tipo: "produto", valor: "Hortelã Egípcia" },
+  "PARA250": { tipo: "produto", valor: "Castanha do Pará" },
+  "alec": { tipo: "produto", valor: "Alecrim" },
+  "calend1k": { tipo: "produto", valor: "Calêndula Flor" },
+  "calend250": { tipo: "produto", valor: "Calêndula Flor" },
+  "calend50": { tipo: "produto", valor: "Calêndula Flor" },
+  "calend500": { tipo: "produto", valor: "Calêndula Flor" },
+  "camo1k": { tipo: "produto", valor: "Camomila Flor" },
+  "camo250": { tipo: "produto", valor: "Camomila Flor" },
+  "camo500": { tipo: "produto", valor: "Camomila Flor" },
+  "hib500": { tipo: "produto", valor: "Hibisco Flor" },
+};
+
 // ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
 // (cobre o caso de uma etiqueta com vários produtos que ocupa 2+ páginas seguidas)
 function buildUnits(pages) {
@@ -1056,6 +1145,12 @@ function processarListaResumo(linhasTabela) {
   }
 
   linhasTabela.forEach(r => {
+    const conhecido = SKU_CONHECIDOS[r.sku];
+    if (conhecido) {
+      if (conhecido.tipo === 'kit') conhecido.valor.forEach(nome => somar(nome, r.variacao, r.qtd));
+      else somar(conhecido.valor, r.variacao, r.qtd);
+      return;
+    }
     if (/^kit\b/i.test(r.anuncio)) {
       const resolvido = resolverKitTruncado(r.anuncio);
       if (!resolvido) { naoIdentificados.push(r); return; }
