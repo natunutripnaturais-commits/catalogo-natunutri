@@ -520,18 +520,19 @@ function buildPageText(textContent) {
 }
 
 // ---- Extrai pedido + itens (produto/variação/qtd) do texto de uma página ----
+// Item comum: "Nome do produto *2" ou "Nome do produto ( *2 )" — só um número,
+// separado do nome por espaço (e às vezes parênteses).
 const RE_ITEM_COM_VARIACAO = /^\d+\.\s*\(([^)]+)\)\s*\/\s*(.+?)\s*\(?\s*\*(\d+)\s*\)?\s*$/;
 const RE_ITEM_SEM_VARIACAO = /^\d+\.\s*(.+?)\s*\(?\s*\*(\d+)\s*\)?\s*$/;
+// Kits vêm com a quantidade de pacotes colada direto no "*", sem espaço, tipo
+// "Kit A + B 1*1" (o "1" antes do "*" É a quantidade a enviar — se o pedido
+// tiver 2 kits, vira "2*1"). Precisa casar ANTES do padrão comum acima, senão
+// esse número de quantidade seria engolido junto com o nome por engano.
+const RE_ITEM_COM_VARIACAO_QTD_COLADA = /^\d+\.\s*\(([^)]+)\)\s*\/\s*(.+?)\s+(\d+)\*\d+\s*$/;
+const RE_ITEM_SEM_VARIACAO_QTD_COLADA = /^\d+\.\s*(.+?)\s+(\d+)\*\d+\s*$/;
 const RE_PEDIDO = /Pedido:\s*([A-Z0-9-]+)/;
 
 function norm(s) { return s.replace(/\s+/g, ' ').trim(); }
-
-// Alguns títulos do Shopee/UpSeller terminam com um número solto colado antes
-// do "*qtd" da etiqueta (ex: "...Chia 1*1", onde o "1" antes do "*" sobra no
-// nome depois de separar a quantidade) — não é peso nem faz parte do nome do
-// produto, é ruído do formato de exportação. Nenhum produto do catálogo
-// termina em número, então é seguro remover sempre.
-function limparNumeroSoltoFinal(s) { return s.replace(/\s+\d+$/, '').trim(); }
 
 // Nomes que o Shopee às vezes exporta diferente (título mudou, ordem das
 // palavras trocada etc.) mas que são o mesmo produto — o primeiro nome de
@@ -563,15 +564,27 @@ function parsePage(text, pageNumber) {
   const items = [];
   for (const ln of lines) {
     if (!/^\d+\./.test(ln)) continue;
-    let m = ln.match(RE_ITEM_COM_VARIACAO);
+    let m = ln.match(RE_ITEM_COM_VARIACAO_QTD_COLADA);
     if (m) {
-      const nomeBruto = limparNumeroSoltoFinal(norm(m[2]));
+      const nomeBruto = norm(m[2]);
       items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
+      continue;
+    }
+    m = ln.match(RE_ITEM_COM_VARIACAO);
+    if (m) {
+      const nomeBruto = norm(m[2]);
+      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
+      continue;
+    }
+    m = ln.match(RE_ITEM_SEM_VARIACAO_QTD_COLADA);
+    if (m) {
+      const nomeBruto = norm(m[1]);
+      items.push({ variacao: 'Único', produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[2], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_SEM_VARIACAO);
     if (m) {
-      const nomeBruto = limparNumeroSoltoFinal(norm(m[1]));
+      const nomeBruto = norm(m[1]);
       items.push({ variacao: 'Único', produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[2], 10) });
     }
   }
@@ -613,13 +626,11 @@ function parseGramas(variacao) {
 // que os compõe, e não num item de estoque à parte — "1 pacote de cada" no
 // kit vira 1 pacote daquele peso em cada componente.
 function limparParteKit(s) {
-  return limparNumeroSoltoFinal(
-    norm(s)
-      .replace(/\d+[.,]?\d*\s*(kg|g)\b/gi, '')
-      .replace(/\bpacote(s)?\s+de\s+cada\b/gi, '')
-      .replace(/[-–]\s*natunutri\w*/gi, '')
-      .trim()
-  );
+  return norm(s)
+    .replace(/\d+[.,]?\d*\s*(kg|g)\b/gi, '')
+    .replace(/\bpacote(s)?\s+de\s+cada\b/gi, '')
+    .replace(/[-–]\s*natunutri\w*/gi, '')
+    .trim();
 }
 
 function decomporKit(nomeProduto) {
