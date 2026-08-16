@@ -179,7 +179,7 @@
     border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; color:var(--texto);
     font-family:inherit;
   }
-  .compra-form select{flex:1; min-width:160px;}
+  .compra-form select, .compra-form input[list]{flex:1; min-width:160px;}
   .compra-form input[type="number"]{width:110px;}
 
   .painel-item{border-top:1px solid var(--linha);}
@@ -373,13 +373,15 @@
       </div>
     </div>
 
+    <datalist id="listaProdutosDatalist"></datalist>
+
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Registrar compra de fornecedor</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Chegou mercadoria do fornecedor — isso só soma ao estoque.
       </div>
       <div class="compra-form">
-        <select id="selCompraProduto"></select>
+        <input type="text" id="selCompraProduto" list="listaProdutosDatalist" placeholder="Pesquisar produto…" autocomplete="off">
         <input type="number" id="inputCompraKg" step="0.001" min="0" placeholder="kg comprados">
         <input type="date" id="inputCompraData">
         <input type="text" id="inputCompraFornecedor" placeholder="Fornecedor (opcional)">
@@ -394,7 +396,7 @@
         Pra quando a contagem física não bate com o sistema (perda, erro de embalagem, etc). Informe o valor real contado — o sistema calcula a diferença e registra o motivo.
       </div>
       <div class="compra-form">
-        <select id="selAjusteProduto"></select>
+        <input type="text" id="selAjusteProduto" list="listaProdutosDatalist" placeholder="Pesquisar produto…" autocomplete="off">
         <input type="number" id="inputAjusteKg" step="0.001" min="0" placeholder="kg reais contados">
         <input type="text" id="inputAjusteMotivo" placeholder="Motivo (ex: contagem mensal, perda)" style="flex:2; min-width:180px;">
         <button class="secondary" id="btnRegistrarAjuste">⚖ Registrar ajuste</button>
@@ -1669,14 +1671,11 @@ function renderEstoqueLista() {
 document.getElementById('buscaEstoque').addEventListener('input', renderEstoqueLista);
 
 function preencherSelects() {
-  ['selCompraProduto', 'selAjusteProduto'].forEach(id => {
-    const sel = document.getElementById(id);
-    const atual = sel.value;
-    sel.innerHTML = estoque
-      .map(item => `<option value="${escapeHtml(item.nome)}">${escapeHtml(item.nome)}</option>`)
-      .join('');
-    if (estoque.some(i => i.nome === atual)) sel.value = atual;
-  });
+  // Datalist compartilhada pelos dois campos de busca (compra e ajuste) — só
+  // atualiza as sugestões, nunca mexe no que o usuário já digitou.
+  document.getElementById('listaProdutosDatalist').innerHTML = estoque
+    .map(item => `<option value="${escapeHtml(item.nome)}">`)
+    .join('');
 }
 
 document.getElementById('btnAddEstoqueItem').addEventListener('click', async () => {
@@ -1718,10 +1717,11 @@ document.getElementById('btnRegistrarCompra').addEventListener('click', async ()
   const data = document.getElementById('inputCompraData').value || hoje();
   const fornecedor = norm(document.getElementById('inputCompraFornecedor').value);
   const custoTotal = parseFloat(document.getElementById('inputCompraCusto').value);
-  if (!nome) { alert('Cadastre pelo menos um produto no estoque antes de registrar uma compra.'); return; }
+  if (!nome) { alert('Digite ou escolha um produto.'); return; }
   if (!kg || kg <= 0) { alert('Informe quantos kg você comprou.'); return; }
 
   const item = acharEstoque(nome);
+  if (!item) { alert('Produto não encontrado no estoque. Escolha um nome sugerido na busca, ou cadastre esse produto primeiro na aba "Estoque atual".'); return; }
   const novoKg = Math.round((item.kg + kg) * 1000) / 1000;
   const mov = { data, tipo: 'compra', produto: item.nome, kg };
   if (fornecedor) mov.fornecedor = fornecedor;
@@ -1743,11 +1743,12 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
   const nome = document.getElementById('selAjusteProduto').value;
   const novoValor = parseFloat(document.getElementById('inputAjusteKg').value);
   const motivo = norm(document.getElementById('inputAjusteMotivo').value);
-  if (!nome) { alert('Cadastre pelo menos um produto no estoque antes de registrar um ajuste.'); return; }
+  if (!nome) { alert('Digite ou escolha um produto.'); return; }
   if (isNaN(novoValor) || novoValor < 0) { alert('Informe a quantidade real contada (kg).'); return; }
   if (!motivo) { alert('Descreva o motivo do ajuste (ex: contagem mensal, perda, erro de embalagem).'); return; }
 
   const item = acharEstoque(nome);
+  if (!item) { alert('Produto não encontrado no estoque. Escolha um nome sugerido na busca, ou cadastre esse produto primeiro na aba "Estoque atual".'); return; }
   const diff = Math.round((novoValor - item.kg) * 1000) / 1000;
   if (diff === 0) { alert('Esse valor já é o que está registrado — nada a ajustar.'); return; }
   if (!confirm(`Ajustar "${item.nome}" de ${item.kg.toFixed(3)} kg para ${novoValor.toFixed(3)} kg (diferença: ${diff > 0 ? '+' : ''}${diff.toFixed(3)} kg)?\nMotivo: ${motivo}`)) return;
