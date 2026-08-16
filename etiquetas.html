@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" onerror="window.__cdnFail=true"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" onerror="window.__cdnFail=true"></script>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,500&display=swap');
   :root{
     --verde-900:#1b3a2b;
     --verde-700:#2c5a3f;
@@ -31,7 +32,10 @@
   header{
     background:var(--verde-900); color:#fff; padding:20px 16px 22px;
   }
-  header h1{margin:0 0 2px; font-size:19px; font-weight:700; letter-spacing:.2px;}
+  header h1{
+    margin:0 0 2px; font-size:21px; font-weight:600; letter-spacing:.1px;
+    font-family:'Fraunces', serif; font-style:italic;
+  }
   header p{margin:0; font-size:13px; color:#c7d8cb;}
   main{max-width:720px; margin:0 auto; padding:16px;}
 
@@ -40,18 +44,18 @@
     padding:16px; margin-bottom:14px;
   }
 
-  #dropzone{
+  #dropzone, #dropzoneResumo{
     border:2px dashed #b9c9bd; border-radius:10px; padding:28px 16px;
     text-align:center; cursor:pointer; background:var(--verde-100);
     transition:border-color .15s, background .15s;
   }
-  #dropzone.drag{border-color:var(--verde-500); background:#dcebe0;}
-  #dropzone strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
-  #dropzone span{font-size:12.5px; color:var(--texto-suave);}
-  #fileInput{display:none;}
+  #dropzone.drag, #dropzoneResumo.drag{border-color:var(--verde-500); background:#dcebe0;}
+  #dropzone strong, #dropzoneResumo strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
+  #dropzone span, #dropzoneResumo span{font-size:12.5px; color:var(--texto-suave);}
+  #fileInput, #fileInputResumo{display:none;}
 
-  #status{font-size:13px; color:var(--texto-suave); margin-top:10px; display:none;}
-  #status.show{display:block;}
+  #status, #statusResumo{font-size:13px; color:var(--texto-suave); margin-top:10px; display:none;}
+  #status.show, #statusResumo.show{display:block;}
   .spinner{
     display:inline-block; width:12px; height:12px; border:2px solid #cfd9d1;
     border-top-color:var(--verde-700); border-radius:50%; animation:spin .7s linear infinite;
@@ -59,8 +63,8 @@
   }
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  #resultado{display:none;}
-  #resultado.show{display:block;}
+  #resultado, #resultadoResumo{display:none;}
+  #resultado.show, #resultadoResumo.show{display:block;}
 
   .stats{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:4px;}
   .stat{
@@ -123,11 +127,29 @@
 
   footer{max-width:720px; margin:0 auto; padding:6px 16px 40px; font-size:11.5px; color:var(--texto-suave);}
 
+  .area-switch{
+    display:flex; gap:0; max-width:720px; margin:0 auto; padding:0 16px;
+    border-bottom:1px solid var(--linha);
+  }
+  .area-btn{
+    background:none; border:none; color:var(--texto-suave); cursor:pointer;
+    font-size:13.5px; font-weight:700; padding:14px 4px; margin-right:22px;
+    display:flex; align-items:center; gap:7px; border-bottom:2.5px solid transparent;
+    margin-bottom:-1px; transition:color .15s, border-color .15s;
+  }
+  .area-btn svg{width:16px; height:16px; flex-shrink:0;}
+  .area-btn.ativo{color:var(--verde-900); border-color:var(--terra);}
+  .area{display:none;}
+  .area.ativa{display:block;}
+  .area-sub{font-size:12px; color:var(--texto-suave); max-width:720px; margin:10px auto 0; padding:0 16px;}
+
   .tabs{display:flex; gap:6px; padding:0 16px; margin-top:14px;}
   .tab-btn{
     background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
     border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600; cursor:pointer;
+    display:flex; align-items:center; gap:6px;
   }
+  .tab-btn svg{width:14px; height:14px; flex-shrink:0;}
   .tab-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
   .tabpanel{display:none;}
   .tabpanel.ativo{display:block;}
@@ -195,15 +217,33 @@
 <body>
 
 <header>
-  <h1>Organizador de Etiquetas · NatuNutri</h1>
-  <p>Agrupa as etiquetas de envio por produto e variação antes de imprimir</p>
+  <h1>NatuNutri</h1>
+  <p>Organizador de etiquetas &amp; gestão</p>
 </header>
 
-<div class="tabs">
-  <button class="tab-btn ativo" data-tab="organizar">Organizar etiquetas</button>
-  <button class="tab-btn" data-tab="estoque">Estoque</button>
-  <button class="tab-btn" data-tab="painel">Painel</button>
+<div class="area-switch">
+  <button class="area-btn ativo" data-area="operacional">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.5 3H4a1 1 0 0 0-1 1v5.5c0 .53.21 1.04.59 1.41l9.58 9.58a2 2 0 0 0 2.82 0l5.6-5.6a2 2 0 0 0 0-2.82Z"/><circle cx="7.2" cy="7.8" r="1.15" fill="currentColor" stroke="none"/></svg>
+    Operacional
+  </button>
+  <button class="area-btn" data-area="administrativo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+    Administrativo
+  </button>
 </div>
+
+<div id="areaOperacional" class="area ativa">
+  <p class="area-sub">Uso do dia a dia: organizar etiquetas de envio e conferir a lista de resumo antes de separar os produtos.</p>
+  <div class="tabs">
+    <button class="tab-btn ativo" data-tab="organizar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+      Organizar etiquetas
+    </button>
+    <button class="tab-btn" data-tab="resumo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      Lista de resumo
+    </button>
+  </div>
 
 <main>
   <div id="tabOrganizar" class="tabpanel ativo">
@@ -245,7 +285,53 @@
     </div>
   </div>
 
-  <div id="tabEstoque" class="tabpanel">
+  <div id="tabResumo" class="tabpanel">
+    <div class="card">
+      <div id="dropzoneResumo">
+        <strong>Toque para escolher a Lista de Resumo (PDF)</strong>
+        <span>Relatório de SKUs vendidos (UpSeller/Shopee) — pode ter várias páginas</span>
+      </div>
+      <input type="file" id="fileInputResumo" accept="application/pdf,.pdf">
+      <div id="statusResumo"></div>
+    </div>
+
+    <div id="resultadoResumo">
+      <div class="card">
+        <div class="stats">
+          <div class="stat"><div class="num" id="statResumoItens">0</div><div class="lbl">itens do relatório</div></div>
+          <div class="stat"><div class="num" id="statResumoProdutos">0</div><div class="lbl">produtos</div></div>
+          <div class="stat"><div class="num" id="statResumoNaoIdent">0</div><div class="lbl">não identificados</div></div>
+        </div>
+        <div class="actions">
+          <button class="secondary" id="btnBaixarResumoTxt">Lista de conferência (.txt)</button>
+        </div>
+      </div>
+
+      <div id="avisoResumoAmbiguo" style="display:none" class="aviso"></div>
+      <div id="avisoResumoNaoIdent" style="display:none" class="aviso"></div>
+
+      <h2 class="section">Produtos · do mais vendido ao menos vendido</h2>
+      <div id="listaResumoGrupos"></div>
+    </div>
+  </div>
+  </main>
+</div>
+
+<div id="areaAdministrativo" class="area">
+  <p class="area-sub">Controle de estoque, compras e relatórios — separado do uso diário.</p>
+  <div class="tabs">
+    <button class="tab-btn ativo" data-tab="estoque">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+      Estoque
+    </button>
+    <button class="tab-btn" data-tab="painel">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+      Painel
+    </button>
+  </div>
+
+  <main>
+  <div id="tabEstoque" class="tabpanel ativo">
     <div class="card">
       <div class="pasta-row">
         <div>
@@ -335,7 +421,8 @@
       <div id="painelMovimentos"></div>
     </div>
   </div>
-</main>
+  </main>
+</div>
 
 <footer>
   Tudo é processado no seu celular/computador — o PDF não é enviado a nenhum servidor.
@@ -512,6 +599,74 @@ function decomporKit(nomeProduto) {
   const partes = semPrefixo.split(/\s*\+\s*/).map(limparParteKit).filter(Boolean);
   if (partes.length < 2) return null;
   return partes.map(normalizeProdutoNome);
+}
+
+// ──────────────────────────────────────────────
+// LISTA DE RESUMO — relatório de SKUs vendidos (UpSeller/Shopee).
+// Os títulos vêm cortados pela largura da coluna do PDF ("Camomila Flor chá
+// natural 1kg 500g 25…"), então aqui casamos por PREFIXO em vez de nome
+// exato. Kits também vêm cortados no 2º/3º componente ("Kit Farinha de
+// Linhaça Dourada + Farin…") — por isso mantemos uma lista dos kits
+// conhecidos (títulos completos) pra reconhecer pelo prefixo visível: se só
+// aparecer texto novo que não bate com nada daqui, cai em "não identificado"
+// em vez de arriscar um componente errado.
+const KIT_COMPOSICAO = [
+  { titulo: 'Kit Farinha de Linhaça Dourada + Farinha de Chia', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Chia'] },
+  { titulo: 'Kit Semente de Girassol + Semente de Abóbora', componentes: ['Semente de Girassol Sem Casca', 'Semente de Abóbora Sem Casca'] },
+  { titulo: 'Kit 3 - Farinha de Linhaça dourada + Farinha de Chia + Psyllium', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Chia', 'Psyllium Husk'] },
+  { titulo: 'Kit Gergelim Branco + Gergelim Preto', componentes: ['Gergelim Branco', 'Gergelim Preto'] },
+  { titulo: 'Kit Quinoa Branca + Amaranto em Grão', componentes: ['Quinoa Branca', 'Amaranto em Grão'] },
+  { titulo: 'Kit semente linhaça dourada + linhaça marrom', componentes: ['Semente de Linhaça Dourada', 'Semente de Linhaça Marrom'] },
+  { titulo: 'Kit Açúcar Mascavo + Açúcar Demerara', componentes: ['Açúcar Mascavo', 'Açúcar Demerara'] },
+  { titulo: 'Kit Semente de Chia + Linhaça Marrom', componentes: ['Semente de Chia', 'Semente de Linhaça Marrom'] },
+  { titulo: 'Kit Frutas Cristalizadas + Uva passa preta', componentes: ['Frutas Cristalizadas', 'Uva Passa Preta'] },
+  { titulo: 'Kit uva passa preta + uva passa branca', componentes: ['Uva Passa Preta', 'Uva Passa Branca'] },
+  { titulo: 'Kit 3x Semente de Girassol Pepita Sem Casca', componentes: ['Semente de Girassol Sem Casca'] },
+  { titulo: 'Kit Semente de Girassol + Linhaça Dourada', componentes: ['Semente de Girassol Sem Casca', 'Semente de Linhaça Dourada'] },
+  { titulo: 'Kit Gergelim Branco + Chia Preta', componentes: ['Gergelim Branco', 'Semente de Chia'] },
+  { titulo: 'Kit Amaranto em grão + Semente de Girassol', componentes: ['Amaranto em Grão', 'Semente de Girassol Sem Casca'] },
+  { titulo: 'Kit semente de abóbora + chia semente', componentes: ['Semente de Abóbora Sem Casca', 'Semente de Chia'] },
+  { titulo: 'Kit Chia Semente + Psyllium', componentes: ['Semente de Chia', 'Psyllium Husk'] },
+  { titulo: 'Kit Semente de Girassol + Gergelim Branco', componentes: ['Semente de Girassol Sem Casca', 'Gergelim Branco'] },
+  { titulo: 'Kit Semente de Girassol + Semente de Chia', componentes: ['Semente de Girassol Sem Casca', 'Semente de Chia'] },
+  { titulo: 'Kit Gergelim Branco + Linhaça Dourada', componentes: ['Gergelim Branco', 'Semente de Linhaça Dourada'] },
+  { titulo: 'Kit Semente Linhaça Dourada + Semente de Chia', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia'] },
+];
+
+const CANONICOS_CONHECIDOS = [...new Set([
+  ...ALIASES_PRODUTO.map(g => g[0]),
+  ...KIT_COMPOSICAO.flatMap(k => k.componentes),
+])].sort((a, b) => b.length - a.length);
+
+function semReticencias(s) { return norm(s).replace(/…+$/, '').trim(); }
+
+// Casa um título (possivelmente cortado) com um nome canônico por prefixo:
+// "Camomila Flor chá natural 1kg 500g 25…" reconhece "Camomila Flor" porque
+// o texto visível COMEÇA com o nome canônico — funciona mesmo cortado,
+// porque o corte sempre acontece no final, nunca no começo do título.
+function matchCanonicalPrefix(nomeAnuncio) {
+  const t = semReticencias(nomeAnuncio).toLowerCase();
+  for (const grupo of ALIASES_PRODUTO) {
+    for (const nome of grupo) {
+      if (t.startsWith(nome.toLowerCase())) return grupo[0];
+    }
+  }
+  for (const nome of CANONICOS_CONHECIDOS) {
+    if (t.startsWith(nome.toLowerCase())) return nome;
+  }
+  return semReticencias(nomeAnuncio);
+}
+
+// Resolve um kit (possivelmente com nome cortado) nos seus produtos
+// individuais. Primeiro tenta achar na lista de kits conhecidos (pelo
+// prefixo visível); se não achar, tenta decompor ao vivo pelo "+" — que só
+// funciona bem se o título não estiver cortado no meio de um componente.
+function resolverKitTruncado(nomeAnuncio) {
+  const t = semReticencias(nomeAnuncio).toLowerCase();
+  const candidatos = KIT_COMPOSICAO.filter(k => k.titulo.toLowerCase().startsWith(t));
+  if (candidatos.length) return { componentes: candidatos[0].componentes, ambiguo: candidatos.length > 1 };
+  const fallback = decomporKit(nomeAnuncio);
+  return fallback ? { componentes: fallback, ambiguo: false } : null;
 }
 
 // ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
@@ -768,6 +923,233 @@ function nomeArquivo(ext) {
   return `natunutri-etiquetas-organizadas-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
 }
 
+// ──────────────────────────────────────────────
+// LISTA DE RESUMO — lê o relatório de SKUs vendidos (UpSeller/Shopee) e
+// organiza do mesmo jeito que as etiquetas: por produto + variação, do mais
+// vendido pro menos vendido, kits decompostos no peso de cada componente.
+// ──────────────────────────────────────────────
+const dropzoneResumo = document.getElementById('dropzoneResumo');
+const fileInputResumo = document.getElementById('fileInputResumo');
+const statusResumoEl = document.getElementById('statusResumo');
+const resultadoResumoEl = document.getElementById('resultadoResumo');
+let resumoParaExport = null;
+
+function setStatusResumo(msg, spinning) {
+  statusResumoEl.classList.add('show');
+  statusResumoEl.innerHTML = (spinning ? '<span class="spinner"></span>' : '') + msg;
+}
+
+if (!(window.__cdnFail || typeof pdfjsLib === 'undefined')) {
+  dropzoneResumo.addEventListener('click', () => fileInputResumo.click());
+  ['dragover', 'dragenter'].forEach(ev => dropzoneResumo.addEventListener(ev, e => { e.preventDefault(); dropzoneResumo.classList.add('drag'); }));
+  ['dragleave', 'drop'].forEach(ev => dropzoneResumo.addEventListener(ev, e => { e.preventDefault(); dropzoneResumo.classList.remove('drag'); }));
+  dropzoneResumo.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFileResumo(f); });
+  fileInputResumo.addEventListener('change', e => { if (e.target.files[0]) handleFileResumo(e.target.files[0]); });
+} else {
+  setStatusResumo('Não consegui carregar os componentes necessários (sem internet ou conexão bloqueada). Verifique sua conexão e recarregue a página.', false);
+}
+
+// ---- Reconstrói as linhas de texto da página mantendo a posição de cada
+// item (preciso pra depois separar as colunas da tabela) ----
+function buildLinhas(items) {
+  const linhas = [];
+  items.forEach(it => {
+    if (!it.str || !it.str.trim()) return;
+    const x = it.transform[4], y = it.transform[5];
+    let linha = linhas.find(l => Math.abs(l.y - y) < 2.5);
+    if (!linha) { linha = { y, items: [] }; linhas.push(linha); }
+    linha.items.push({ x, str: it.str, width: it.width || (it.str.length * 4) });
+  });
+  linhas.sort((a, b) => b.y - a.y);
+  linhas.forEach(l => l.items.sort((a, b) => a.x - b.x));
+  return linhas;
+}
+
+// ---- Junta o texto dos itens de uma linha que caem dentro de uma faixa de
+// X — é assim que separamos "Anúncios / Variação / SKU / Qtd." sem depender
+// de um delimitador explícito no texto ----
+function celulaTexto(items, xStart, xEnd) {
+  const naColuna = items.filter(it => it.x >= xStart - 3 && it.x < xEnd - 3);
+  naColuna.sort((a, b) => a.x - b.x);
+  let texto = '', fimAnterior = null;
+  naColuna.forEach(it => {
+    if (fimAnterior !== null && (it.x - fimAnterior) > 1) texto += ' ';
+    texto += it.str;
+    fimAnterior = it.x + it.width;
+  });
+  return texto.trim();
+}
+
+async function handleFileResumo(file) {
+  resultadoResumoEl.classList.remove('show');
+  setStatusResumo('Lendo o PDF…', true);
+
+  let pdfDoc;
+  try {
+    const buf = await file.arrayBuffer();
+    pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
+  } catch (err) {
+    setStatusResumo('Não consegui abrir esse PDF. Confirme se é a Lista de Resumo exportada da UpSeller/Shopee.', false);
+    return;
+  }
+
+  const totalPages = pdfDoc.numPages;
+  let cols = null;
+  const linhasTabela = [];
+
+  for (let i = 1; i <= totalPages; i++) {
+    setStatusResumo(`Lendo página ${i} de ${totalPages}…`, true);
+    const page = await pdfDoc.getPage(i);
+    const tc = await page.getTextContent();
+    const linhas = buildLinhas(tc.items);
+
+    for (const linha of linhas) {
+      const textoLinha = linha.items.map(it => it.str).join(' ');
+      if (!cols) {
+        const hAnuncio = linha.items.find(it => it.str.trim() === 'Anúncios');
+        const hVar = linha.items.find(it => it.str.trim() === 'Variação');
+        const hSku = linha.items.find(it => it.str.trim() === 'SKU do Anúncio');
+        const hQtd = linha.items.find(it => it.str.trim().startsWith('Qtd'));
+        if (hAnuncio && hVar && hSku && hQtd) {
+          cols = { anuncio: hAnuncio.x, variacao: hVar.x, sku: hSku.x, qtd: hQtd.x, qtdEnd: hQtd.x + 200 };
+        }
+        continue;
+      }
+      if (/upseller\.com|Página \d+ de \d+/i.test(textoLinha)) continue;
+      const anuncio = celulaTexto(linha.items, cols.anuncio, cols.variacao);
+      const variacao = celulaTexto(linha.items, cols.variacao, cols.sku);
+      const sku = celulaTexto(linha.items, cols.sku, cols.qtd);
+      const qtd = parseInt(celulaTexto(linha.items, cols.qtd, cols.qtdEnd), 10);
+      if (!anuncio || isNaN(qtd)) continue;
+      linhasTabela.push({ anuncio, variacao, sku, qtd });
+    }
+  }
+
+  if (!cols) {
+    setStatusResumo('Não encontrei a tabela "Anúncios / Variação / SKU do Anúncio / Qtd." nesse PDF. Confirme se é a Lista de Resumo.', false);
+    return;
+  }
+  if (!linhasTabela.length) {
+    setStatusResumo('Não encontrei nenhuma linha de produto nesse PDF.', false);
+    return;
+  }
+
+  setStatusResumo('Organizando…', true);
+  const resultado = processarListaResumo(linhasTabela);
+  renderResumo(resultado, linhasTabela.length);
+  setStatusResumo('', false);
+  statusResumoEl.classList.remove('show');
+  resultadoResumoEl.classList.add('show');
+}
+
+function processarListaResumo(linhasTabela) {
+  const produtoMap = {};
+  const naoIdentificados = [];
+  const ambiguos = [];
+
+  function somar(nome, variacaoTxt, qtd) {
+    if (!produtoMap[nome]) produtoMap[nome] = { produto: nome, totalQtd: 0, variacoes: {} };
+    const pm = produtoMap[nome];
+    pm.totalQtd += qtd;
+    if (!pm.variacoes[variacaoTxt]) pm.variacoes[variacaoTxt] = { variacao: variacaoTxt, totalQtd: 0 };
+    pm.variacoes[variacaoTxt].totalQtd += qtd;
+  }
+
+  linhasTabela.forEach(r => {
+    if (/^kit\b/i.test(r.anuncio)) {
+      const resolvido = resolverKitTruncado(r.anuncio);
+      if (!resolvido) { naoIdentificados.push(r); return; }
+      if (resolvido.ambiguo) ambiguos.push(r);
+      resolvido.componentes.forEach(nome => somar(nome, r.variacao, r.qtd));
+    } else {
+      somar(matchCanonicalPrefix(r.anuncio), r.variacao, r.qtd);
+    }
+  });
+
+  const produtos = Object.values(produtoMap).map(pm => {
+    pm.variacoesSorted = Object.values(pm.variacoes).sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
+    return pm;
+  }).sort((a, b) => b.totalQtd - a.totalQtd || a.produto.localeCompare(b.produto, 'pt-BR'));
+
+  return { produtos, naoIdentificados, ambiguos };
+}
+
+function renderResumo(resultado, totalLinhas) {
+  const { produtos, naoIdentificados, ambiguos } = resultado;
+  resumoParaExport = resultado;
+
+  document.getElementById('statResumoItens').textContent = totalLinhas;
+  document.getElementById('statResumoProdutos').textContent = produtos.length;
+  document.getElementById('statResumoNaoIdent').textContent = naoIdentificados.length;
+
+  const avisoAmbiguo = document.getElementById('avisoResumoAmbiguo');
+  if (ambiguos.length) {
+    avisoAmbiguo.style.display = 'block';
+    avisoAmbiguo.innerHTML = `⚠ ${ambiguos.length} kit(s) com nome cortado pela tabela e mais de uma combinação conhecida possível — usei a combinação mais comum, mas vale conferir: ${ambiguos.map(a => escapeHtml(a.anuncio)).join('; ')}`;
+  } else {
+    avisoAmbiguo.style.display = 'none';
+  }
+
+  const avisoNaoIdent = document.getElementById('avisoResumoNaoIdent');
+  if (naoIdentificados.length) {
+    avisoNaoIdent.style.display = 'block';
+    avisoNaoIdent.innerHTML = `⚠ ${naoIdentificados.length} linha(s) não reconhecida(s) automaticamente — confira manualmente: ${naoIdentificados.map(n => escapeHtml(n.anuncio + ' (' + n.variacao + ')')).join('; ')}`;
+  } else {
+    avisoNaoIdent.style.display = 'none';
+  }
+
+  renderResumoLista(document.getElementById('listaResumoGrupos'), produtos);
+}
+
+function renderResumoLista(container, list) {
+  container.innerHTML = '';
+  if (!list.length) {
+    container.innerHTML = '<div class="estoque-vazio">Nenhum produto encontrado.</div>';
+    return;
+  }
+  list.forEach((pm, idx) => {
+    const det = document.createElement('details');
+    det.className = 'grupo';
+    const subvars = pm.variacoesSorted.map(v => `
+      <div class="subvariacao">
+        <span>${escapeHtml(v.variacao)}</span>
+        <span class="qtd">${v.totalQtd} un</span>
+      </div>
+    `).join('');
+    det.innerHTML = `
+      <summary>
+        <div><span class="rank">#${idx + 1}</span><span class="nome">${escapeHtml(pm.produto)}</span><br><span class="var">${pm.totalQtd} unidades · ${pm.variacoesSorted.length} variação(ões)</span></div>
+        <span class="qtd">${pm.totalQtd}</span>
+      </summary>
+      ${subvars}
+    `;
+    container.appendChild(det);
+  });
+}
+
+document.getElementById('btnBaixarResumoTxt').addEventListener('click', () => {
+  if (!resumoParaExport) return;
+  const { produtos, naoIdentificados } = resumoParaExport;
+  let out = 'NATUNUTRI — LISTA DE RESUMO ORGANIZADA\n';
+  out += new Date().toLocaleString('pt-BR') + '\n\n';
+  out += '== PRODUTOS (do mais vendido ao menos vendido) ==\n';
+  produtos.forEach((pm, i) => {
+    out += `#${i + 1}  ${pm.produto} — ${pm.totalQtd} unidades\n`;
+    pm.variacoesSorted.forEach(v => { out += `      ${v.variacao}: ${v.totalQtd} un\n`; });
+  });
+  if (naoIdentificados.length) {
+    out += '\n== NÃO IDENTIFICADOS (conferir manualmente) ==\n';
+    naoIdentificados.forEach(n => { out += `${n.anuncio} (${n.variacao}): ${n.qtd} un — SKU ${n.sku}\n`; });
+  }
+  downloadBlob(new Blob([out], { type: 'text/plain' }), nomeArquivoResumo('txt'));
+});
+
+function nomeArquivoResumo(ext) {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  return `natunutri-lista-resumo-organizada-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
+}
+
 function isIOS() {
   return /iP(hone|od|ad)/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -783,12 +1165,22 @@ function blobToBase64(blob) {
 }
 
 // ──────────────────────────────────────────────
-// ABAS
+// ÁREAS (Operacional / Administrativo) E ABAS
 // ──────────────────────────────────────────────
+document.querySelectorAll('.area-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.area-btn').forEach(b => b.classList.remove('ativo'));
+    document.querySelectorAll('.area').forEach(a => a.classList.remove('ativa'));
+    btn.classList.add('ativo');
+    document.getElementById('area' + btn.dataset.area[0].toUpperCase() + btn.dataset.area.slice(1)).classList.add('ativa');
+  });
+});
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
-    document.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('ativo'));
+    const grupo = btn.closest('.area') || document;
+    grupo.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('ativo'));
+    grupo.querySelectorAll('.tabpanel').forEach(p => p.classList.remove('ativo'));
     btn.classList.add('ativo');
     document.getElementById('tab' + btn.dataset.tab[0].toUpperCase() + btn.dataset.tab.slice(1)).classList.add('ativo');
     if (btn.dataset.tab === 'painel') renderPainel();
