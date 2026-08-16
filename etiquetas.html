@@ -485,6 +485,7 @@ async function handleFile(file) {
   }
 
   setStatus('Organizando…', true);
+  aprenderIdentidadesDasPaginas(pages);
   const units = buildUnits(pages);
   const { produtos, kits, combos, unmatched } = groupUnits(units);
   render(produtos, kits, combos, unmatched, totalPages);
@@ -525,6 +526,13 @@ const RE_PEDIDO = /Pedido:\s*([A-Z0-9-]+)/;
 
 function norm(s) { return s.replace(/\s+/g, ' ').trim(); }
 
+// Alguns títulos do Shopee/UpSeller terminam com um número solto colado antes
+// do "*qtd" da etiqueta (ex: "...Chia 1*1", onde o "1" antes do "*" sobra no
+// nome depois de separar a quantidade) — não é peso nem faz parte do nome do
+// produto, é ruído do formato de exportação. Nenhum produto do catálogo
+// termina em número, então é seguro remover sempre.
+function limparNumeroSoltoFinal(s) { return s.replace(/\s+\d+$/, '').trim(); }
+
 // Nomes que o Shopee às vezes exporta diferente (título mudou, ordem das
 // palavras trocada etc.) mas que são o mesmo produto — o primeiro nome de
 // cada grupo é o que aparece na lista organizada. Adicione outros pares aqui
@@ -557,12 +565,14 @@ function parsePage(text, pageNumber) {
     if (!/^\d+\./.test(ln)) continue;
     let m = ln.match(RE_ITEM_COM_VARIACAO);
     if (m) {
-      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(m[2]), qtd: parseInt(m[3], 10) });
+      const nomeBruto = limparNumeroSoltoFinal(norm(m[2]));
+      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_SEM_VARIACAO);
     if (m) {
-      items.push({ variacao: 'Único', produto: normalizeProdutoNome(m[1]), qtd: parseInt(m[2], 10) });
+      const nomeBruto = limparNumeroSoltoFinal(norm(m[1]));
+      items.push({ variacao: 'Único', produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[2], 10) });
     }
   }
   const pedidoMatch = text.match(RE_PEDIDO);
@@ -573,6 +583,23 @@ function parsePage(text, pageNumber) {
     items,
     rawText: text
   };
+}
+
+// A etiqueta traz o nome do produto/kit sempre por extenso (sem corte),
+// diferente da Lista de Resumo. Aproveita isso pra ir aprendendo e salvando
+// a identidade de cada nome visto, pra reforçar a identificação de nomes
+// cortados nos relatórios no futuro.
+function aprenderIdentidadesDasPaginas(pages) {
+  const pares = [];
+  pages.forEach(p => {
+    p.items.forEach(it => {
+      if (!it.produtoBruto) return;
+      const kit = decomporKit(it.produtoBruto);
+      if (kit) pares.push({ nomeBruto: it.produtoBruto, tipo: 'kit', valor: kit });
+      else pares.push({ nomeBruto: it.produtoBruto, tipo: 'produto', valor: it.produto });
+    });
+  });
+  if (pares.length) aprenderIdentidades(pares);
 }
 
 function parseGramas(variacao) {
@@ -586,11 +613,13 @@ function parseGramas(variacao) {
 // que os compõe, e não num item de estoque à parte — "1 pacote de cada" no
 // kit vira 1 pacote daquele peso em cada componente.
 function limparParteKit(s) {
-  return norm(s)
-    .replace(/\d+[.,]?\d*\s*(kg|g)\b/gi, '')
-    .replace(/\bpacote(s)?\s+de\s+cada\b/gi, '')
-    .replace(/[-–]\s*natunutri\w*/gi, '')
-    .trim();
+  return limparNumeroSoltoFinal(
+    norm(s)
+      .replace(/\d+[.,]?\d*\s*(kg|g)\b/gi, '')
+      .replace(/\bpacote(s)?\s+de\s+cada\b/gi, '')
+      .replace(/[-–]\s*natunutri\w*/gi, '')
+      .trim()
+  );
 }
 
 function decomporKit(nomeProduto) {
@@ -673,6 +702,20 @@ function resolverKitTruncado(nomeAnuncio) {
   if (candidatos.length) return { componentes: candidatos[0].componentes, ambiguo: candidatos.length > 1 };
   const fallback = decomporKit(nomeAnuncio);
   return fallback ? { componentes: fallback, ambiguo: false } : null;
+}
+
+// Confere o título (possivelmente cortado) da Lista de Resumo contra os
+// nomes já vistos por extenso nas etiquetas de envio (identidadesAprendidas,
+// carregada da pasta) — mesma ideia do matchCanonicalPrefix, mas usando o
+// histórico real do dia a dia em vez da tabela fixa de kits conhecidos.
+// Prefixo mais longo primeiro, pra não confundir um kit com outro parecido.
+function matchIdentidadeAprendida(nomeAnuncio) {
+  const t = semReticencias(nomeAnuncio).toLowerCase();
+  const chaves = Object.keys(identidadesAprendidas).sort((a, b) => b.length - a.length);
+  for (const chave of chaves) {
+    if (t.startsWith(chave)) return identidadesAprendidas[chave];
+  }
+  return null;
 }
 
 // SKU do Anúncio nunca vem cortado (ao contrário do nome) e não muda entre
@@ -1256,6 +1299,12 @@ function processarListaResumo(linhasTabela) {
       else somar(conhecido.valor, r.variacao, r.qtd);
       return;
     }
+    const aprendido = matchIdentidadeAprendida(r.anuncio);
+    if (aprendido) {
+      if (aprendido.tipo === 'kit') aprendido.valor.forEach(nome => somar(nome, r.variacao, r.qtd));
+      else somar(aprendido.valor, r.variacao, r.qtd);
+      return;
+    }
     if (/^kit\b/i.test(r.anuncio)) {
       const resolvido = resolverKitTruncado(r.anuncio);
       if (!resolvido) { naoIdentificados.push(r); return; }
@@ -1397,6 +1446,11 @@ const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tant
 let estoqueDirHandle = null;
 let estoque = []; // [{ nome, kg }]
 let movimentos = []; // [{ data: 'AAAA-MM-DD', tipo: 'venda'|'compra', produto, kg }]
+// Nomes completos (sem corte) já vistos e identificados nas etiquetas de envio,
+// aprendidos automaticamente conforme o dia a dia — chave = nome bruto em
+// minúsculas como aparece na etiqueta, valor = identidade já resolvida.
+// { "kit semente linhaça dourada + semente de chia": { tipo:'kit', valor:[...] } }
+let identidadesAprendidas = {};
 
 function idbAbrir() {
   return new Promise((resolve, reject) => {
@@ -1504,6 +1558,40 @@ async function salvarMovimentosNaPasta() {
   return salvarArquivoNaPasta('movimentos.json', movimentos);
 }
 
+async function carregarIdentidadesDaPasta() {
+  try {
+    const fileHandle = await estoqueDirHandle.getFileHandle('identidades.json');
+    const file = await fileHandle.getFile();
+    identidadesAprendidas = JSON.parse(await file.text());
+  } catch (err) {
+    identidadesAprendidas = {}; // arquivo ainda não existe nessa pasta
+  }
+}
+
+async function salvarIdentidadesNaPasta() {
+  return salvarArquivoNaPasta('identidades.json', identidadesAprendidas);
+}
+
+// Aprende, a partir de uma etiqueta já lida (nome sempre completo, nunca
+// cortado), a identidade de cada item — e persiste na pasta só se algo novo
+// apareceu, pra não gravar toda hora à toa. Esse histórico depois ajuda a
+// resolver nomes cortados na Lista de Resumo (aba separada, PDF diferente).
+function aprenderIdentidades(pares) {
+  let mudou = false;
+  pares.forEach(({ nomeBruto, tipo, valor }) => {
+    const chave = norm(nomeBruto).toLowerCase();
+    if (!chave || chave.length < 4) return;
+    const atual = identidadesAprendidas[chave];
+    if (atual && atual.tipo === tipo && JSON.stringify(atual.valor) === JSON.stringify(valor)) return;
+    identidadesAprendidas[chave] = { tipo, valor };
+    mudou = true;
+  });
+  // Sem pasta conectada, ainda vale aprender em memória (ajuda a própria
+  // Lista de Resumo na mesma sessão), mas não tenta salvar nem pede permissão —
+  // organizar etiquetas é o uso do dia a dia e não deve depender da área admin.
+  if (mudou && estoqueDirHandle) salvarIdentidadesNaPasta();
+}
+
 document.getElementById('btnConectarPasta').addEventListener('click', async () => {
   if (!SUPORTA_PASTA) { alert('Esse navegador não suporta essa função. Use Chrome ou Edge no computador.'); return; }
   try {
@@ -1511,6 +1599,7 @@ document.getElementById('btnConectarPasta').addEventListener('click', async () =
     await idbSet('estoqueDir', estoqueDirHandle);
     await carregarEstoqueDaPasta();
     await carregarMovimentosDaPasta();
+    await carregarIdentidadesDaPasta();
     atualizarPastaStatus();
     renderEstoqueLista();
   } catch (err) {
@@ -1527,6 +1616,7 @@ async function tentarReconectarPasta() {
     if (await garantirPermissaoPasta(false)) {
       await carregarEstoqueDaPasta();
       await carregarMovimentosDaPasta();
+      await carregarIdentidadesDaPasta();
     }
   } catch (err) { /* handle inválido/revogado — ignora, usuário reconecta manualmente */ }
   atualizarPastaStatus();
