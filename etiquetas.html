@@ -169,9 +169,6 @@
     width:90px; text-align:right; font-family:var(--mono); font-size:12.5px; color:var(--texto-suave);
     padding:8px 4px; white-space:nowrap;
   }
-  .estoque-row .estoque-del{
-    background:none; border:none; cursor:pointer; font-size:15px; padding:6px; color:var(--alerta);
-  }
   .estoque-vazio{font-size:12.5px; color:var(--texto-suave); padding:6px 0;}
 
   .compra-form{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
@@ -179,8 +176,10 @@
     border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; color:var(--texto);
     font-family:inherit;
   }
-  .compra-form select, .compra-form input[list]{flex:1; min-width:160px;}
+  .compra-form select{flex:1; min-width:160px;}
   .compra-form input[type="number"]{width:110px;}
+  .produto-picker{display:flex; flex-direction:column; gap:6px; width:100%;}
+  .produto-picker select{width:100%;}
 
   .painel-item{border-top:1px solid var(--linha);}
   .painel-item:first-child{border-top:none;}
@@ -340,7 +339,6 @@
         <div class="pasta-status" id="contaStatus">—</div>
       </div>
       <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="secondary" id="btnBackup">⬇ Baixar backup (.json)</button>
         <button class="secondary" id="btnLogout">Sair</button>
       </div>
     </div>
@@ -373,15 +371,16 @@
       </div>
     </div>
 
-    <datalist id="listaProdutosDatalist"></datalist>
-
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Registrar compra de fornecedor</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Chegou mercadoria do fornecedor — isso só soma ao estoque.
       </div>
       <div class="compra-form">
-        <input type="text" id="selCompraProduto" list="listaProdutosDatalist" placeholder="Pesquisar produto…" autocomplete="off">
+        <div class="produto-picker">
+          <input type="text" id="buscaCompraProduto" placeholder="Pesquisar produto…" autocomplete="off">
+          <select id="selCompraProduto"></select>
+        </div>
         <input type="number" id="inputCompraKg" step="0.001" min="0" placeholder="kg comprados">
         <input type="date" id="inputCompraData">
         <input type="text" id="inputCompraFornecedor" placeholder="Fornecedor (opcional)">
@@ -396,7 +395,10 @@
         Pra quando a contagem física não bate com o sistema (perda, erro de embalagem, etc). Informe o valor real contado — o sistema calcula a diferença e registra o motivo.
       </div>
       <div class="compra-form">
-        <input type="text" id="selAjusteProduto" list="listaProdutosDatalist" placeholder="Pesquisar produto…" autocomplete="off">
+        <div class="produto-picker">
+          <input type="text" id="buscaAjusteProduto" placeholder="Pesquisar produto…" autocomplete="off">
+          <select id="selAjusteProduto"></select>
+        </div>
         <input type="number" id="inputAjusteKg" step="0.001" min="0" placeholder="kg reais contados">
         <input type="text" id="inputAjusteMotivo" placeholder="Motivo (ex: contagem mensal, perda)" style="flex:2; min-width:180px;">
         <button class="secondary" id="btnRegistrarAjuste">⚖ Registrar ajuste</button>
@@ -415,6 +417,18 @@
         Ordenado do maior pro menor estoque. O kg é só leitura — some da soma de compras e vendas registradas. Pra corrigir, use "Ajuste de inventário" na aba Produtos. Nome pode ser editado direto (é só rótulo, não mexe na quantidade).
       </div>
       <div id="listaEstoque"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Planilha de contagem de inventário</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Baixe a planilha com todos os produtos, preencha o estoque que você contou fisicamente na coluna de kg, e importe de volta — o site ajusta cada produto automaticamente (registrando o motivo "Contagem física").
+      </div>
+      <div class="actions" style="margin-bottom:0">
+        <button class="secondary" id="btnExportarInventarioCsv">⬇ Baixar planilha (.csv)</button>
+        <button class="secondary" id="btnImportarInventarioCsv">⬆ Importar planilha preenchida</button>
+        <input type="file" id="inputImportarInventarioCsv" accept=".csv,text/csv" style="display:none">
+      </div>
     </div>
   </div>
 
@@ -447,6 +461,14 @@
     </div>
   </div>
   </main>
+
+  <div class="card">
+    <strong style="font-size:13.5px">Backup</strong>
+    <div class="pasta-status" style="margin-bottom:8px">
+      Tudo já é salvo automaticamente na nuvem — esse botão é só uma cópia extra pra guardar por conta própria de vez em quando.
+    </div>
+    <button class="secondary" id="btnBackup">⬇ Baixar backup completo (.json)</button>
+  </div>
   </div>
 </div>
 
@@ -462,7 +484,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  addDoc, updateDoc, deleteDoc,
+  addDoc, updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -1660,7 +1682,6 @@ function renderEstoqueLista() {
       row.innerHTML = `
         <input type="text" value="${escapeHtml(item.nome)}" data-id="${item.id}" data-f="nome">
         <span class="estoque-kg-leitura" title="Só leitura — use Registrar compra ou Ajuste de inventário para mudar">${item.kg.toFixed(3)} kg</span>
-        <button class="estoque-del" data-id="${item.id}" title="Remover">🗑</button>
       `;
       el.appendChild(row);
     });
@@ -1670,13 +1691,24 @@ function renderEstoqueLista() {
 
 document.getElementById('buscaEstoque').addEventListener('input', renderEstoqueLista);
 
+// Cada seletor de produto (compra/ajuste) tem uma busca em cima e um <select>
+// embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
+// todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  // Datalist compartilhada pelos dois campos de busca (compra e ajuste) — só
-  // atualiza as sugestões, nunca mexe no que o usuário já digitou.
-  document.getElementById('listaProdutosDatalist').innerHTML = estoque
-    .map(item => `<option value="${escapeHtml(item.nome)}">`)
-    .join('');
+  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto']].forEach(([selId, buscaId]) => {
+    const sel = document.getElementById(selId);
+    const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
+    const atual = sel.value;
+    const filtrados = estoque.filter(item => !termo || item.nome.toLowerCase().includes(termo));
+    sel.innerHTML = filtrados
+      .map(item => `<option value="${escapeHtml(item.nome)}">${escapeHtml(item.nome)}</option>`)
+      .join('');
+    if (filtrados.some(i => i.nome === atual)) sel.value = atual;
+  });
 }
+
+document.getElementById('buscaCompraProduto').addEventListener('input', preencherSelects);
+document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
 
 document.getElementById('btnAddEstoqueItem').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
@@ -1700,11 +1732,6 @@ document.getElementById('listaEstoque').addEventListener('change', async e => {
   const id = e.target.dataset.id, f = e.target.dataset.f;
   if (id === undefined || f !== 'nome') return;
   await updateDoc(doc(db, 'estoque', id), { nome: e.target.value });
-});
-
-document.getElementById('listaEstoque').addEventListener('click', async e => {
-  if (!e.target.classList.contains('estoque-del')) return;
-  await deleteDoc(doc(db, 'estoque', e.target.dataset.id));
 });
 
 function hoje() { return new Date().toISOString().slice(0, 10); }
@@ -1947,6 +1974,12 @@ function csvEscape(v) {
   return /[;"\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
 
+// BOM no início faz o Excel reconhecer o arquivo como UTF-8 e mostrar
+// acentos corretamente (sem ele, "Açúcar" vira "AÃ§Ãºcar" ao abrir).
+function csvBlob(linhas) {
+  return new Blob(['﻿' + linhas.join('\n')], { type: 'text/csv' });
+}
+
 document.getElementById('btnExportarEstoqueCsv').addEventListener('click', () => {
   const linhas = ['Produto;Estoque (kg);Média venda/dia (kg);Dias restantes;Sugestão de compra (kg);Custo médio (R$/kg)'];
   calcularPainel().forEach(p => {
@@ -1959,7 +1992,7 @@ document.getElementById('btnExportarEstoqueCsv').addEventListener('click', () =>
       p.custoMedioKg ? p.custoMedioKg.toFixed(2) : '',
     ].join(';'));
   });
-  downloadBlob(new Blob([linhas.join('\n')], { type: 'text/csv' }), `natunutri-estoque-${hoje()}.csv`);
+  downloadBlob(csvBlob(linhas), `natunutri-estoque-${hoje()}.csv`);
 });
 
 document.getElementById('btnExportarMovimentosCsv').addEventListener('click', () => {
@@ -1970,7 +2003,88 @@ document.getElementById('btnExportarMovimentosCsv').addEventListener('click', ()
       csvEscape(m.fornecedor || ''), m.custoTotal ? m.custoTotal.toFixed(2) : '', csvEscape(m.motivo || ''),
     ].join(';'));
   });
-  downloadBlob(new Blob([linhas.join('\n')], { type: 'text/csv' }), `natunutri-movimentacoes-${hoje()}.csv`);
+  downloadBlob(csvBlob(linhas), `natunutri-movimentacoes-${hoje()}.csv`);
+});
+
+document.getElementById('btnExportarInventarioCsv').addEventListener('click', () => {
+  const linhas = ['Produto;Estoque atual (kg)'];
+  [...estoque].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).forEach(item => {
+    linhas.push([csvEscape(item.nome), item.kg.toFixed(3)].join(';'));
+  });
+  downloadBlob(csvBlob(linhas), `natunutri-inventario-${hoje()}.csv`);
+});
+
+function parseCsvLinha(linha) {
+  const campos = [];
+  let atual = '';
+  let dentroAspas = false;
+  for (let i = 0; i < linha.length; i++) {
+    const c = linha[i];
+    if (dentroAspas) {
+      if (c === '"') { if (linha[i + 1] === '"') { atual += '"'; i++; } else dentroAspas = false; }
+      else atual += c;
+    } else if (c === '"') dentroAspas = true;
+    else if (c === ';') { campos.push(atual); atual = ''; }
+    else atual += c;
+  }
+  campos.push(atual);
+  return campos;
+}
+
+function parseCsvInventario(texto) {
+  const linhas = texto.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+  return linhas.slice(1) // pula o cabeçalho
+    .map(parseCsvLinha)
+    .map(([produto, kg]) => ({ produto: norm(produto || ''), kg: parseFloat(String(kg || '').replace(',', '.')) }))
+    .filter(r => r.produto);
+}
+
+document.getElementById('btnImportarInventarioCsv').addEventListener('click', () => {
+  document.getElementById('inputImportarInventarioCsv').click();
+});
+
+document.getElementById('inputImportarInventarioCsv').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+
+  const linhas = parseCsvInventario(await file.text());
+  if (!linhas.length) { alert('Não encontrei nenhuma linha válida nessa planilha.'); return; }
+
+  const mudancas = [];
+  const naoEncontrados = [];
+  linhas.forEach(({ produto, kg }) => {
+    if (isNaN(kg) || kg < 0) return;
+    const item = acharEstoque(produto);
+    if (!item) { naoEncontrados.push(produto); return; }
+    const kgArred = Math.round(kg * 1000) / 1000;
+    const diff = Math.round((kgArred - item.kg) * 1000) / 1000;
+    if (diff !== 0) mudancas.push({ item, kgArred, diff });
+  });
+
+  if (!mudancas.length) {
+    let msg = 'Nenhuma quantidade diferente do estoque atual encontrada nessa planilha.';
+    if (naoEncontrados.length) msg += `\n\nSem cadastro no estoque (ignorados): ${naoEncontrados.join(', ')}`;
+    alert(msg);
+    return;
+  }
+
+  let msg = `Confirma atualizar ${mudancas.length} produto(s) pela planilha?\n\n`;
+  mudancas.forEach(({ item, kgArred, diff }) => {
+    msg += `${item.nome}: ${item.kg.toFixed(3)} → ${kgArred.toFixed(3)} kg (${diff > 0 ? '+' : ''}${diff.toFixed(3)})\n`;
+  });
+  if (naoEncontrados.length) msg += `\nSem cadastro no estoque (ignorados): ${naoEncontrados.join(', ')}`;
+  if (!confirm(msg)) return;
+
+  const data = hoje();
+  const batch = writeBatch(db);
+  mudancas.forEach(({ item, kgArred, diff }) => {
+    batch.update(doc(db, 'estoque', item.id), { kg: kgArred });
+    batch.set(doc(collection(db, 'movimentos')), { data, tipo: 'ajuste', produto: item.nome, kg: diff, motivo: 'Contagem física (planilha importada)' });
+  });
+  await batch.commit();
+  alert(`Estoque atualizado: ${mudancas.length} produto(s).`);
 });
 
 function renderMovimentos() {
