@@ -4,6 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Catálogo Natunutri</title>
+<meta name="description" content="Catálogo Natunutri Produtos Naturais — monte seu pedido e finalize direto pelo WhatsApp.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Catálogo Natunutri">
+<meta property="og:description" content="Produtos naturais direto da fábrica. Monte seu pedido e finalize direto pelo WhatsApp.">
+<meta property="og:image" content="logo.png">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Catálogo Natunutri">
+<meta name="twitter:description" content="Produtos naturais direto da fábrica. Monte seu pedido e finalize direto pelo WhatsApp.">
+<meta name="twitter:image" content="logo.png">
 <link rel="icon" type="image/png" href="favicon.png">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap');
@@ -1159,6 +1168,27 @@
     .form-row { grid-template-columns: 1fr; }
     .modal-price { font-size: 22px; }
   }
+
+  /* ─── AVISO DE POLÍTICAS (pedido mínimo / pagamento / entrega) ─── */
+  .info-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    background: var(--verde-l);
+    border: 1px solid var(--cinza4);
+    border-radius: var(--r);
+    padding: 12px 18px;
+    margin-bottom: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--verde-m);
+  }
+  .info-strip span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
 </style>
 </head>
 <body>
@@ -1193,6 +1223,11 @@
       <p class="hero-title">Comprado a granel, fracionado com cuidado.</p>
       <p class="hero-sub">Produtos naturais direto da fábrica</p>
     </div>
+  </div>
+  <div class="info-strip">
+    <span>💳 Pagamento combinado no WhatsApp</span>
+    <span>🚚 Entrega e retirada combinadas no WhatsApp</span>
+    <span>📦 Sem pedido mínimo</span>
   </div>
   <div class="section-title" id="sectionTitle">Todos os produtos</div>
   <div class="grid" id="prodGrid"></div>
