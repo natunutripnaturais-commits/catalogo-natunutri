@@ -257,7 +257,7 @@
         <div class="actions">
           <button class="primary" id="btnBaixarPdf">⬇ Baixar PDF organizado</button>
           <button class="secondary" id="btnBaixarTxt">Lista de conferência (.txt)</button>
-          <button class="secondary" id="btnBaixarSeparacaoTxt">Lista de separação (.txt)</button>
+          <button class="secondary" id="btnBaixarSeparacaoPdf">⬇ Lista de separação (.pdf)</button>
           <button class="secondary" id="btnDescontarEstoque">📦 Descontar do estoque</button>
         </div>
       </div>
@@ -988,15 +988,59 @@ function renderSeparacaoLista(container, list) {
   });
 }
 
-document.getElementById('btnBaixarSeparacaoTxt').addEventListener('click', () => {
-  if (!separacaoParaExport.length) return;
-  let out = 'NATUNUTRI — LISTA DE SEPARAÇÃO (kits desmembrados)\n';
-  out += new Date().toLocaleString('pt-BR') + '\n\n';
-  separacaoParaExport.forEach((pm, i) => {
-    out += `#${i + 1}  ${pm.produto} — ${pm.totalQtd} unidades\n`;
-    pm.variacoesSorted.forEach(v => { out += `      ${v.variacao}: ${v.totalQtd} un\n`; });
+// Monta um PDF do zero (não reordena páginas existentes, como o PDF das
+// etiquetas) — uma tabela simples: produto, peso/variação, quantidade a
+// separar, com uma caixinha pra marcar conforme vai separando.
+async function gerarPdfSeparacao(lista) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fonte = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fonteNegrito = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const LARGURA = 595.28, ALTURA = 841.89; // A4 em pontos
+  const MARGEM = 40;
+  const colCheck = MARGEM, colProduto = MARGEM + 22, colPeso = 370, colQtd = 500;
+  const ALTURA_LINHA = 20;
+  const cinza = rgb(0.45, 0.45, 0.45);
+  const cinzaClaro = rgb(0.75, 0.75, 0.75);
+
+  let page, y;
+  function novaPagina() {
+    page = pdfDoc.addPage([LARGURA, ALTURA]);
+    y = ALTURA - MARGEM;
+    page.drawText('NATUNUTRI — LISTA DE SEPARAÇÃO', { x: MARGEM, y, size: 14, font: fonteNegrito });
+    y -= 16;
+    page.drawText(new Date().toLocaleString('pt-BR'), { x: MARGEM, y, size: 9, font: fonte, color: cinza });
+    y -= 20;
+    page.drawText('Produto', { x: colProduto, y, size: 10, font: fonteNegrito });
+    page.drawText('Peso', { x: colPeso, y, size: 10, font: fonteNegrito });
+    page.drawText('Qtd', { x: colQtd, y, size: 10, font: fonteNegrito });
+    y -= 6;
+    page.drawLine({ start: { x: MARGEM, y }, end: { x: LARGURA - MARGEM, y }, thickness: 0.75, color: cinzaClaro });
+    y -= 16;
+  }
+  novaPagina();
+
+  lista.forEach(pm => {
+    pm.variacoesSorted.forEach(v => {
+      if (y < MARGEM + ALTURA_LINHA) novaPagina();
+      page.drawRectangle({ x: colCheck, y: y - 1, width: 9, height: 9, borderColor: cinza, borderWidth: 0.8 });
+      let nome = pm.produto;
+      if (nome.length > 48) nome = nome.slice(0, 47) + '…';
+      page.drawText(nome, { x: colProduto, y, size: 10, font: fonte });
+      page.drawText(v.variacao, { x: colPeso, y, size: 10, font: fonte });
+      page.drawText(String(v.totalQtd), { x: colQtd, y, size: 10, font: fonte });
+      y -= ALTURA_LINHA;
+    });
   });
-  downloadBlob(new Blob([out], { type: 'text/plain' }), nomeArquivoSeparacao('txt'));
+
+  return pdfDoc.save();
+}
+
+document.getElementById('btnBaixarSeparacaoPdf').addEventListener('click', async () => {
+  if (!separacaoParaExport.length) return;
+  const bytes = await gerarPdfSeparacao(separacaoParaExport);
+  downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivoSeparacao('pdf'));
 });
 
 function nomeArquivoSeparacao(ext) {
