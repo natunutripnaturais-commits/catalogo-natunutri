@@ -999,8 +999,8 @@ async function gerarPdfSeparacao(lista) {
 
   const LARGURA = 595.28, ALTURA = 841.89; // A4 em pontos
   const MARGEM = 40;
-  const colCheck = MARGEM, colProduto = MARGEM + 22, colPeso = 370, colQtd = 500;
-  const ALTURA_LINHA = 20;
+  const colCheck = MARGEM, colProduto = MARGEM + 28, colPeso = 350, colQtd = 500;
+  const ALTURA_LINHA = 28;
   const cinza = rgb(0.45, 0.45, 0.45);
   const cinzaClaro = rgb(0.75, 0.75, 0.75);
 
@@ -1008,28 +1008,28 @@ async function gerarPdfSeparacao(lista) {
   function novaPagina() {
     page = pdfDoc.addPage([LARGURA, ALTURA]);
     y = ALTURA - MARGEM;
-    page.drawText('NATUNUTRI — LISTA DE SEPARAÇÃO', { x: MARGEM, y, size: 14, font: fonteNegrito });
-    y -= 16;
-    page.drawText(new Date().toLocaleString('pt-BR'), { x: MARGEM, y, size: 9, font: fonte, color: cinza });
+    page.drawText('NATUNUTRI — LISTA DE SEPARAÇÃO', { x: MARGEM, y, size: 18, font: fonteNegrito });
     y -= 20;
-    page.drawText('Produto', { x: colProduto, y, size: 10, font: fonteNegrito });
-    page.drawText('Peso', { x: colPeso, y, size: 10, font: fonteNegrito });
-    page.drawText('Qtd', { x: colQtd, y, size: 10, font: fonteNegrito });
-    y -= 6;
+    page.drawText(new Date().toLocaleString('pt-BR'), { x: MARGEM, y, size: 11, font: fonte, color: cinza });
+    y -= 26;
+    page.drawText('Produto', { x: colProduto, y, size: 13, font: fonteNegrito });
+    page.drawText('Peso', { x: colPeso, y, size: 13, font: fonteNegrito });
+    page.drawText('Qtd', { x: colQtd, y, size: 13, font: fonteNegrito });
+    y -= 8;
     page.drawLine({ start: { x: MARGEM, y }, end: { x: LARGURA - MARGEM, y }, thickness: 0.75, color: cinzaClaro });
-    y -= 16;
+    y -= 22;
   }
   novaPagina();
 
   lista.forEach(pm => {
     pm.variacoesSorted.forEach(v => {
       if (y < MARGEM + ALTURA_LINHA) novaPagina();
-      page.drawRectangle({ x: colCheck, y: y - 1, width: 9, height: 9, borderColor: cinza, borderWidth: 0.8 });
+      page.drawRectangle({ x: colCheck, y: y - 2, width: 12, height: 12, borderColor: cinza, borderWidth: 1 });
       let nome = pm.produto;
-      if (nome.length > 48) nome = nome.slice(0, 47) + '…';
-      page.drawText(nome, { x: colProduto, y, size: 10, font: fonte });
-      page.drawText(v.variacao, { x: colPeso, y, size: 10, font: fonte });
-      page.drawText(String(v.totalQtd), { x: colQtd, y, size: 10, font: fonte });
+      if (nome.length > 38) nome = nome.slice(0, 37) + '…';
+      page.drawText(nome, { x: colProduto, y, size: 13, font: fonte });
+      page.drawText(v.variacao, { x: colPeso, y, size: 13, font: fonte });
+      page.drawText(String(v.totalQtd), { x: colQtd, y, size: 13, font: fonte });
       y -= ALTURA_LINHA;
     });
   });
