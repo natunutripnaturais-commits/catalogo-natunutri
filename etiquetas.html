@@ -44,15 +44,15 @@
     padding:16px; margin-bottom:14px;
   }
 
-  #dropzone, #dropzoneResumo{
+  #dropzone{
     border:2px dashed #b9c9bd; border-radius:10px; padding:28px 16px;
     text-align:center; cursor:pointer; background:var(--verde-100);
     transition:border-color .15s, background .15s;
   }
-  #dropzone.drag, #dropzoneResumo.drag{border-color:var(--verde-500); background:#dcebe0;}
-  #dropzone strong, #dropzoneResumo strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
-  #dropzone span, #dropzoneResumo span{font-size:12.5px; color:var(--texto-suave);}
-  #fileInput, #fileInputResumo{display:none;}
+  #dropzone.drag{border-color:var(--verde-500); background:#dcebe0;}
+  #dropzone strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
+  #dropzone span{font-size:12.5px; color:var(--texto-suave);}
+  #fileInput{display:none;}
 
   #status, #statusResumo{font-size:13px; color:var(--texto-suave); margin-top:10px; display:none;}
   #status.show, #statusResumo.show{display:block;}
@@ -232,17 +232,7 @@
 </div>
 
 <div id="areaOperacional" class="area ativa">
-  <p class="area-sub">Uso do dia a dia: organizar etiquetas de envio e conferir a lista de resumo antes de separar os produtos.</p>
-  <div class="tabs">
-    <button class="tab-btn ativo" data-tab="organizar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-      Organizar etiquetas
-    </button>
-    <button class="tab-btn" data-tab="resumo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-      Lista de resumo
-    </button>
-  </div>
+  <p class="area-sub">Uso do dia a dia: envie o PDF de etiquetas e organize junto com a lista de separação.</p>
 
 <main>
   <div id="tabOrganizar" class="tabpanel ativo">
@@ -267,6 +257,7 @@
         <div class="actions">
           <button class="primary" id="btnBaixarPdf">⬇ Baixar PDF organizado</button>
           <button class="secondary" id="btnBaixarTxt">Lista de conferência (.txt)</button>
+          <button class="secondary" id="btnBaixarSeparacaoTxt">Lista de separação (.txt)</button>
           <button class="secondary" id="btnDescontarEstoque">📦 Descontar do estoque</button>
         </div>
       </div>
@@ -281,36 +272,12 @@
 
       <h2 class="section" id="tituloMulti" style="display:none">Pedidos com mais de um produto</h2>
       <div id="listaMulti"></div>
-    </div>
-  </div>
 
-  <div id="tabResumo" class="tabpanel">
-    <div class="card">
-      <div id="dropzoneResumo">
-        <strong>Toque para escolher a Lista de Resumo (PDF)</strong>
-        <span>Relatório de SKUs vendidos (UpSeller/Shopee) — pode ter várias páginas</span>
+      <h2 class="section">Lista de separação · kits desmembrados nos produtos individuais</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin:-4px 0 8px;">
+        O que você precisa separar do estoque — cada kit vira seus produtos por dentro, somados junto com as vendas avulsas do mesmo produto.
       </div>
-      <input type="file" id="fileInputResumo" accept="application/pdf,.pdf">
-      <div id="statusResumo"></div>
-    </div>
-
-    <div id="resultadoResumo">
-      <div class="card">
-        <div class="stats">
-          <div class="stat"><div class="num" id="statResumoItens">0</div><div class="lbl">itens do relatório</div></div>
-          <div class="stat"><div class="num" id="statResumoProdutos">0</div><div class="lbl">produtos</div></div>
-          <div class="stat"><div class="num" id="statResumoNaoIdent">0</div><div class="lbl">não identificados</div></div>
-        </div>
-        <div class="actions">
-          <button class="secondary" id="btnBaixarResumoTxt">Lista de conferência (.txt)</button>
-        </div>
-      </div>
-
-      <div id="avisoResumoAmbiguo" style="display:none" class="aviso"></div>
-      <div id="avisoResumoNaoIdent" style="display:none" class="aviso"></div>
-
-      <h2 class="section">Produtos · do mais vendido ao menos vendido</h2>
-      <div id="listaResumoGrupos"></div>
+      <div id="listaSeparacao"></div>
     </div>
   </div>
   </main>
@@ -524,6 +491,7 @@ const resultadoEl = document.getElementById('resultado');
 let originalBytes = null;   // ArrayBuffer for pdf-lib
 let orderedIndices = [];    // final page order (0-based, original PDF)
 let groupsForExport = [];   // for txt list
+let separacaoParaExport = [];   // for the "lista de separação" txt export
 
 function setStatus(msg, spinning) {
   statusEl.classList.add('show');
@@ -572,10 +540,11 @@ async function handleFile(file) {
   }
 
   setStatus('Organizando…', true);
-  aprenderIdentidadesDasPaginas(pages);
   const units = buildUnits(pages);
   const { produtos, kits, combos, unmatched } = groupUnits(units);
   render(produtos, kits, combos, unmatched, totalPages);
+  separacaoParaExport = calcularListaSeparacao(pages);
+  renderSeparacaoLista(document.getElementById('listaSeparacao'), separacaoParaExport);
   setStatus('', false);
   statusEl.classList.remove('show');
   resultadoEl.classList.add('show');
@@ -685,23 +654,6 @@ function parsePage(text, pageNumber) {
   };
 }
 
-// A etiqueta traz o nome do produto/kit sempre por extenso (sem corte),
-// diferente da Lista de Resumo. Aproveita isso pra ir aprendendo e salvando
-// a identidade de cada nome visto, pra reforçar a identificação de nomes
-// cortados nos relatórios no futuro.
-function aprenderIdentidadesDasPaginas(pages) {
-  const pares = [];
-  pages.forEach(p => {
-    p.items.forEach(it => {
-      if (!it.produtoBruto) return;
-      const kit = decomporKit(it.produtoBruto);
-      if (kit) pares.push({ nomeBruto: it.produtoBruto, tipo: 'kit', valor: kit });
-      else pares.push({ nomeBruto: it.produtoBruto, tipo: 'produto', valor: it.produto });
-    });
-  });
-  if (pares.length) aprenderIdentidades(pares);
-}
-
 function parseGramas(variacao) {
   const m = variacao.match(/([\d.,]+)\s*(kg|g)\b/i);
   if (!m) return Infinity;
@@ -727,282 +679,6 @@ function decomporKit(nomeProduto) {
   if (partes.length < 2) return null;
   return partes.map(normalizeProdutoNome);
 }
-
-// ──────────────────────────────────────────────
-// LISTA DE RESUMO — relatório de SKUs vendidos (UpSeller/Shopee).
-// Os títulos vêm cortados pela largura da coluna do PDF ("Camomila Flor chá
-// natural 1kg 500g 25…"), então aqui casamos por PREFIXO em vez de nome
-// exato. Kits também vêm cortados no 2º/3º componente ("Kit Farinha de
-// Linhaça Dourada + Farin…") — por isso mantemos uma lista dos kits
-// conhecidos (títulos completos) pra reconhecer pelo prefixo visível: se só
-// aparecer texto novo que não bate com nada daqui, cai em "não identificado"
-// em vez de arriscar um componente errado.
-const KIT_COMPOSICAO = [
-  { titulo: 'Kit Farinha de Linhaça Dourada + Farinha de Chia', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Chia'] },
-  { titulo: 'Kit Semente de Girassol + Semente de Abóbora', componentes: ['Semente de Girassol Sem Casca', 'Semente de Abóbora Sem Casca'] },
-  { titulo: 'Kit 3 - Farinha de Linhaça dourada + Farinha de Chia + Psyllium', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Chia', 'Psyllium Husk'] },
-  { titulo: 'Kit Gergelim Branco + Gergelim Preto', componentes: ['Gergelim Branco', 'Gergelim Preto'] },
-  { titulo: 'Kit Quinoa Branca + Amaranto em Grão', componentes: ['Quinoa Branca', 'Amaranto em Grão'] },
-  { titulo: 'Kit semente linhaça dourada + linhaça marrom', componentes: ['Semente de Linhaça Dourada', 'Semente de Linhaça Marrom'] },
-  { titulo: 'Kit Açúcar Mascavo + Açúcar Demerara', componentes: ['Açúcar Mascavo', 'Açúcar Demerara'] },
-  { titulo: 'Kit Semente de Chia + Linhaça Marrom', componentes: ['Semente de Chia', 'Semente de Linhaça Marrom'] },
-  { titulo: 'Kit Frutas Cristalizadas + Uva passa preta', componentes: ['Frutas Cristalizadas', 'Uva Passa Preta'] },
-  { titulo: 'Kit uva passa preta + uva passa branca', componentes: ['Uva Passa Preta', 'Uva Passa Branca'] },
-  { titulo: 'Kit 3x Semente de Girassol Pepita Sem Casca', componentes: ['Semente de Girassol Sem Casca'] },
-  { titulo: 'Kit Semente de Girassol + Linhaça Dourada', componentes: ['Semente de Girassol Sem Casca', 'Semente de Linhaça Dourada'] },
-  { titulo: 'Kit Gergelim Branco + Chia Preta', componentes: ['Gergelim Branco', 'Semente de Chia'] },
-  { titulo: 'Kit Amaranto em grão + Semente de Girassol', componentes: ['Amaranto em Grão', 'Semente de Girassol Sem Casca'] },
-  { titulo: 'Kit semente de abóbora + chia semente', componentes: ['Semente de Abóbora Sem Casca', 'Semente de Chia'] },
-  { titulo: 'Kit Chia Semente + Psyllium', componentes: ['Semente de Chia', 'Psyllium Husk'] },
-  { titulo: 'Kit Semente de Girassol + Gergelim Branco', componentes: ['Semente de Girassol Sem Casca', 'Gergelim Branco'] },
-  { titulo: 'Kit Semente de Girassol + Semente de Chia', componentes: ['Semente de Girassol Sem Casca', 'Semente de Chia'] },
-  { titulo: 'Kit Gergelim Branco + Linhaça Dourada', componentes: ['Gergelim Branco', 'Semente de Linhaça Dourada'] },
-  { titulo: 'Kit Semente Linhaça Dourada + Semente de Chia', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia'] },
-  { titulo: 'Kit Gergelim Preto + Psyllium Pó', componentes: ['Gergelim Preto', 'Psyllium Husk'] },
-  { titulo: 'Kit Gergelim Branco + Psyllium', componentes: ['Gergelim Branco', 'Psyllium Husk'] },
-  { titulo: 'Kit Farinha de Linhaça Dourada + Farinha de Beterraba', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Beterraba'] },
-  { titulo: 'Kit Copa do Mundo Amendoim Crocante', componentes: ['Amendoim Crocante Cebola e Salsa', 'Amendoim Crocante Tradicional'] },
-  { titulo: 'kit sementes Linhaça, Chia, Gergelim, Sem abobora, Sem girassol embalagens individuais', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia', 'Gergelim Branco', 'Semente de Abóbora Sem Casca', 'Semente de Girassol Sem Casca'] },
-  { titulo: 'Kit Sementes (Linhaça, chia e gergelim branco)', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia', 'Gergelim Branco'] },
-];
-
-const CANONICOS_CONHECIDOS = [...new Set([
-  ...ALIASES_PRODUTO.map(g => g[0]),
-  ...KIT_COMPOSICAO.flatMap(k => k.componentes),
-])].sort((a, b) => b.length - a.length);
-
-function semReticencias(s) { return norm(s).replace(/…+$/, '').trim(); }
-
-// Casa um título (possivelmente cortado) com um nome canônico por prefixo:
-// "Camomila Flor chá natural 1kg 500g 25…" reconhece "Camomila Flor" porque
-// o texto visível COMEÇA com o nome canônico — funciona mesmo cortado,
-// porque o corte sempre acontece no final, nunca no começo do título.
-function matchCanonicalPrefix(nomeAnuncio) {
-  const t = semReticencias(nomeAnuncio).toLowerCase();
-  for (const grupo of ALIASES_PRODUTO) {
-    for (const nome of grupo) {
-      if (t.startsWith(nome.toLowerCase())) return grupo[0];
-    }
-  }
-  for (const nome of CANONICOS_CONHECIDOS) {
-    if (t.startsWith(nome.toLowerCase())) return nome;
-  }
-  return semReticencias(nomeAnuncio);
-}
-
-// Resolve um kit (possivelmente com nome cortado) nos seus produtos
-// individuais. Primeiro tenta achar na lista de kits conhecidos (pelo
-// prefixo visível); se não achar, tenta decompor ao vivo pelo "+" — que só
-// funciona bem se o título não estiver cortado no meio de um componente.
-function resolverKitTruncado(nomeAnuncio) {
-  const t = semReticencias(nomeAnuncio).toLowerCase();
-  const candidatos = KIT_COMPOSICAO.filter(k => k.titulo.toLowerCase().startsWith(t));
-  if (candidatos.length) return { componentes: candidatos[0].componentes, ambiguo: candidatos.length > 1 };
-  const fallback = decomporKit(nomeAnuncio);
-  return fallback ? { componentes: fallback, ambiguo: false } : null;
-}
-
-// Confere o título (possivelmente cortado) da Lista de Resumo contra os
-// nomes já vistos por extenso nas etiquetas de envio (identidadesAprendidas,
-// carregada da pasta) — mesma ideia do matchCanonicalPrefix, mas usando o
-// histórico real do dia a dia em vez da tabela fixa de kits conhecidos.
-// Prefixo mais longo primeiro, pra não confundir um kit com outro parecido.
-function matchIdentidadeAprendida(nomeAnuncio) {
-  const t = semReticencias(nomeAnuncio).toLowerCase();
-  const chaves = Object.keys(identidadesAprendidas).sort((a, b) => b.length - a.length);
-  for (const chave of chaves) {
-    if (t.startsWith(chave)) return identidadesAprendidas[chave];
-  }
-  return null;
-}
-
-// SKU do Anúncio nunca vem cortado (ao contrário do nome) e não muda entre
-// relatórios diferentes (30 dias, 90 dias, etc) — é o mesmo SKU sempre que o
-// mesmo anúncio+variação é vendido. Por isso ele é a PRIMEIRA tentativa de
-// identificação na Lista de Resumo; o nome cortado só entra como plano B
-// pra SKU que ainda não apareceu aqui. Lista aprendida a partir dos
-// relatórios já enviados — quando aparecer um SKU novo, ele cai como "não
-// identificado" (produto) ou usa o prefixo do nome (kit) até ser adicionado.
-const SKU_CONHECIDOS = {
-  "109727354308": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "139655679429": { tipo: "produto", valor: "Alfazema" },
-  "139655679430": { tipo: "produto", valor: "Alfazema" },
-  "149553066049": { tipo: "produto", valor: "Melissa (Erva Cidreira)" },
-  "159788601037": { tipo: "kit", valor: ["Uva Passa Preta", "Uva Passa Branca"] },
-  "169409465538": { tipo: "produto", valor: "Aveia Flocos Grossos" },
-  "179410098413": { tipo: "produto", valor: "Açúcar Demerara" },
-  "179415338484": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
-  "179415338485": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
-  "179415338486": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
-  "189183864082": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Abóbora Sem Casca"] },
-  "189183864083": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Abóbora Sem Casca"] },
-  "189188251871": { tipo: "produto", valor: "Erva Doce" },
-  "189188251872": { tipo: "produto", valor: "Erva Doce" },
-  "189613452624": { tipo: "produto", valor: "Aveia Flocos Finos" },
-  "199184614878": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "199184614879": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "199184614880": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "199186096378": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "199186096379": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "199190269400": { tipo: "produto", valor: "Semente de Chia" },
-  "199190269401": { tipo: "produto", valor: "Semente de Chia" },
-  "199190269402": { tipo: "produto", valor: "Semente de Chia" },
-  "199190445214": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "199190445215": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "199190445216": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "209186734188": { tipo: "produto", valor: "Capim Limão" },
-  "209186734189": { tipo: "produto", valor: "Capim Limão" },
-  "209186734190": { tipo: "produto", valor: "Capim Limão" },
-  "209619286572": { tipo: "produto", valor: "Arruda" },
-  "209619286573": { tipo: "produto", valor: "Arruda" },
-  "209625438919": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia"] },
-  "209625438920": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia"] },
-  "219189835828": { tipo: "produto", valor: "Alfazema" },
-  "219613300049": { tipo: "produto", valor: "Batata Doce em Pó" },
-  "219617352637": { tipo: "kit", valor: ["Açúcar Mascavo", "Açúcar Demerara"] },
-  "219618491538": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "219618491539": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "219618491540": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "22699447817": { tipo: "produto", valor: "Arruda" },
-  "228801991869": { tipo: "produto", valor: "Mulungu Rasura" },
-  "228801991870": { tipo: "produto", valor: "Mulungu Rasura" },
-  "228801991871": { tipo: "produto", valor: "Mulungu Rasura" },
-  "229432903910": { tipo: "produto", valor: "Farinha de Linhaça Dourada" },
-  "229432903911": { tipo: "produto", valor: "Farinha de Linhaça Dourada" },
-  "229434884094": { tipo: "kit", valor: ["Quinoa Branca", "Amaranto em Grão"] },
-  "229434884095": { tipo: "kit", valor: ["Quinoa Branca", "Amaranto em Grão"] },
-  "239446460658": { tipo: "produto", valor: "Erva Baleeira" },
-  "239446460659": { tipo: "produto", valor: "Erva Baleeira" },
-  "239446460660": { tipo: "produto", valor: "Erva Baleeira" },
-  "ACA250": { tipo: "produto", valor: "Amendoim Crocante Tradicional" },
-  "AMARG1K": { tipo: "produto", valor: "Amaranto em Grão" },
-  "ART500": { tipo: "produto", valor: "Artemísia" },
-  "AVGROSSOS1K": { tipo: "produto", valor: "Aveia Flocos Grossos" },
-  "AÇUMASC1K": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "AÇUMASC500": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "BANCHÁ": { tipo: "produto", valor: "Banchá Chá Verde" },
-  "CAMOMILA 250G": { tipo: "produto", valor: "Camomila Flor" },
-  "CAMOMILA 500G": { tipo: "produto", valor: "Camomila Flor" },
-  "CARQUEJA": { tipo: "produto", valor: "Carqueja Amarga" },
-  "CENTELLA250": { tipo: "produto", valor: "Centella Asiática" },
-  "CENTELLA500": { tipo: "produto", valor: "Centella Asiática" },
-  "COCOG250": { tipo: "produto", valor: "Coco Chips" },
-  "FARCHIA1K": { tipo: "produto", valor: "Farinha de Chia" },
-  "FARCHIA500": { tipo: "produto", valor: "Farinha de Chia" },
-  "GERGP250": { tipo: "produto", valor: "Gergelim Preto" },
-  "GERGP500": { tipo: "produto", valor: "Gergelim Preto" },
-  "Hort": { tipo: "produto", valor: "Hortelã Egípcia" },
-  "PARA250": { tipo: "produto", valor: "Castanha do Pará" },
-  "alec": { tipo: "produto", valor: "Alecrim" },
-  "calend1k": { tipo: "produto", valor: "Calêndula Flor" },
-  "calend250": { tipo: "produto", valor: "Calêndula Flor" },
-  "calend50": { tipo: "produto", valor: "Calêndula Flor" },
-  "calend500": { tipo: "produto", valor: "Calêndula Flor" },
-  "camo1k": { tipo: "produto", valor: "Camomila Flor" },
-  "camo250": { tipo: "produto", valor: "Camomila Flor" },
-  "camo500": { tipo: "produto", valor: "Camomila Flor" },
-  "hib500": { tipo: "produto", valor: "Hibisco Flor" },
-
-  // ---- aprendidos do relatório "Vendas por Produtos" (títulos completos,
-  // sem corte) — usa o "SKU Principal", que é o mesmo em qualquer período ----
-  "CAMO": { tipo: "produto", valor: "Camomila Flor" },
-  "BANCHA": { tipo: "produto", valor: "Banchá Chá Verde" },
-  "AVGROSSOS": { tipo: "produto", valor: "Aveia Flocos Grossos" },
-  "CAPLIMAO": { tipo: "produto", valor: "Capim Limão" },
-  "ARTEMISIA": { tipo: "produto", valor: "Artemísia" },
-  "AVEIAF": { tipo: "produto", valor: "Aveia Flocos Finos" },
-  "CALEND": { tipo: "produto", valor: "Calêndula Flor" },
-  "Alec": { tipo: "produto", valor: "Alecrim" },
-  "Hortela": { tipo: "produto", valor: "Hortelã Egípcia" },
-  "CAMOMILA": { tipo: "produto", valor: "Camomila Flor" },
-  "SEMCHI": { tipo: "produto", valor: "Semente de Chia" },
-  "LINDOU": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "AMOBR": { tipo: "produto", valor: "Amora Branca" },
-  "HIBISCO": { tipo: "produto", valor: "Hibisco Flor" },
-  "FRCR": { tipo: "produto", valor: "Frutas Cristalizadas" },
-  "ARROZN": { tipo: "produto", valor: "Arroz Negro" },
-  "AMARG": { tipo: "produto", valor: "Amaranto em Grão" },
-  "FARCHIA": { tipo: "produto", valor: "Farinha de Chia" },
-  "CENTELLA": { tipo: "produto", valor: "Centella Asiática" },
-  "AÇUMASC": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "FARLIN": { tipo: "produto", valor: "Farinha de Linhaça Marrom" },
-  "PARA": { tipo: "produto", valor: "Castanha do Pará" },
-  "CACAU": { tipo: "produto", valor: "Cacau em Pó 100%" },
-  "cava": { tipo: "produto", valor: "Cavalinha" },
-  "AMAR": { tipo: "produto", valor: "Amaranto Peruano em Flocos" },
-  "ERV": { tipo: "produto", valor: "Ervilha Inteira Seca" },
-  "cp": { tipo: "produto", valor: "Canela em Pau" },
-  "GERGP": { tipo: "produto", valor: "Gergelim Preto" },
-  "quinoabranca": { tipo: "produto", valor: "Quinoa Branca" },
-  "COEN": { tipo: "produto", valor: "Coentro em Grão" },
-  "ABOBORA": { tipo: "produto", valor: "Semente de Abóbora Sem Casca" },
-  "GERGELIM": { tipo: "produto", valor: "Gergelim Branco" },
-  "AROEIRA": { tipo: "produto", valor: "Aroeira" },
-  "BERIN": { tipo: "produto", valor: "Berinjela em Pó" },
-  "ANIS": { tipo: "produto", valor: "Anis Estrelado" },
-  "BICARBONATO": { tipo: "produto", valor: "Bicarbonato de Sódio" },
-  "ATSS": { tipo: "produto", valor: "Amendoim Torrado Sem Casca (sem sal)" },
-  "Fibrademaça": { tipo: "produto", valor: "Fibra de Maçã em Pó" },
-  "UVAPR": { tipo: "produto", valor: "Uva Passa Preta" },
-  "MIXQ": { tipo: "produto", valor: "Quinoa Peruana Mix de Grãos" },
-  "mixs": { tipo: "produto", valor: "Mix de Sementes" },
-  "ACEB": { tipo: "produto", valor: "Amendoim Crocante Cebola e Salsa" },
-  "GIRASSOL": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "CAJUS": { tipo: "produto", valor: "Castanha de Caju Inteira com Sal" },
-  "APIM": { tipo: "produto", valor: "Amendoim Crocante Pimenta" },
-  "AMJ": { tipo: "produto", valor: "Amendoim Crocante Japonês" },
-  "GENGI": { tipo: "produto", valor: "Gengibre Moído" },
-  "GRANOLA": { tipo: "produto", valor: "Granola Completa" },
-  "MIXU": { tipo: "produto", valor: "Uvas Passas Mistas" },
-  "BICO": { tipo: "produto", valor: "Grão de Bico" },
-  "LINHMA": { tipo: "produto", valor: "Semente de Linhaça Marrom" },
-  "ACO": { tipo: "produto", valor: "Açúcar de Coco" },
-  "COCOG": { tipo: "produto", valor: "Coco Chips" },
-  "ACA": { tipo: "produto", valor: "Amendoim Crocante Tradicional" },
-  "LENVER": { tipo: "produto", valor: "Lentilha Vermelha Canadense" },
-  "TEMP POTE": { tipo: "produto", valor: "Tempero Premium (Potes Dosadores)" },
-  "DOLOMITA": { tipo: "produto", valor: "Dolomita em Pó" },
-  "NOZ": { tipo: "produto", valor: "Nozes Chilena" },
-  "TAMARAS": { tipo: "produto", valor: "Tâmara sem Caroço" },
-  "AMTCS": { tipo: "produto", valor: "Amendoim Torrado Sem Casca (com sal)" },
-  "CHIMI": { tipo: "produto", valor: "Tempero Chimichurri" },
-  "chia": { tipo: "produto", valor: "Semente de Chia" },
-  "BETERRABA": { tipo: "produto", valor: "Farinha de Beterraba" },
-  "LENTILHA": { tipo: "produto", valor: "Lentilha Vermelha Canadense" },
-  "CAJUC": { tipo: "produto", valor: "Castanha de Caju Caramelizada com Gergelim" },
-  "AMASC": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "GOJI": { tipo: "produto", valor: "Goji Berry" },
-  "PECAN": { tipo: "produto", valor: "Noz Pecã Inteira" },
-  "BLUE": { tipo: "produto", valor: "Blueberry (Mirtilo)" },
-  "UVABR": { tipo: "produto", valor: "Uva Passa Branca" },
-  "SABC5K": { tipo: "produto", valor: "Semente de Abóbora Sem Casca" },
-  "BAIANO": { tipo: "produto", valor: "Tempero Baiano" },
-  "PAPDEF": { tipo: "produto", valor: "Tempero Páprica Defumada" },
-  "TAMARA": { tipo: "produto", valor: "Tâmara com Caroço" },
-  "CEBASAL": { tipo: "produto", valor: "Tempero Cebola, Alho e Salsa" },
-  "AMEN": { tipo: "produto", valor: "Amendoim Crocante Sabores (mix)" },
-  "C01": { tipo: "produto", valor: "Castanha de Caju Inteira com Sal" },
-  "CAMO1KG": { tipo: "produto", valor: "Camomila Flor" },
-  "GUARANA": { tipo: "produto", valor: "Guaraná em Pó" },
-  "LEMON": { tipo: "produto", valor: "Tempero Lemon Pepper" },
-  "MIXC": { tipo: "produto", valor: "Mix de Castanhas" },
-  "CHIIMICP": { tipo: "produto", valor: "Tempero Chimichurri com Pimenta" },
-  "CALABRESA": { tipo: "produto", valor: "Tempero Pimenta Calabresa" },
-  "COLORAL": { tipo: "produto", valor: "Temperos Naturais Condimentos" },
-  "AMEIXA": { tipo: "produto", valor: "Ameixa Preta sem Caroço" },
-  "PMARIDO": { tipo: "produto", valor: "Tempero Pega Marido" },
-  "CRAVO": { tipo: "produto", valor: "Cravo da Índia em Pó" },
-  "KFLC": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "KameGi": { tipo: "kit", valor: ["Amaranto em Grão", "Semente de Girassol Sem Casca"] },
-  "SG+LD": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Linhaça Dourada"] },
-  "SG+GB": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Gergelim Branco"] },
-  "kgl": { tipo: "kit", valor: ["Gergelim Branco", "Semente de Linhaça Dourada"] },
-  "SG+SC": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Chia"] },
-  "GP+PS": { tipo: "kit", valor: ["Gergelim Preto", "Psyllium Husk"] },
-  "KGB+PS": { tipo: "kit", valor: ["Gergelim Branco", "Psyllium Husk"] },
-  "KIT5S": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia", "Gergelim Branco", "Semente de Abóbora Sem Casca", "Semente de Girassol Sem Casca"] },
-  "MIXSE": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia", "Gergelim Branco"] },
-};
 
 // ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
 // (cobre o caso de uma etiqueta com vários produtos que ocupa 2+ páginas seguidas)
@@ -1259,129 +935,13 @@ function nomeArquivo(ext) {
 }
 
 // ──────────────────────────────────────────────
-// LISTA DE RESUMO — lê o relatório de SKUs vendidos (UpSeller/Shopee) e
-// organiza do mesmo jeito que as etiquetas: por produto + variação, do mais
-// vendido pro menos vendido, kits decompostos no peso de cada componente.
+// LISTA DE SEPARAÇÃO — a mesma leva de etiquetas, só que agrupada de outro
+// jeito: cada kit vira seus produtos individuais (com a variação/peso do
+// kit), somados junto com o mesmo produto vendido avulso. É o que precisa
+// ser fisicamente separado do estoque, não o que vai em cada etiqueta.
 // ──────────────────────────────────────────────
-const dropzoneResumo = document.getElementById('dropzoneResumo');
-const fileInputResumo = document.getElementById('fileInputResumo');
-const statusResumoEl = document.getElementById('statusResumo');
-const resultadoResumoEl = document.getElementById('resultadoResumo');
-let resumoParaExport = null;
-
-function setStatusResumo(msg, spinning) {
-  statusResumoEl.classList.add('show');
-  statusResumoEl.innerHTML = (spinning ? '<span class="spinner"></span>' : '') + msg;
-}
-
-if (!(window.__cdnFail || typeof pdfjsLib === 'undefined')) {
-  dropzoneResumo.addEventListener('click', () => fileInputResumo.click());
-  ['dragover', 'dragenter'].forEach(ev => dropzoneResumo.addEventListener(ev, e => { e.preventDefault(); dropzoneResumo.classList.add('drag'); }));
-  ['dragleave', 'drop'].forEach(ev => dropzoneResumo.addEventListener(ev, e => { e.preventDefault(); dropzoneResumo.classList.remove('drag'); }));
-  dropzoneResumo.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFileResumo(f); });
-  fileInputResumo.addEventListener('change', e => { if (e.target.files[0]) handleFileResumo(e.target.files[0]); });
-} else {
-  setStatusResumo('Não consegui carregar os componentes necessários (sem internet ou conexão bloqueada). Verifique sua conexão e recarregue a página.', false);
-}
-
-// ---- Reconstrói as linhas de texto da página mantendo a posição de cada
-// item (preciso pra depois separar as colunas da tabela) ----
-function buildLinhas(items) {
-  const linhas = [];
-  items.forEach(it => {
-    if (!it.str || !it.str.trim()) return;
-    const x = it.transform[4], y = it.transform[5];
-    let linha = linhas.find(l => Math.abs(l.y - y) < 2.5);
-    if (!linha) { linha = { y, items: [] }; linhas.push(linha); }
-    linha.items.push({ x, str: it.str, width: it.width || (it.str.length * 4) });
-  });
-  linhas.sort((a, b) => b.y - a.y);
-  linhas.forEach(l => l.items.sort((a, b) => a.x - b.x));
-  return linhas;
-}
-
-// ---- Junta o texto dos itens de uma linha que caem dentro de uma faixa de
-// X — é assim que separamos "Anúncios / Variação / SKU / Qtd." sem depender
-// de um delimitador explícito no texto ----
-function celulaTexto(items, xStart, xEnd) {
-  const naColuna = items.filter(it => it.x >= xStart - 3 && it.x < xEnd - 3);
-  naColuna.sort((a, b) => a.x - b.x);
-  let texto = '', fimAnterior = null;
-  naColuna.forEach(it => {
-    if (fimAnterior !== null && (it.x - fimAnterior) > 1) texto += ' ';
-    texto += it.str;
-    fimAnterior = it.x + it.width;
-  });
-  return texto.trim();
-}
-
-async function handleFileResumo(file) {
-  resultadoResumoEl.classList.remove('show');
-  setStatusResumo('Lendo o PDF…', true);
-
-  let pdfDoc;
-  try {
-    const buf = await file.arrayBuffer();
-    pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
-  } catch (err) {
-    setStatusResumo('Não consegui abrir esse PDF. Confirme se é a Lista de Resumo exportada da UpSeller/Shopee.', false);
-    return;
-  }
-
-  const totalPages = pdfDoc.numPages;
-  let cols = null;
-  const linhasTabela = [];
-
-  for (let i = 1; i <= totalPages; i++) {
-    setStatusResumo(`Lendo página ${i} de ${totalPages}…`, true);
-    const page = await pdfDoc.getPage(i);
-    const tc = await page.getTextContent();
-    const linhas = buildLinhas(tc.items);
-
-    for (const linha of linhas) {
-      const textoLinha = linha.items.map(it => it.str).join(' ');
-      if (!cols) {
-        const hAnuncio = linha.items.find(it => it.str.trim() === 'Anúncios');
-        const hVar = linha.items.find(it => it.str.trim() === 'Variação');
-        const hSku = linha.items.find(it => it.str.trim() === 'SKU do Anúncio');
-        const hQtd = linha.items.find(it => it.str.trim().startsWith('Qtd'));
-        if (hAnuncio && hVar && hSku && hQtd) {
-          cols = { anuncio: hAnuncio.x, variacao: hVar.x, sku: hSku.x, qtd: hQtd.x, qtdEnd: hQtd.x + 200 };
-        }
-        continue;
-      }
-      if (/upseller\.com|Página \d+ de \d+/i.test(textoLinha)) continue;
-      const anuncio = celulaTexto(linha.items, cols.anuncio, cols.variacao);
-      const variacao = celulaTexto(linha.items, cols.variacao, cols.sku);
-      const sku = celulaTexto(linha.items, cols.sku, cols.qtd);
-      const qtd = parseInt(celulaTexto(linha.items, cols.qtd, cols.qtdEnd), 10);
-      if (!anuncio || isNaN(qtd)) continue;
-      linhasTabela.push({ anuncio, variacao, sku, qtd });
-    }
-  }
-
-  if (!cols) {
-    setStatusResumo('Não encontrei a tabela "Anúncios / Variação / SKU do Anúncio / Qtd." nesse PDF. Confirme se é a Lista de Resumo.', false);
-    return;
-  }
-  if (!linhasTabela.length) {
-    setStatusResumo('Não encontrei nenhuma linha de produto nesse PDF.', false);
-    return;
-  }
-
-  setStatusResumo('Organizando…', true);
-  const resultado = processarListaResumo(linhasTabela);
-  renderResumo(resultado, linhasTabela.length);
-  setStatusResumo('', false);
-  statusResumoEl.classList.remove('show');
-  resultadoResumoEl.classList.add('show');
-}
-
-function processarListaResumo(linhasTabela) {
+function calcularListaSeparacao(pages) {
   const produtoMap = {};
-  const naoIdentificados = [];
-  const ambiguos = [];
-
   function somar(nome, variacaoTxt, qtd) {
     if (!produtoMap[nome]) produtoMap[nome] = { produto: nome, totalQtd: 0, variacoes: {} };
     const pm = produtoMap[nome];
@@ -1389,66 +949,20 @@ function processarListaResumo(linhasTabela) {
     if (!pm.variacoes[variacaoTxt]) pm.variacoes[variacaoTxt] = { variacao: variacaoTxt, totalQtd: 0 };
     pm.variacoes[variacaoTxt].totalQtd += qtd;
   }
-
-  linhasTabela.forEach(r => {
-    const conhecido = SKU_CONHECIDOS[r.sku];
-    if (conhecido) {
-      if (conhecido.tipo === 'kit') conhecido.valor.forEach(nome => somar(nome, r.variacao, r.qtd));
-      else somar(conhecido.valor, r.variacao, r.qtd);
-      return;
-    }
-    const aprendido = matchIdentidadeAprendida(r.anuncio);
-    if (aprendido) {
-      if (aprendido.tipo === 'kit') aprendido.valor.forEach(nome => somar(nome, r.variacao, r.qtd));
-      else somar(aprendido.valor, r.variacao, r.qtd);
-      return;
-    }
-    if (/^kit\b/i.test(r.anuncio)) {
-      const resolvido = resolverKitTruncado(r.anuncio);
-      if (!resolvido) { naoIdentificados.push(r); return; }
-      if (resolvido.ambiguo) ambiguos.push(r);
-      resolvido.componentes.forEach(nome => somar(nome, r.variacao, r.qtd));
-    } else {
-      somar(matchCanonicalPrefix(r.anuncio), r.variacao, r.qtd);
-    }
+  pages.forEach(p => {
+    p.items.forEach(it => {
+      const componentes = decomporKit(it.produto);
+      if (componentes) componentes.forEach(nome => somar(nome, it.variacao, it.qtd));
+      else somar(it.produto, it.variacao, it.qtd);
+    });
   });
-
-  const produtos = Object.values(produtoMap).map(pm => {
+  return Object.values(produtoMap).map(pm => {
     pm.variacoesSorted = Object.values(pm.variacoes).sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
     return pm;
   }).sort((a, b) => b.totalQtd - a.totalQtd || a.produto.localeCompare(b.produto, 'pt-BR'));
-
-  return { produtos, naoIdentificados, ambiguos };
 }
 
-function renderResumo(resultado, totalLinhas) {
-  const { produtos, naoIdentificados, ambiguos } = resultado;
-  resumoParaExport = resultado;
-
-  document.getElementById('statResumoItens').textContent = totalLinhas;
-  document.getElementById('statResumoProdutos').textContent = produtos.length;
-  document.getElementById('statResumoNaoIdent').textContent = naoIdentificados.length;
-
-  const avisoAmbiguo = document.getElementById('avisoResumoAmbiguo');
-  if (ambiguos.length) {
-    avisoAmbiguo.style.display = 'block';
-    avisoAmbiguo.innerHTML = `⚠ ${ambiguos.length} kit(s) com nome cortado pela tabela e mais de uma combinação conhecida possível — usei a combinação mais comum, mas vale conferir: ${ambiguos.map(a => escapeHtml(a.anuncio)).join('; ')}`;
-  } else {
-    avisoAmbiguo.style.display = 'none';
-  }
-
-  const avisoNaoIdent = document.getElementById('avisoResumoNaoIdent');
-  if (naoIdentificados.length) {
-    avisoNaoIdent.style.display = 'block';
-    avisoNaoIdent.innerHTML = `⚠ ${naoIdentificados.length} linha(s) não reconhecida(s) automaticamente — confira manualmente: ${naoIdentificados.map(n => escapeHtml(n.anuncio + ' (' + n.variacao + ')')).join('; ')}`;
-  } else {
-    avisoNaoIdent.style.display = 'none';
-  }
-
-  renderResumoLista(document.getElementById('listaResumoGrupos'), produtos);
-}
-
-function renderResumoLista(container, list) {
+function renderSeparacaoLista(container, list) {
   container.innerHTML = '';
   if (!list.length) {
     container.innerHTML = '<div class="estoque-vazio">Nenhum produto encontrado.</div>';
@@ -1474,27 +988,21 @@ function renderResumoLista(container, list) {
   });
 }
 
-document.getElementById('btnBaixarResumoTxt').addEventListener('click', () => {
-  if (!resumoParaExport) return;
-  const { produtos, naoIdentificados } = resumoParaExport;
-  let out = 'NATUNUTRI — LISTA DE RESUMO ORGANIZADA\n';
+document.getElementById('btnBaixarSeparacaoTxt').addEventListener('click', () => {
+  if (!separacaoParaExport.length) return;
+  let out = 'NATUNUTRI — LISTA DE SEPARAÇÃO (kits desmembrados)\n';
   out += new Date().toLocaleString('pt-BR') + '\n\n';
-  out += '== PRODUTOS (do mais vendido ao menos vendido) ==\n';
-  produtos.forEach((pm, i) => {
+  separacaoParaExport.forEach((pm, i) => {
     out += `#${i + 1}  ${pm.produto} — ${pm.totalQtd} unidades\n`;
     pm.variacoesSorted.forEach(v => { out += `      ${v.variacao}: ${v.totalQtd} un\n`; });
   });
-  if (naoIdentificados.length) {
-    out += '\n== NÃO IDENTIFICADOS (conferir manualmente) ==\n';
-    naoIdentificados.forEach(n => { out += `${n.anuncio} (${n.variacao}): ${n.qtd} un — SKU ${n.sku}\n`; });
-  }
-  downloadBlob(new Blob([out], { type: 'text/plain' }), nomeArquivoResumo('txt'));
+  downloadBlob(new Blob([out], { type: 'text/plain' }), nomeArquivoSeparacao('txt'));
 });
 
-function nomeArquivoResumo(ext) {
+function nomeArquivoSeparacao(ext) {
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
-  return `natunutri-lista-resumo-organizada-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
+  return `natunutri-lista-separacao-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
 }
 
 function isIOS() {
@@ -1542,17 +1050,12 @@ const BUFFER_DIAS_MINIMO = 15;   // abaixo disso, o painel marca "comprar urgent
 const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tanto de estoque
 let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
 let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
-// Nomes completos (sem corte) já vistos e identificados nas etiquetas de envio,
-// aprendidos automaticamente conforme o dia a dia — chave = nome bruto em
-// minúsculas como aparece na etiqueta, valor = identidade já resolvida.
-// { "kit semente linhaça dourada + semente de chia": { tipo:'kit', valor:[...] } }
-let identidadesAprendidas = {};
 
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
 }
 
-let unsubEstoque = null, unsubMovimentos = null, unsubIdentidades = null;
+let unsubEstoque = null, unsubMovimentos = null;
 
 function painelAtivo() {
   const el = document.getElementById('tabComprar');
@@ -1575,20 +1078,13 @@ function iniciarSincronizacao() {
     movimentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (painelAtivo()) renderPainel();
   });
-
-  unsubIdentidades = onSnapshot(collection(db, 'identidades'), snap => {
-    const nova = {};
-    snap.docs.forEach(d => { nova[d.id] = d.data(); });
-    identidadesAprendidas = nova;
-  });
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos, unsubIdentidades].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = unsubIdentidades = null;
+  [unsubEstoque, unsubMovimentos].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = null;
   estoque = [];
   movimentos = [];
-  identidadesAprendidas = {};
 }
 
 function traduzErroAuth(code) {
@@ -1621,7 +1117,7 @@ if (FIREBASE_CONFIGURADO) {
   document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
   document.getElementById('btnBackup').addEventListener('click', () => {
-    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, identidadesAprendidas };
+    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos };
     downloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), `natunutri-backup-${hoje()}.json`);
   });
 
@@ -1639,29 +1135,6 @@ if (FIREBASE_CONFIGURADO) {
 } else {
   document.getElementById('loginGate').style.display = 'block';
   document.getElementById('loginGate').innerHTML = '<div class="pasta-status">Configuração da nuvem ainda não concluída neste site.</div>';
-}
-
-// Aprende, a partir de uma etiqueta já lida (nome sempre completo, nunca
-// cortado), a identidade de cada item. Sem login, ainda vale aprender em
-// memória (ajuda a própria Lista de Resumo nesta sessão), mas não tenta
-// salvar na nuvem — organizar etiquetas é o uso do dia a dia e não deve
-// depender da área administrativa.
-async function aprenderIdentidades(pares) {
-  const novos = [];
-  pares.forEach(({ nomeBruto, tipo, valor }) => {
-    const chave = norm(nomeBruto).toLowerCase();
-    if (!chave || chave.length < 4) return;
-    const atual = identidadesAprendidas[chave];
-    if (atual && atual.tipo === tipo && JSON.stringify(atual.valor) === JSON.stringify(valor)) return;
-    identidadesAprendidas[chave] = { tipo, valor };
-    novos.push({ chave, tipo, valor });
-  });
-  if (!novos.length || !auth?.currentUser) return;
-  try {
-    const batch = writeBatch(db);
-    novos.forEach(({ chave, tipo, valor }) => batch.set(doc(db, 'identidades', chave), { tipo, valor }));
-    await batch.commit();
-  } catch (err) { /* falha de rede não deve travar o uso do dia a dia */ }
 }
 
 function renderEstoqueLista() {
