@@ -1444,14 +1444,14 @@ function calcularConsumoEstoque() {
 async function descontarEstoqueAtual() {
   const consumo = calcularConsumoEstoque();
   const aplicaveis = [];
-  const semCadastro = [];
+  const novos = []; // produtos sem cadastro — cria automaticamente, partindo de 0 kg
   Object.keys(consumo).forEach(nome => {
     const item = acharEstoque(nome);
     if (item) aplicaveis.push({ item, kg: consumo[nome] });
-    else semCadastro.push(nome);
+    else novos.push({ nome, kg: consumo[nome] });
   });
 
-  if (aplicaveis.length === 0 && semCadastro.length === 0) {
+  if (aplicaveis.length === 0 && novos.length === 0) {
     alert('Nenhum produto com variação em peso (kg/g) pra descontar.');
     return;
   }
@@ -1460,18 +1460,22 @@ async function descontarEstoqueAtual() {
   aplicaveis.forEach(({ item, kg }) => {
     msg += `${item.nome}: -${kg.toFixed(3)} kg  (${item.kg.toFixed(3)} → ${(item.kg - kg).toFixed(3)} kg)\n`;
   });
-  if (semCadastro.length) {
-    msg += `\nSem cadastro no estoque (ignorados):\n- ${semCadastro.join('\n- ')}`;
+  if (novos.length) {
+    msg += `\nProduto(s) novo(s) (cadastra automaticamente, partindo de 0 kg):\n`;
+    novos.forEach(({ nome, kg }) => { msg += `${nome}: -${kg.toFixed(3)} kg  (0.000 → ${(-kg).toFixed(3)} kg)\n`; });
   }
-  if (aplicaveis.length === 0) { alert(msg); return; }
   if (!confirm(msg)) return;
 
   const data = hoje();
   const batch = writeBatch(db);
-  const nomesAplicaveis = new Set(aplicaveis.map(a => a.item.nome.toLowerCase()));
+  const nomesAplicaveis = new Set([...aplicaveis.map(a => a.item.nome.toLowerCase()), ...novos.map(n => n.nome.toLowerCase())]);
   aplicaveis.forEach(({ item, kg }) => {
     const novoKg = Math.round((item.kg - kg) * 1000) / 1000;
     batch.update(doc(db, 'estoque', item.id), { kg: novoKg });
+  });
+  novos.forEach(({ nome, kg }) => {
+    const novoKg = Math.round(-kg * 1000) / 1000;
+    batch.set(doc(collection(db, 'estoque')), { nome, kg: novoKg });
   });
   // Um movimento de venda por produto + variação (não só o total em kg) —
   // é o que alimenta a sugestão de produção por variação mais abaixo.
