@@ -171,6 +171,7 @@
   }
   .estoque-row:first-child{border-top:none;}
   .estoque-row input[type="text"]{flex:1; min-width:0;}
+  .estoque-nome{flex:1; min-width:0; font-size:13.5px; color:var(--texto);}
   .estoque-row input{
     border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; color:var(--texto);
     font-family:inherit;
@@ -342,6 +343,20 @@
   <main>
   <div id="tabProdutos" class="tabpanel ativo">
     <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Cadastrar novo produto</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Se informar o kg inicial, já registra como uma compra também (com fornecedor e custo, se preenchidos).
+      </div>
+      <div class="compra-form">
+        <input type="text" id="inputNovoProdutoNome" placeholder="Nome do produto" style="flex:2; min-width:200px;">
+        <input type="number" id="inputNovoProdutoKg" step="0.001" min="0" placeholder="kg inicial (opcional)">
+        <input type="text" id="inputNovoProdutoFornecedor" placeholder="Fornecedor (opcional)">
+        <input type="number" id="inputNovoProdutoCusto" step="0.01" min="0" placeholder="Custo total R$ (opcional)">
+        <button class="secondary" id="btnCadastrarNovoProduto">+ Cadastrar produto</button>
+      </div>
+    </div>
+
+    <div class="card">
       <h2 class="section" style="margin:0 0 8px">Importar vários produtos de uma vez</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Cole um nome de produto por linha. Os que ainda não existem são criados com estoque 0 kg — depois é só preencher a quantidade.
@@ -389,13 +404,10 @@
 
   <div id="tabEstoqueAtual" class="tabpanel">
     <div class="card">
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-        <h2 class="section" style="margin:0">Produtos em estoque (kg)</h2>
-        <button class="secondary" id="btnAddEstoqueItem">+ Produto</button>
-      </div>
+      <h2 class="section" style="margin:0 0 8px">Produtos em estoque (kg)</h2>
       <input type="search" id="buscaEstoque" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Ordenado do maior pro menor estoque. O kg é só leitura — some da soma de compras e vendas registradas. Pra corrigir, use "Ajuste de inventário" na aba Produtos. Nome pode ser editado direto (é só rótulo, não mexe na quantidade).
+        Ordenado do maior pro menor estoque. Só consulta — pra cadastrar produto novo use a aba Produtos; pra corrigir quantidade, "Ajuste de inventário".
       </div>
       <div id="listaEstoque"></div>
     </div>
@@ -507,7 +519,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  addDoc, updateDoc, setDoc, query, where,
+  setDoc, query, where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -925,6 +937,7 @@ document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
   const iosWin = isIOS() ? window.open('', '_blank') : null;
   btn.disabled = true;
   btn.textContent = 'Gerando PDF…';
+  let baixou = false;
   try {
     const { PDFDocument } = PDFLib;
     const srcDoc = await PDFDocument.load(originalBytes.slice(0));
@@ -932,13 +945,18 @@ document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
     const copiedPages = await newDoc.copyPages(srcDoc, orderedIndices);
     copiedPages.forEach(p => newDoc.addPage(p));
     const bytes = await newDoc.save();
-    downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'), iosWin);
+    await downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'), iosWin);
+    baixou = true;
   } catch (err) {
     if (iosWin) iosWin.close();
     alert('Não consegui gerar o PDF: ' + err.message);
   }
   btn.disabled = false;
   btn.textContent = '⬇ Baixar PDF organizado';
+
+  if (baixou && auth?.currentUser && confirm('PDF baixado! Deseja descontar esses produtos do estoque agora?')) {
+    await descontarEstoqueAtual();
+  }
 });
 
 // ---- Baixar lista de conferência em texto ----
@@ -1279,8 +1297,8 @@ function renderEstoqueLista() {
       const row = document.createElement('div');
       row.className = 'estoque-row';
       row.innerHTML = `
-        <input type="text" value="${escapeHtml(item.nome)}" data-id="${item.id}" data-f="nome">
-        <span class="estoque-kg-leitura" title="Só leitura — use Registrar compra ou Ajuste de inventário para mudar">${item.kg.toFixed(3)} kg</span>
+        <span class="estoque-nome">${escapeHtml(item.nome)}</span>
+        <span class="estoque-kg-leitura">${item.kg.toFixed(3)} kg</span>
       `;
       el.appendChild(row);
     });
@@ -1310,9 +1328,30 @@ document.getElementById('buscaCompraProduto').addEventListener('input', preenche
 document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaProducaoProduto').addEventListener('input', preencherSelects);
 
-document.getElementById('btnAddEstoqueItem').addEventListener('click', async () => {
+document.getElementById('btnCadastrarNovoProduto').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
-  await addDoc(collection(db, 'estoque'), { nome: '', kg: 0 });
+  const nome = norm(document.getElementById('inputNovoProdutoNome').value);
+  const kg = parseFloat(document.getElementById('inputNovoProdutoKg').value) || 0;
+  const fornecedor = norm(document.getElementById('inputNovoProdutoFornecedor').value);
+  const custoTotal = parseFloat(document.getElementById('inputNovoProdutoCusto').value);
+  if (!nome) { alert('Digite o nome do produto.'); return; }
+  if (acharEstoque(nome)) { alert('Esse produto já existe no estoque.'); return; }
+
+  const batch = writeBatch(db);
+  batch.set(doc(collection(db, 'estoque')), { nome, kg: Math.round(kg * 1000) / 1000 });
+  if (kg > 0) {
+    const mov = { data: hoje(), tipo: 'compra', produto: nome, kg };
+    if (fornecedor) mov.fornecedor = fornecedor;
+    if (!isNaN(custoTotal) && custoTotal > 0) mov.custoTotal = custoTotal;
+    batch.set(doc(collection(db, 'movimentos')), mov);
+  }
+  await batch.commit();
+
+  document.getElementById('inputNovoProdutoNome').value = '';
+  document.getElementById('inputNovoProdutoKg').value = '';
+  document.getElementById('inputNovoProdutoFornecedor').value = '';
+  document.getElementById('inputNovoProdutoCusto').value = '';
+  alert(`Produto "${nome}" cadastrado${kg > 0 ? ` com ${kg} kg` : ''}.`);
 });
 
 document.getElementById('btnImportarEstoque').addEventListener('click', async () => {
@@ -1326,12 +1365,6 @@ document.getElementById('btnImportarEstoque').addEventListener('click', async ()
   await batch.commit();
   txt.value = '';
   alert(`${novos.length} produto(s) novo(s) importado(s). ${nomes.length - novos.length} já existiam e foram ignorados.`);
-});
-
-document.getElementById('listaEstoque').addEventListener('change', async e => {
-  const id = e.target.dataset.id, f = e.target.dataset.f;
-  if (id === undefined || f !== 'nome') return;
-  await updateDoc(doc(db, 'estoque', id), { nome: e.target.value });
 });
 
 function hoje() { return new Date().toISOString().slice(0, 10); }
@@ -1406,9 +1439,9 @@ function calcularConsumoEstoque() {
   return consumo;
 }
 
-document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
-  if (!auth?.currentUser) { alert('Entre na conta administrativa primeiro (aba Administrativo) pra descontar do estoque.'); return; }
-
+// Compartilhado entre o botão "Descontar do estoque" e o aviso automático
+// que aparece depois de baixar o PDF organizado.
+async function descontarEstoqueAtual() {
   const consumo = calcularConsumoEstoque();
   const aplicaveis = [];
   const semCadastro = [];
@@ -1454,6 +1487,11 @@ document.getElementById('btnDescontarEstoque').addEventListener('click', async (
   });
   await batch.commit();
   alert('Estoque atualizado.');
+}
+
+document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta administrativa primeiro (aba Administrativo) pra descontar do estoque.'); return; }
+  await descontarEstoqueAtual();
 });
 
 // ──────────────────────────────────────────────
