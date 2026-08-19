@@ -468,6 +468,14 @@
     </div>
 
     <div class="card">
+      <h2 class="section" style="margin:0 0 4px">Produção de hoje</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Quantidade sugerida por variação, com base na média de vendas de cada uma — marque conforme for produzindo. Só aparece a partir de vendas registradas depois que essa função foi ligada.
+      </div>
+      <div id="listaProducaoHoje"></div>
+    </div>
+
+    <div class="card">
       <h2 class="section" style="margin:0 0 4px">Produção da semana</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Quantidade sugerida pra cobrir as vendas até a próxima vez que o produto entrar na agenda — descontando o estoque atual só na próxima produção de cada um.
@@ -499,7 +507,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  addDoc, updateDoc, setDoc,
+  addDoc, updateDoc, setDoc, query, where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -1144,12 +1152,13 @@ const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tant
 let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
 let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
 let agendaProducao = {}; // { segunda: ['Produto A', ...], terca: [...], ... }
+let producaoFeitaHoje = {}; // { "<idProducaoFeita>": true|false }
 
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
 }
 
-let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null;
+let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null, unsubProducaoFeita = null;
 
 function painelAtivo() {
   const el = document.getElementById('tabComprar');
@@ -1186,14 +1195,22 @@ function iniciarSincronizacao() {
     agendaProducao = nova;
     if (producaoAtiva()) renderProducao();
   });
+
+  unsubProducaoFeita = onSnapshot(query(collection(db, 'producaoFeita'), where('data', '==', hoje())), snap => {
+    const novo = {};
+    snap.docs.forEach(d => { novo[d.id] = !!d.data().concluido; });
+    producaoFeitaHoje = novo;
+    if (producaoAtiva()) renderProducao();
+  });
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = null;
+  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda, unsubProducaoFeita].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = unsubProducaoFeita = null;
   estoque = [];
   movimentos = [];
   agendaProducao = {};
+  producaoFeitaHoje = {};
 }
 
 function traduzErroAuth(code) {
@@ -1374,18 +1391,16 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
   alert('Ajuste registrado.');
 });
 
+// Reaproveita a lista de separação (já desmembra kits e soma por produto +
+// variação) pra saber quanto descontar de cada produto em kg — mesma fonte
+// de dados, sem precisar decompor os kits de novo.
 function calcularConsumoEstoque() {
-  const { produtos = [], kits = [] } = groupsForExport;
-  const consumo = {}; // nome do produto individual -> kg vendidos
-  function somar(nome, kg) { consumo[nome] = (consumo[nome] || 0) + kg; }
-  [...produtos, ...kits].forEach(pm => {
+  const consumo = {};
+  separacaoParaExport.forEach(pm => {
     pm.variacoesSorted.forEach(v => {
       const g = parseGramas(v.variacao);
       if (!isFinite(g)) return; // variação sem peso reconhecível (ex: "Único") não entra no cálculo
-      const kg = (g * v.totalQtd) / 1000;
-      const componentes = decomporKit(pm.produto);
-      if (componentes) componentes.forEach(nome => somar(nome, kg));
-      else somar(pm.produto, kg);
+      consumo[pm.produto] = (consumo[pm.produto] || 0) + (g * v.totalQtd) / 1000;
     });
   });
   return consumo;
@@ -1420,10 +1435,22 @@ document.getElementById('btnDescontarEstoque').addEventListener('click', async (
 
   const data = hoje();
   const batch = writeBatch(db);
+  const nomesAplicaveis = new Set(aplicaveis.map(a => a.item.nome.toLowerCase()));
   aplicaveis.forEach(({ item, kg }) => {
     const novoKg = Math.round((item.kg - kg) * 1000) / 1000;
     batch.update(doc(db, 'estoque', item.id), { kg: novoKg });
-    batch.set(doc(collection(db, 'movimentos')), { data, tipo: 'venda', produto: item.nome, kg });
+  });
+  // Um movimento de venda por produto + variação (não só o total em kg) —
+  // é o que alimenta a sugestão de produção por variação mais abaixo.
+  separacaoParaExport.forEach(pm => {
+    if (!nomesAplicaveis.has(pm.produto.toLowerCase())) return;
+    pm.variacoesSorted.forEach(v => {
+      const g = parseGramas(v.variacao);
+      const kgLinha = isFinite(g) ? (g * v.totalQtd) / 1000 : 0;
+      batch.set(doc(collection(db, 'movimentos')), {
+        data, tipo: 'venda', produto: pm.produto, variacao: v.variacao, qtd: v.totalQtd, kg: kgLinha,
+      });
+    });
   });
   await batch.commit();
   alert('Estoque atualizado.');
@@ -1472,29 +1499,35 @@ const DIAS_SEMANA = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta',
 const DIAS_LABEL = { domingo: 'Domingo', segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado' };
 let diaProducaoSelecionado = DIAS_SEMANA[new Date().getDay()];
 
+// Pra cada dia em que um produto aparece na agenda, calcula o intervalo (em
+// dias) até a próxima vez que ele aparece de novo — ciclando a semana — e a
+// distância desse dia até hoje. Usado tanto pela sugestão semanal em kg
+// quanto pela sugestão de hoje por variação, pra manter a mesma conta.
+function intervalosDeProducao(nome) {
+  const hojeIdx = new Date().getDay();
+  const idxs = [];
+  DIAS_SEMANA.forEach((dia, i) => {
+    if ((agendaProducao[dia] || []).some(p => p.toLowerCase() === nome.toLowerCase())) idxs.push(i);
+  });
+  return idxs.map((diaIdx, k) => {
+    const proxIdx = idxs[(k + 1) % idxs.length];
+    let intervalo = proxIdx - diaIdx;
+    if (intervalo <= 0) intervalo += 7;
+    let distanciaDeHoje = diaIdx - hojeIdx;
+    if (distanciaDeHoje < 0) distanciaDeHoje += 7;
+    return { diaIdx, intervalo, distanciaDeHoje };
+  });
+}
+
 // Pra cada produto agendado, calcula quanto produzir em cada dia em que ele
 // aparece: média de venda/dia × dias até a próxima vez que ele entra na
 // agenda de novo. Só desconta o estoque atual na ocorrência mais próxima a
 // partir de hoje — as demais no resto da semana são uma projeção, não dá
 // pra saber o estoque exato de dias futuros sem simular venda a venda.
 function calcularProducaoSemana() {
-  const hojeIdx = new Date().getDay();
   const painel = calcularPainel();
   const porNome = {};
   painel.forEach(p => { porNome[p.nome.toLowerCase()] = p; });
-
-  function diasComProduto(nome) {
-    const idxs = [];
-    DIAS_SEMANA.forEach((dia, i) => {
-      if ((agendaProducao[dia] || []).some(p => p.toLowerCase() === nome.toLowerCase())) idxs.push(i);
-    });
-    return idxs;
-  }
-  function distanciaDeHoje(diaIdx) {
-    let d = diaIdx - hojeIdx;
-    if (d < 0) d += 7;
-    return d;
-  }
 
   const resultado = {};
   DIAS_SEMANA.forEach(dia => { resultado[dia] = []; });
@@ -1503,20 +1536,16 @@ function calcularProducaoSemana() {
   DIAS_SEMANA.forEach(dia => (agendaProducao[dia] || []).forEach(p => todosProdutos.add(p)));
 
   todosProdutos.forEach(nome => {
-    const idxs = diasComProduto(nome);
-    if (!idxs.length) return;
+    const ocorrencias = intervalosDeProducao(nome);
+    if (!ocorrencias.length) return;
     const p = porNome[nome.toLowerCase()];
     const mediaDia = p ? p.mediaDia : 0;
     const estoqueAtual = p ? p.estoqueKg : 0;
-    const menorDistancia = Math.min(...idxs.map(distanciaDeHoje));
+    const menorDistancia = Math.min(...ocorrencias.map(o => o.distanciaDeHoje));
 
-    idxs.forEach((diaIdx, k) => {
-      const proxIdx = idxs[(k + 1) % idxs.length];
-      let intervalo = proxIdx - diaIdx;
-      if (intervalo <= 0) intervalo += 7;
-
+    ocorrencias.forEach(({ diaIdx, intervalo, distanciaDeHoje }) => {
       let kg = mediaDia * intervalo;
-      if (distanciaDeHoje(diaIdx) === menorDistancia) kg = Math.max(0, kg - estoqueAtual);
+      if (distanciaDeHoje === menorDistancia) kg = Math.max(0, kg - estoqueAtual);
       kg = Math.round(kg * 10) / 10;
       if (kg > 0) resultado[DIAS_SEMANA[diaIdx]].push({ produto: nome, kg });
     });
@@ -1524,6 +1553,68 @@ function calcularProducaoSemana() {
 
   Object.keys(resultado).forEach(dia => resultado[dia].sort((a, b) => b.kg - a.kg));
   return resultado;
+}
+
+// Média de unidades vendidas por dia nos últimos 30 dias, por produto +
+// variação — só existe pra vendas registradas depois que "Descontar do
+// estoque" passou a gravar a variação de cada linha (dados antigos não têm
+// essa granularidade e ficam de fora daqui).
+function calcularVendaMediaPorVariacao() {
+  const hojeMs = Date.now();
+  const desdeMs = hojeMs - 30 * 24 * 60 * 60 * 1000;
+  const vendas = movimentos.filter(m => m.tipo === 'venda' && m.variacao && m.qtd != null);
+  if (!vendas.length) return {};
+  const primeiraVendaMs = Math.min(...vendas.map(m => new Date(m.data).getTime()));
+  const diasComHistorico = Math.max(1, Math.min(30, Math.round((hojeMs - primeiraVendaMs) / 86400000) + 1));
+
+  const porChave = {};
+  vendas.forEach(m => {
+    if (new Date(m.data).getTime() < desdeMs) return;
+    const chave = m.produto.toLowerCase() + '||' + m.variacao.toLowerCase();
+    if (!porChave[chave]) porChave[chave] = { produto: m.produto, variacao: m.variacao, qtdTotal: 0 };
+    porChave[chave].qtdTotal += m.qtd;
+  });
+
+  const resultado = {};
+  Object.entries(porChave).forEach(([chave, v]) => {
+    resultado[chave] = { produto: v.produto, variacao: v.variacao, mediaDia: v.qtdTotal / diasComHistorico };
+  });
+  return resultado;
+}
+
+// Sugestão de hoje, desmembrada por variação (não só o kg agregado): usa o
+// mesmo intervalo até a próxima produção de cada produto, aplicado à média
+// de venda de CADA variação separadamente.
+function calcularProducaoHojeVariacoes() {
+  const hojeIdx = new Date().getDay();
+  const produtosHoje = agendaProducao[DIAS_SEMANA[hojeIdx]] || [];
+  const vendaVar = calcularVendaMediaPorVariacao();
+
+  const variacoesPorProduto = {};
+  Object.values(vendaVar).forEach(v => {
+    const chaveProd = v.produto.toLowerCase();
+    if (!variacoesPorProduto[chaveProd]) variacoesPorProduto[chaveProd] = [];
+    variacoesPorProduto[chaveProd].push(v);
+  });
+
+  const resultado = [];
+  produtosHoje.forEach(nome => {
+    const ocorrencias = intervalosDeProducao(nome);
+    const ocorrenciaHoje = ocorrencias.find(o => o.diaIdx === hojeIdx);
+    if (!ocorrenciaHoje) return;
+    const variacoes = variacoesPorProduto[nome.toLowerCase()] || [];
+    const itens = variacoes
+      .map(v => ({ variacao: v.variacao, qtd: Math.round(v.mediaDia * ocorrenciaHoje.intervalo) }))
+      .filter(it => it.qtd > 0)
+      .sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
+    if (itens.length) resultado.push({ produto: nome, itens });
+  });
+  return resultado;
+}
+
+function idProducaoFeita(produto, variacao) {
+  const limpa = s => norm(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `${hoje()}__${limpa(produto)}__${limpa(variacao)}`;
 }
 
 function renderProducaoDiaEdicao() {
@@ -1543,8 +1634,45 @@ function renderProducaoDiaEdicao() {
   });
 }
 
+function renderProducaoHoje() {
+  const el = document.getElementById('listaProducaoHoje');
+  const itens = calcularProducaoHojeVariacoes();
+  el.innerHTML = '';
+  if (!itens.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nada agendado pra hoje, ou ainda sem histórico de vendas por variação.</div>';
+    return;
+  }
+  itens.forEach(pm => {
+    const bloco = document.createElement('div');
+    bloco.className = 'producao-dia-bloco';
+    bloco.innerHTML = `
+      <div class="producao-dia-titulo">${escapeHtml(pm.produto)}</div>
+      ${pm.itens.map(it => {
+        const idFeito = idProducaoFeita(pm.produto, it.variacao);
+        const marcado = !!producaoFeitaHoje[idFeito];
+        return `
+          <label class="painel-row" style="cursor:pointer;">
+            <span class="painel-nome">${escapeHtml(it.variacao)} — ${it.qtd} un</span>
+            <input type="checkbox" data-id-feito="${idFeito}" data-produto="${escapeHtml(pm.produto)}" data-variacao="${escapeHtml(it.variacao)}" ${marcado ? 'checked' : ''} style="width:20px; height:20px;">
+          </label>
+        `;
+      }).join('')}
+    `;
+    el.appendChild(bloco);
+  });
+}
+
+document.getElementById('listaProducaoHoje').addEventListener('change', async e => {
+  if (!e.target.matches('input[type="checkbox"]')) return;
+  if (!auth?.currentUser) return;
+  await setDoc(doc(db, 'producaoFeita', e.target.dataset.idFeito), {
+    data: hoje(), produto: e.target.dataset.produto, variacao: e.target.dataset.variacao, concluido: e.target.checked,
+  });
+});
+
 function renderProducao() {
   renderProducaoDiaEdicao();
+  renderProducaoHoje();
   const resultado = calcularProducaoSemana();
   const el = document.getElementById('listaProducaoSemana');
   el.innerHTML = '';
@@ -1711,10 +1839,10 @@ document.getElementById('btnExportarEstoqueCsv').addEventListener('click', () =>
 });
 
 document.getElementById('btnExportarMovimentosCsv').addEventListener('click', () => {
-  const linhas = ['Data;Tipo;Produto;Kg;Fornecedor;Custo total (R$);Motivo'];
+  const linhas = ['Data;Tipo;Produto;Variação;Qtd;Kg;Fornecedor;Custo total (R$);Motivo'];
   [...movimentos].sort((a, b) => a.data.localeCompare(b.data)).forEach(m => {
     linhas.push([
-      m.data, m.tipo, csvEscape(m.produto), m.kg.toFixed(3),
+      m.data, m.tipo, csvEscape(m.produto), csvEscape(m.variacao || ''), m.qtd ?? '', m.kg.toFixed(3),
       csvEscape(m.fornecedor || ''), m.custoTotal ? m.custoTotal.toFixed(2) : '', csvEscape(m.motivo || ''),
     ].join(';'));
   });
