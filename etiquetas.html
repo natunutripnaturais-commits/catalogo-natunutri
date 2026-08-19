@@ -154,6 +154,16 @@
   .tabpanel{display:none;}
   .tabpanel.ativo{display:block;}
 
+  .dias-semana{display:flex; gap:6px; flex-wrap:wrap;}
+  .dia-btn{
+    background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
+    border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .dia-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
+  .producao-dia-bloco{border-top:1px solid var(--linha); padding-top:10px; margin-top:10px;}
+  .producao-dia-bloco:first-child{border-top:none; margin-top:0; padding-top:0;}
+  .producao-dia-titulo{font-weight:700; font-size:13.5px; color:var(--verde-900); margin-bottom:4px;}
+
   .pasta-row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
   .pasta-status{font-size:12px; color:var(--texto-suave); margin-top:2px;}
   .estoque-row{
@@ -323,6 +333,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
         O que comprar
       </button>
+      <button class="tab-btn" data-tab="producao">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 3v3M16 3v3"/></svg>
+        Produção
+      </button>
     </div>
 
   <main>
@@ -427,6 +441,40 @@
       <div id="painelMovimentos"></div>
     </div>
   </div>
+
+  <div id="tabProducao" class="tabpanel">
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Agenda semanal de produção</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:10px;">
+        Escolha quais produtos você produz em cada dia da semana. Toque no dia pra editar a lista dele.
+      </div>
+      <div class="dias-semana">
+        <button class="dia-btn" data-dia="domingo">Dom</button>
+        <button class="dia-btn" data-dia="segunda">Seg</button>
+        <button class="dia-btn" data-dia="terca">Ter</button>
+        <button class="dia-btn" data-dia="quarta">Qua</button>
+        <button class="dia-btn" data-dia="quinta">Qui</button>
+        <button class="dia-btn" data-dia="sexta">Sex</button>
+        <button class="dia-btn" data-dia="sabado">Sáb</button>
+      </div>
+      <div class="produto-picker" style="margin:12px 0 8px;">
+        <input type="text" id="buscaProducaoProduto" placeholder="Pesquisar produto para adicionar…" autocomplete="off">
+        <select id="selProducaoProduto"></select>
+      </div>
+      <div class="actions" style="margin-bottom:8px">
+        <button class="secondary" id="btnAdicionarProducaoProduto">+ Adicionar a esse dia</button>
+      </div>
+      <div id="listaProducaoDia"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 4px">Produção da semana</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Quantidade sugerida pra cobrir as vendas até a próxima vez que o produto entrar na agenda — descontando o estoque atual só na próxima produção de cada um.
+      </div>
+      <div id="listaProducaoSemana"></div>
+    </div>
+  </div>
   </main>
 
   <div class="card">
@@ -451,7 +499,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  addDoc, updateDoc,
+  addDoc, updateDoc, setDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -1083,6 +1131,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('ativo');
     document.getElementById('tab' + btn.dataset.tab[0].toUpperCase() + btn.dataset.tab.slice(1)).classList.add('ativo');
     if (btn.dataset.tab === 'comprar') renderPainel();
+    if (btn.dataset.tab === 'producao') renderProducao();
   });
 });
 
@@ -1094,15 +1143,21 @@ const BUFFER_DIAS_MINIMO = 15;   // abaixo disso, o painel marca "comprar urgent
 const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tanto de estoque
 let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
 let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
+let agendaProducao = {}; // { segunda: ['Produto A', ...], terca: [...], ... }
 
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
 }
 
-let unsubEstoque = null, unsubMovimentos = null;
+let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null;
 
 function painelAtivo() {
   const el = document.getElementById('tabComprar');
+  return el && el.classList.contains('ativo');
+}
+
+function producaoAtiva() {
+  const el = document.getElementById('tabProducao');
   return el && el.classList.contains('ativo');
 }
 
@@ -1116,19 +1171,29 @@ function iniciarSincronizacao() {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     renderEstoqueLista();
     if (painelAtivo()) renderPainel();
+    if (producaoAtiva()) renderProducao();
   }, () => { document.getElementById('contaStatus').textContent = 'Conectado, mas sem conseguir ler o estoque agora (verifique sua internet).'; });
 
   unsubMovimentos = onSnapshot(collection(db, 'movimentos'), snap => {
     movimentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (painelAtivo()) renderPainel();
+    if (producaoAtiva()) renderProducao();
+  });
+
+  unsubProducaoAgenda = onSnapshot(collection(db, 'producaoAgenda'), snap => {
+    const nova = {};
+    snap.docs.forEach(d => { nova[d.id] = d.data().produtos || []; });
+    agendaProducao = nova;
+    if (producaoAtiva()) renderProducao();
   });
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = null;
+  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = null;
   estoque = [];
   movimentos = [];
+  agendaProducao = {};
 }
 
 function traduzErroAuth(code) {
@@ -1212,7 +1277,7 @@ document.getElementById('buscaEstoque').addEventListener('input', renderEstoqueL
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
 // todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto']].forEach(([selId, buscaId]) => {
+  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto']].forEach(([selId, buscaId]) => {
     const sel = document.getElementById(selId);
     const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
     const atual = sel.value;
@@ -1226,6 +1291,7 @@ function preencherSelects() {
 
 document.getElementById('buscaCompraProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
+document.getElementById('buscaProducaoProduto').addEventListener('input', preencherSelects);
 
 document.getElementById('btnAddEstoqueItem').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
@@ -1396,6 +1462,138 @@ function calcularPainel() {
     return { nome: item.nome, estoqueKg: item.kg, mediaDia, diasRestantes, sugestaoCompra, custoMedioKg };
   }).sort((a, b) => a.diasRestantes - b.diasRestantes);
 }
+
+// ──────────────────────────────────────────────
+// PRODUÇÃO — agenda semanal (quais produtos são produzidos em cada dia) mais
+// a quantidade sugerida de cada um, salvos no Firestore (coleção
+// producaoAgenda, um documento por dia da semana).
+// ──────────────────────────────────────────────
+const DIAS_SEMANA = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+const DIAS_LABEL = { domingo: 'Domingo', segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado' };
+let diaProducaoSelecionado = DIAS_SEMANA[new Date().getDay()];
+
+// Pra cada produto agendado, calcula quanto produzir em cada dia em que ele
+// aparece: média de venda/dia × dias até a próxima vez que ele entra na
+// agenda de novo. Só desconta o estoque atual na ocorrência mais próxima a
+// partir de hoje — as demais no resto da semana são uma projeção, não dá
+// pra saber o estoque exato de dias futuros sem simular venda a venda.
+function calcularProducaoSemana() {
+  const hojeIdx = new Date().getDay();
+  const painel = calcularPainel();
+  const porNome = {};
+  painel.forEach(p => { porNome[p.nome.toLowerCase()] = p; });
+
+  function diasComProduto(nome) {
+    const idxs = [];
+    DIAS_SEMANA.forEach((dia, i) => {
+      if ((agendaProducao[dia] || []).some(p => p.toLowerCase() === nome.toLowerCase())) idxs.push(i);
+    });
+    return idxs;
+  }
+  function distanciaDeHoje(diaIdx) {
+    let d = diaIdx - hojeIdx;
+    if (d < 0) d += 7;
+    return d;
+  }
+
+  const resultado = {};
+  DIAS_SEMANA.forEach(dia => { resultado[dia] = []; });
+
+  const todosProdutos = new Set();
+  DIAS_SEMANA.forEach(dia => (agendaProducao[dia] || []).forEach(p => todosProdutos.add(p)));
+
+  todosProdutos.forEach(nome => {
+    const idxs = diasComProduto(nome);
+    if (!idxs.length) return;
+    const p = porNome[nome.toLowerCase()];
+    const mediaDia = p ? p.mediaDia : 0;
+    const estoqueAtual = p ? p.estoqueKg : 0;
+    const menorDistancia = Math.min(...idxs.map(distanciaDeHoje));
+
+    idxs.forEach((diaIdx, k) => {
+      const proxIdx = idxs[(k + 1) % idxs.length];
+      let intervalo = proxIdx - diaIdx;
+      if (intervalo <= 0) intervalo += 7;
+
+      let kg = mediaDia * intervalo;
+      if (distanciaDeHoje(diaIdx) === menorDistancia) kg = Math.max(0, kg - estoqueAtual);
+      kg = Math.round(kg * 10) / 10;
+      if (kg > 0) resultado[DIAS_SEMANA[diaIdx]].push({ produto: nome, kg });
+    });
+  });
+
+  Object.keys(resultado).forEach(dia => resultado[dia].sort((a, b) => b.kg - a.kg));
+  return resultado;
+}
+
+function renderProducaoDiaEdicao() {
+  document.querySelectorAll('.dia-btn').forEach(b => b.classList.toggle('ativo', b.dataset.dia === diaProducaoSelecionado));
+  const lista = agendaProducao[diaProducaoSelecionado] || [];
+  const el = document.getElementById('listaProducaoDia');
+  el.innerHTML = '';
+  if (!lista.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum produto nesse dia ainda.</div>';
+    return;
+  }
+  lista.forEach(nome => {
+    const row = document.createElement('div');
+    row.className = 'estoque-row';
+    row.innerHTML = `<span style="flex:1">${escapeHtml(nome)}</span><button class="secondary" data-remover="${escapeHtml(nome)}" style="padding:4px 10px; font-size:12px;">Remover</button>`;
+    el.appendChild(row);
+  });
+}
+
+function renderProducao() {
+  renderProducaoDiaEdicao();
+  const resultado = calcularProducaoSemana();
+  const el = document.getElementById('listaProducaoSemana');
+  el.innerHTML = '';
+  const hojeIdx = new Date().getDay();
+  const diasRotacionados = DIAS_SEMANA.map((_, i) => DIAS_SEMANA[(hojeIdx + i) % 7]);
+  let algumaCoisa = false;
+  diasRotacionados.forEach((dia, i) => {
+    const itens = resultado[dia] || [];
+    if (!itens.length) return;
+    algumaCoisa = true;
+    const bloco = document.createElement('div');
+    bloco.className = 'producao-dia-bloco';
+    const rotulo = i === 0 ? `${DIAS_LABEL[dia]} (hoje)` : DIAS_LABEL[dia];
+    bloco.innerHTML = `
+      <div class="producao-dia-titulo">${escapeHtml(rotulo)}</div>
+      ${itens.map(it => `
+        <div class="painel-row">
+          <span class="painel-nome">${escapeHtml(it.produto)}</span>
+          <span class="painel-badge ok">${it.kg.toFixed(1)} kg</span>
+        </div>
+      `).join('')}
+    `;
+    el.appendChild(bloco);
+  });
+  if (!algumaCoisa) el.innerHTML = '<div class="estoque-vazio">Nenhum produto agendado ainda. Escolha os produtos de cada dia acima.</div>';
+}
+
+document.querySelectorAll('.dia-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    diaProducaoSelecionado = btn.dataset.dia;
+    renderProducaoDiaEdicao();
+  });
+});
+
+document.getElementById('btnAdicionarProducaoProduto').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const nome = document.getElementById('selProducaoProduto').value;
+  if (!nome) { alert('Escolha um produto.'); return; }
+  const atual = agendaProducao[diaProducaoSelecionado] || [];
+  if (atual.some(p => p.toLowerCase() === nome.toLowerCase())) { alert('Esse produto já está nesse dia.'); return; }
+  await setDoc(doc(db, 'producaoAgenda', diaProducaoSelecionado), { produtos: [...atual, nome] });
+});
+
+document.getElementById('listaProducaoDia').addEventListener('click', async e => {
+  const nome = e.target.dataset.remover;
+  if (!nome || !auth?.currentUser) return;
+  const atual = agendaProducao[diaProducaoSelecionado] || [];
+  await setDoc(doc(db, 'producaoAgenda', diaProducaoSelecionado), { produtos: atual.filter(p => p !== nome) });
+});
 
 function serieDiaria(nomeProduto, dias) {
   const hoje0 = new Date();
