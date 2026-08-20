@@ -675,11 +675,32 @@ const ALIASES_PRODUTO = [
   ['Psyllium Husk', 'Psyllium'],
 ];
 
+// Acha, entre os produtos já cadastrados no estoque, um cujo nome seja
+// prefixo do texto do anúncio — "Semente de Chia Premium 1kg 500g 250g"
+// reconhece "Semente de Chia" porque o nome cadastrado é o COMEÇO do
+// título (o resto é peso/marca/adjetivo de marketing, sempre no final).
+// Prefixo mais longo primeiro, e sempre casando numa borda de palavra
+// (senão "Farinha de Linhaça" bateria errado com "Farinha de Linhaça Marrom").
+function acharPorPrefixoNoEstoque(alvoLower) {
+  const candidatos = estoque
+    .filter(item => {
+      const nomeLower = item.nome.toLowerCase();
+      if (!nomeLower || !alvoLower.startsWith(nomeLower)) return false;
+      const proximoChar = alvoLower[nomeLower.length];
+      return proximoChar === undefined || proximoChar === ' ';
+    })
+    .map(item => item.nome)
+    .sort((a, b) => b.length - a.length);
+  return candidatos[0] || null;
+}
+
 function normalizeProdutoNome(nome) {
   const alvo = norm(nome).toLowerCase();
   for (const grupo of ALIASES_PRODUTO) {
     if (grupo.some(n => n.toLowerCase() === alvo)) return grupo[0];
   }
+  const existente = acharPorPrefixoNoEstoque(alvo);
+  if (existente) return existente;
   return norm(nome);
 }
 
