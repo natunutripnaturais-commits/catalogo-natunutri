@@ -684,11 +684,15 @@ const ALIASES_PRODUTO = [
 // título (o resto é peso/marca/adjetivo de marketing, sempre no final).
 // Prefixo mais longo primeiro, e sempre casando numa borda de palavra
 // (senão "Farinha de Linhaça" bateria errado com "Farinha de Linhaça Marrom").
+// Ignora candidato igual ao próprio texto buscado: se o nome cheio de
+// marketing também já estiver cadastrado (duplicata antiga), ele não pode
+// "se auto-confirmar" e impedir a normalização pro nome curto correto.
 function acharPorPrefixoNoEstoque(alvoLower) {
   const candidatos = estoque
     .filter(item => {
       const nomeLower = item.nome.toLowerCase();
-      if (!nomeLower || !alvoLower.startsWith(nomeLower)) return false;
+      if (!nomeLower || nomeLower === alvoLower) return false;
+      if (!alvoLower.startsWith(nomeLower)) return false;
       const proximoChar = alvoLower[nomeLower.length];
       return proximoChar === undefined || proximoChar === ' ';
     })
@@ -745,6 +749,45 @@ function encontrarDuplicatasEstoque() {
   return fusoes;
 }
 
+// Algumas variações do Shopee vêm com "de cada" no final (comum em anúncios
+// pensados pra combo) e outras não, mesmo sendo o mesmíssimo peso — "250g"
+// e "250g de cada" têm que contar juntos, senão o mesmo peso aparece
+// duplicado na lista de separação.
+function normalizarVariacaoTxt(v) {
+  return norm(v).replace(/\s*de\s+cada\s*$/i, '').trim();
+}
+
+// Depois de agrupar por nome de produto (já normalizado no parse), funde
+// grupos que ainda escaparam como nomes diferentes — mesma regra do
+// "Verificar duplicatas" do estoque (aliases/prefixo), útil quando a
+// etiqueta foi processada antes do produto estar cadastrado no estoque e
+// por isso não deu pra normalizar o nome ainda no parsePage. O grupo de
+// nome mais curto vira o principal; soma quantidade e junta as variações
+// (inclusive as listas de "units", usadas pra reordenar o PDF).
+function fundirGruposMesmoProduto(mapaPorNome) {
+  const nomes = Object.keys(mapaPorNome).sort((a, b) => a.length - b.length);
+  const fundidos = new Set();
+  nomes.forEach((nomeA, i) => {
+    if (fundidos.has(nomeA)) return;
+    nomes.slice(i + 1).forEach(nomeB => {
+      if (fundidos.has(nomeB) || fundidos.has(nomeA)) return;
+      if (!mesmoProdutoNome(nomeA, nomeB)) return;
+      const alvo = mapaPorNome[nomeA];
+      const origem = mapaPorNome[nomeB];
+      alvo.totalQtd += origem.totalQtd;
+      if (alvo.totalEtiquetas !== undefined) alvo.totalEtiquetas += (origem.totalEtiquetas || 0);
+      Object.values(origem.variacoes).forEach(v => {
+        if (!alvo.variacoes[v.variacao]) alvo.variacoes[v.variacao] = { variacao: v.variacao, totalQtd: 0, units: [] };
+        alvo.variacoes[v.variacao].totalQtd += v.totalQtd;
+        if (v.units) alvo.variacoes[v.variacao].units.push(...v.units);
+      });
+      delete mapaPorNome[nomeB];
+      fundidos.add(nomeB);
+    });
+  });
+  return mapaPorNome;
+}
+
 function parsePage(text, pageNumber) {
   const lines = text.split('\n').map(l => l.trim());
   const items = [];
@@ -753,13 +796,13 @@ function parsePage(text, pageNumber) {
     let m = ln.match(RE_ITEM_COM_VARIACAO_QTD_COLADA);
     if (m) {
       const nomeBruto = norm(m[2]);
-      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
+      items.push({ variacao: normalizarVariacaoTxt(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_COM_VARIACAO);
     if (m) {
       const nomeBruto = norm(m[2]);
-      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
+      items.push({ variacao: normalizarVariacaoTxt(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_SEM_VARIACAO_QTD_COLADA);
@@ -870,8 +913,8 @@ function groupUnits(units) {
     return list;
   }
 
-  const produtos = toSortedList(produtoMap);
-  const kits = toSortedList(kitMap);
+  const produtos = toSortedList(fundirGruposMesmoProduto(produtoMap));
+  const kits = toSortedList(fundirGruposMesmoProduto(kitMap));
   const combos = Object.values(comboMap).sort((a, b) => b.units.length - a.units.length || a.label.localeCompare(b.label, 'pt-BR'));
 
   return { produtos, kits, combos, unmatched };
@@ -1092,7 +1135,7 @@ function calcularListaSeparacao(pages) {
       else somar(it.produto, it.variacao, it.qtd);
     });
   });
-  return Object.values(produtoMap).map(pm => {
+  return Object.values(fundirGruposMesmoProduto(produtoMap)).map(pm => {
     pm.variacoesSorted = Object.values(pm.variacoes).sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
     return pm;
   }).sort((a, b) => b.totalQtd - a.totalQtd || a.produto.localeCompare(b.produto, 'pt-BR'));
