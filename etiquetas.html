@@ -404,7 +404,10 @@
 
   <div id="tabEstoqueAtual" class="tabpanel">
     <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Produtos em estoque (kg)</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <h2 class="section" style="margin:0">Produtos em estoque (kg)</h2>
+        <button class="secondary" id="btnVerificarDuplicatas" style="padding:6px 10px; font-size:12px;">🔗 Verificar duplicatas</button>
+      </div>
       <input type="search" id="buscaEstoque" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Ordenado do maior pro menor estoque. Só consulta — pra cadastrar produto novo use a aba Produtos; pra corrigir quantidade, "Ajuste de inventário".
@@ -519,7 +522,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  setDoc, query, where,
+  setDoc, deleteDoc, query, where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -702,6 +705,44 @@ function normalizeProdutoNome(nome) {
   const existente = acharPorPrefixoNoEstoque(alvo);
   if (existente) return existente;
   return norm(nome);
+}
+
+// Dois nomes cadastrados no estoque são o "mesmo produto" se estiverem no
+// mesmo grupo de aliases conhecidos (ex: "Camomila Flor" e "Chá de Camomila
+// Flor") ou se um for prefixo do outro numa borda de palavra (mesma conta
+// de normalizeProdutoNome/acharPorPrefixoNoEstoque) — usado pra achar
+// duplicata a fundir, não pra decidir nome de etiqueta.
+function mesmoProdutoNome(nomeA, nomeB) {
+  const a = norm(nomeA).toLowerCase(), b = norm(nomeB).toLowerCase();
+  if (a === b) return false;
+  for (const grupo of ALIASES_PRODUTO) {
+    const gl = grupo.map(n => n.toLowerCase());
+    if (gl.includes(a) && gl.includes(b)) return true;
+  }
+  const [curto, longo] = a.length <= b.length ? [a, b] : [b, a];
+  if (!curto || !longo.startsWith(curto)) return false;
+  const proximoChar = longo[curto.length];
+  return proximoChar === undefined || proximoChar === ' ';
+}
+
+// Varre o estoque cadastrado e monta a lista de fusões (produto principal +
+// duplicata) usando mesmoProdutoNome — o nome mais curto vira o principal
+// (geralmente o mais "limpo"), a soma do kg vai pra ele, e a duplicata some.
+function encontrarDuplicatasEstoque() {
+  const ordenados = [...estoque].sort((a, b) => a.nome.length - b.nome.length);
+  const jaFundido = new Set();
+  const fusoes = [];
+  ordenados.forEach((principal, i) => {
+    if (jaFundido.has(principal.id)) return;
+    ordenados.slice(i + 1).forEach(candidato => {
+      if (jaFundido.has(candidato.id) || jaFundido.has(principal.id)) return;
+      if (mesmoProdutoNome(principal.nome, candidato.nome)) {
+        fusoes.push({ principal, duplicata: candidato });
+        jaFundido.add(candidato.id);
+      }
+    });
+  });
+  return fusoes;
 }
 
 function parsePage(text, pageNumber) {
@@ -1328,6 +1369,28 @@ function renderEstoqueLista() {
 }
 
 document.getElementById('buscaEstoque').addEventListener('input', renderEstoqueLista);
+
+document.getElementById('btnVerificarDuplicatas').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const fusoes = encontrarDuplicatasEstoque();
+  if (!fusoes.length) { alert('Nenhuma duplicata encontrada — todos os nomes parecem produtos diferentes.'); return; }
+
+  let msg = `Encontrei ${fusoes.length} duplicata(s). Confirma fundir?\n\n`;
+  fusoes.forEach(({ principal, duplicata }) => {
+    const somaKg = Math.round((principal.kg + duplicata.kg) * 1000) / 1000;
+    msg += `"${duplicata.nome}" (${duplicata.kg.toFixed(3)} kg) → "${principal.nome}" (${principal.kg.toFixed(3)} → ${somaKg.toFixed(3)} kg)\n`;
+  });
+  if (!confirm(msg)) return;
+
+  const batch = writeBatch(db);
+  fusoes.forEach(({ principal, duplicata }) => {
+    const somaKg = Math.round((principal.kg + duplicata.kg) * 1000) / 1000;
+    batch.update(doc(db, 'estoque', principal.id), { kg: somaKg });
+    batch.delete(doc(db, 'estoque', duplicata.id));
+  });
+  await batch.commit();
+  alert(`${fusoes.length} duplicata(s) fundida(s).`);
+});
 
 // Cada seletor de produto (compra/ajuste) tem uma busca em cima e um <select>
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
