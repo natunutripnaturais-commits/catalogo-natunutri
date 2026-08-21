@@ -678,6 +678,23 @@ const ALIASES_PRODUTO = [
   ['Psyllium Husk', 'Psyllium'],
 ];
 
+// Uma palavra sozinha tipo "de"/"da"/"do" não identifica produto nenhum —
+// impede que um nome curto e genérico demais (ex: um cadastro corrompido
+// "Farinha de", sem o resto do nome) seja aceito como prefixo válido. Sem
+// essa trava, "Farinha de" bateria como prefixo TANTO de "Farinha de
+// Linhaça Dourada" QUANTO de "Farinha de Linhaça Marrom" — e nas fusões de
+// duplicata isso fundiria os dois sabores diferentes num só, por tabela.
+const PALAVRAS_IGNORADAS_PREFIXO = new Set(['de', 'da', 'do', 'das', 'dos', 'com', 'sem', 'e']);
+function palavrasSignificativas(s) {
+  return s.split(' ').filter(w => w.length > 1 && !PALAVRAS_IGNORADAS_PREFIXO.has(w));
+}
+function prefixoValido(curtoLower, longoLower) {
+  if (!curtoLower || !longoLower.startsWith(curtoLower)) return false;
+  const proximoChar = longoLower[curtoLower.length];
+  if (proximoChar !== undefined && proximoChar !== ' ') return false;
+  return palavrasSignificativas(curtoLower).length >= 2;
+}
+
 // Acha, entre os produtos já cadastrados no estoque, um cujo nome seja
 // prefixo do texto do anúncio — "Semente de Chia Premium 1kg 500g 250g"
 // reconhece "Semente de Chia" porque o nome cadastrado é o COMEÇO do
@@ -692,13 +709,28 @@ function acharPorPrefixoNoEstoque(alvoLower) {
     .filter(item => {
       const nomeLower = item.nome.toLowerCase();
       if (!nomeLower || nomeLower === alvoLower) return false;
-      if (!alvoLower.startsWith(nomeLower)) return false;
-      const proximoChar = alvoLower[nomeLower.length];
-      return proximoChar === undefined || proximoChar === ' ';
+      return prefixoValido(nomeLower, alvoLower);
     })
     .map(item => item.nome)
     .sort((a, b) => b.length - a.length);
   return candidatos[0] || null;
+}
+
+// Além de bater o nome exato de um alias, aceita quando o texto do anúncio
+// começa por um alias conhecido seguido de sufixo de marketing — cobre
+// "Linhaça Dourada Semente Premium 1kg 500g" (que não é igual a nenhum
+// alias cadastrado, mas COMEÇA com "Linhaça Dourada Semente").
+function acharPorPrefixoNosAliases(alvo) {
+  let melhor = null;
+  for (const grupo of ALIASES_PRODUTO) {
+    for (const n of grupo) {
+      const nLower = n.toLowerCase();
+      if (prefixoValido(nLower, alvo) && (!melhor || nLower.length > melhor.nLower.length)) {
+        melhor = { nLower, canonico: grupo[0] };
+      }
+    }
+  }
+  return melhor ? melhor.canonico : null;
 }
 
 function normalizeProdutoNome(nome) {
@@ -706,6 +738,8 @@ function normalizeProdutoNome(nome) {
   for (const grupo of ALIASES_PRODUTO) {
     if (grupo.some(n => n.toLowerCase() === alvo)) return grupo[0];
   }
+  const porAlias = acharPorPrefixoNosAliases(alvo);
+  if (porAlias) return porAlias;
   const existente = acharPorPrefixoNoEstoque(alvo);
   if (existente) return existente;
   return norm(nome);
@@ -724,9 +758,7 @@ function mesmoProdutoNome(nomeA, nomeB) {
     if (gl.includes(a) && gl.includes(b)) return true;
   }
   const [curto, longo] = a.length <= b.length ? [a, b] : [b, a];
-  if (!curto || !longo.startsWith(curto)) return false;
-  const proximoChar = longo[curto.length];
-  return proximoChar === undefined || proximoChar === ' ';
+  return prefixoValido(curto, longo);
 }
 
 // Varre o estoque cadastrado e monta a lista de fusões (produto principal +
