@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Calculadora de Preços Shopee — Natunutri</title>
+<title>Calculadora Shopee</title>
 <meta name="description" content="Ferramenta interna Natunutri para calcular margem de lucro e preço ideal de venda na Shopee.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -26,9 +26,53 @@
     --cinza4:  #E2DFD3;
     --vermelho: #B3432E;
     --amarelo: #B8862E;
+    --bom:     #3E7A4F;
+    --alerta-bg: #FBEAE6;
+    --verde-solido: #1B3A2B;
     --sombra:  0 2px 12px rgba(27,58,43,0.07);
     --sombra2: 0 10px 32px rgba(27,58,43,0.14);
     --r: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --verde:   #57B37B;
+      --verde-m: #7FCC9C;
+      --verde-l: #17251C;
+      --terra:   #D6A868;
+      --areia:   #11130F;
+      --branco:  #1A1D17;
+      --cinza1:  #EDEBE1;
+      --cinza2:  #B7B6A6;
+      --cinza3:  #8B8A78;
+      --cinza4:  #32362B;
+      --vermelho: #E8785F;
+      --amarelo: #E0B15C;
+      --bom:     #5FBE85;
+      --alerta-bg: #3A231E;
+      --verde-solido: #2F6B48;
+      --sombra:  0 2px 12px rgba(0,0,0,0.35);
+      --sombra2: 0 10px 32px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --verde:   #57B37B;
+    --verde-m: #7FCC9C;
+    --verde-l: #17251C;
+    --terra:   #D6A868;
+    --areia:   #11130F;
+    --branco:  #1A1D17;
+    --cinza1:  #EDEBE1;
+    --cinza2:  #B7B6A6;
+    --cinza3:  #8B8A78;
+    --cinza4:  #32362B;
+    --vermelho: #E8785F;
+    --amarelo: #E0B15C;
+    --bom:     #5FBE85;
+    --alerta-bg: #3A231E;
+    --verde-solido: #2F6B48;
+    --sombra:  0 2px 12px rgba(0,0,0,0.35);
+    --sombra2: 0 10px 32px rgba(0,0,0,0.5);
   }
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
@@ -41,7 +85,7 @@
   }
 
   header {
-    background: var(--verde);
+    background: var(--verde-solido);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -91,7 +135,7 @@
     cursor: pointer;
     transition: background .15s, color .15s;
   }
-  .tab-btn.active { background: var(--verde); color: #fff; }
+  .tab-btn.active { background: var(--verde-solido); color: #fff; }
 
   .view { display: none; }
   .view.active { display: block; }
@@ -167,7 +211,7 @@
     border-radius: 7px;
     cursor: pointer;
   }
-  .seg button.active { background: var(--verde); color: #fff; }
+  .seg button.active { background: var(--verde-solido); color: #fff; }
 
   .result-hero {
     text-align: center;
@@ -238,7 +282,7 @@
   .breakdown .b-row.total span { color: var(--verde) !important; }
 
   .warn {
-    background: #FBEAE6;
+    background: var(--alerta-bg);
     color: var(--vermelho);
     border-radius: 9px;
     padding: 10px 12px;
@@ -249,7 +293,7 @@
 
   .btn {
     width: 100%;
-    background: var(--verde);
+    background: var(--verde-solido);
     color: #fff;
     border: none;
     padding: 13px;
@@ -282,7 +326,7 @@
     padding: 14px;
     border-left: 4px solid var(--cinza4);
   }
-  .prod-item.good { border-left-color: #3E7A4F; }
+  .prod-item.good { border-left-color: var(--bom); }
   .prod-item.mid { border-left-color: var(--amarelo); }
   .prod-item.bad { border-left-color: var(--vermelho); }
   .prod-item .p-top {
@@ -300,7 +344,7 @@
     font-weight: 700;
     font-size: 15px;
   }
-  .prod-item .p-margin.good { color: #3E7A4F; }
+  .prod-item .p-margin.good { color: var(--bom); }
   .prod-item .p-margin.mid { color: var(--amarelo); }
   .prod-item .p-margin.bad { color: var(--vermelho); }
   .prod-item .p-details {
@@ -327,7 +371,7 @@
     font-weight: 600;
     cursor: pointer;
   }
-  .prod-item .p-actions button.del { background: #FBEAE6; color: var(--vermelho); }
+  .prod-item .p-actions button.del { background: var(--alerta-bg); color: var(--vermelho); }
 
   .empty {
     text-align: center;
@@ -337,7 +381,7 @@
   }
 
   .totals-card {
-    background: var(--verde);
+    background: var(--verde-solido);
     border-radius: var(--r);
     padding: 16px 18px;
     margin-bottom: 16px;
