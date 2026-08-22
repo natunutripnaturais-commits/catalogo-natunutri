@@ -44,15 +44,15 @@
     padding:16px; margin-bottom:14px;
   }
 
-  #dropzone, #dropzoneResumo{
+  #dropzone{
     border:2px dashed #b9c9bd; border-radius:10px; padding:28px 16px;
     text-align:center; cursor:pointer; background:var(--verde-100);
     transition:border-color .15s, background .15s;
   }
-  #dropzone.drag, #dropzoneResumo.drag{border-color:var(--verde-500); background:#dcebe0;}
-  #dropzone strong, #dropzoneResumo strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
-  #dropzone span, #dropzoneResumo span{font-size:12.5px; color:var(--texto-suave);}
-  #fileInput, #fileInputResumo{display:none;}
+  #dropzone.drag{border-color:var(--verde-500); background:#dcebe0;}
+  #dropzone strong{display:block; font-size:15px; color:var(--verde-900); margin-bottom:4px;}
+  #dropzone span{font-size:12.5px; color:var(--texto-suave);}
+  #fileInput{display:none;}
 
   #status, #statusResumo{font-size:13px; color:var(--texto-suave); margin-top:10px; display:none;}
   #status.show, #statusResumo.show{display:block;}
@@ -154,6 +154,16 @@
   .tabpanel{display:none;}
   .tabpanel.ativo{display:block;}
 
+  .dias-semana{display:flex; gap:6px; flex-wrap:wrap;}
+  .dia-btn{
+    background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
+    border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .dia-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
+  .producao-dia-bloco{border-top:1px solid var(--linha); padding-top:10px; margin-top:10px;}
+  .producao-dia-bloco:first-child{border-top:none; margin-top:0; padding-top:0;}
+  .producao-dia-titulo{font-weight:700; font-size:13.5px; color:var(--verde-900); margin-bottom:4px;}
+
   .pasta-row{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
   .pasta-status{font-size:12px; color:var(--texto-suave); margin-top:2px;}
   .estoque-row{
@@ -161,6 +171,7 @@
   }
   .estoque-row:first-child{border-top:none;}
   .estoque-row input[type="text"]{flex:1; min-width:0;}
+  .estoque-nome{flex:1; min-width:0; font-size:13.5px; color:var(--texto);}
   .estoque-row input{
     border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; color:var(--texto);
     font-family:inherit;
@@ -232,17 +243,7 @@
 </div>
 
 <div id="areaOperacional" class="area ativa">
-  <p class="area-sub">Uso do dia a dia: organizar etiquetas de envio e conferir a lista de resumo antes de separar os produtos.</p>
-  <div class="tabs">
-    <button class="tab-btn ativo" data-tab="organizar">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
-      Organizar etiquetas
-    </button>
-    <button class="tab-btn" data-tab="resumo">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-      Lista de resumo
-    </button>
-  </div>
+  <p class="area-sub">Uso do dia a dia: envie o PDF de etiquetas e organize junto com a lista de separação.</p>
 
 <main>
   <div id="tabOrganizar" class="tabpanel ativo">
@@ -267,6 +268,7 @@
         <div class="actions">
           <button class="primary" id="btnBaixarPdf">⬇ Baixar PDF organizado</button>
           <button class="secondary" id="btnBaixarTxt">Lista de conferência (.txt)</button>
+          <button class="secondary" id="btnBaixarSeparacaoPdf">⬇ Lista de separação (.pdf)</button>
           <button class="secondary" id="btnDescontarEstoque">📦 Descontar do estoque</button>
         </div>
       </div>
@@ -281,36 +283,12 @@
 
       <h2 class="section" id="tituloMulti" style="display:none">Pedidos com mais de um produto</h2>
       <div id="listaMulti"></div>
-    </div>
-  </div>
 
-  <div id="tabResumo" class="tabpanel">
-    <div class="card">
-      <div id="dropzoneResumo">
-        <strong>Toque para escolher a Lista de Resumo (PDF)</strong>
-        <span>Relatório de SKUs vendidos (UpSeller/Shopee) — pode ter várias páginas</span>
+      <h2 class="section">Lista de separação · kits desmembrados nos produtos individuais</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin:-4px 0 8px;">
+        O que você precisa separar do estoque — cada kit vira seus produtos por dentro, somados junto com as vendas avulsas do mesmo produto.
       </div>
-      <input type="file" id="fileInputResumo" accept="application/pdf,.pdf">
-      <div id="statusResumo"></div>
-    </div>
-
-    <div id="resultadoResumo">
-      <div class="card">
-        <div class="stats">
-          <div class="stat"><div class="num" id="statResumoItens">0</div><div class="lbl">itens do relatório</div></div>
-          <div class="stat"><div class="num" id="statResumoProdutos">0</div><div class="lbl">produtos</div></div>
-          <div class="stat"><div class="num" id="statResumoNaoIdent">0</div><div class="lbl">não identificados</div></div>
-        </div>
-        <div class="actions">
-          <button class="secondary" id="btnBaixarResumoTxt">Lista de conferência (.txt)</button>
-        </div>
-      </div>
-
-      <div id="avisoResumoAmbiguo" style="display:none" class="aviso"></div>
-      <div id="avisoResumoNaoIdent" style="display:none" class="aviso"></div>
-
-      <h2 class="section">Produtos · do mais vendido ao menos vendido</h2>
-      <div id="listaResumoGrupos"></div>
+      <div id="listaSeparacao"></div>
     </div>
   </div>
   </main>
@@ -356,10 +334,28 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
         O que comprar
       </button>
+      <button class="tab-btn" data-tab="producao">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 3v3M16 3v3"/></svg>
+        Produção
+      </button>
     </div>
 
   <main>
   <div id="tabProdutos" class="tabpanel ativo">
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Cadastrar novo produto</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Se informar o kg inicial, já registra como uma compra também (com fornecedor e custo, se preenchidos).
+      </div>
+      <div class="compra-form">
+        <input type="text" id="inputNovoProdutoNome" placeholder="Nome do produto" style="flex:2; min-width:200px;">
+        <input type="number" id="inputNovoProdutoKg" step="0.001" min="0" placeholder="kg inicial (opcional)">
+        <input type="text" id="inputNovoProdutoFornecedor" placeholder="Fornecedor (opcional)">
+        <input type="number" id="inputNovoProdutoCusto" step="0.01" min="0" placeholder="Custo total R$ (opcional)">
+        <button class="secondary" id="btnCadastrarNovoProduto">+ Cadastrar produto</button>
+      </div>
+    </div>
+
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Importar vários produtos de uma vez</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
@@ -403,6 +399,31 @@
         <input type="text" id="inputAjusteMotivo" placeholder="Motivo (ex: contagem mensal, perda)" style="flex:2; min-width:180px;">
         <button class="secondary" id="btnRegistrarAjuste">⚖ Registrar ajuste</button>
       </div>
+
+      <div style="border-top:1px solid var(--linha); margin:16px 0 12px;"></div>
+      <h3 style="margin:0 0 8px; font-size:13.5px;">Ou ajuste tudo de uma vez por planilha</h3>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Baixe a planilha com todos os produtos, as variações que cada um já vendeu (pra te ajudar a conferir) e o estoque atual. Escreva o estoque contado na última coluna, salve e importe de volta — o site ajusta cada produto automaticamente (registrando o motivo "Contagem física"). Deixar a última coluna em branco pula o produto, sem alterar nada.
+      </div>
+      <div class="actions" style="margin-bottom:0">
+        <button class="secondary" id="btnExportarInventarioCsv">⬇ Baixar planilha (.csv)</button>
+        <button class="secondary" id="btnImportarInventarioCsv">⬆ Importar planilha preenchida</button>
+        <input type="file" id="inputImportarInventarioCsv" accept=".csv,text/csv" style="display:none">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Excluir produto</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Remove o cadastro do produto do estoque — use pra limpar nome errado, duplicata ou produto que parou de vender. Se o produto ainda tiver kg em estoque, você vai ver um aviso antes de confirmar.
+      </div>
+      <div class="compra-form">
+        <div class="produto-picker">
+          <input type="text" id="buscaExcluirProduto" placeholder="Pesquisar produto…" autocomplete="off">
+          <select id="selExcluirProduto"></select>
+        </div>
+        <button class="secondary" id="btnExcluirProduto" style="color:#b91c1c; border-color:#b91c1c;">🗑 Excluir produto</button>
+      </div>
     </div>
   </div>
 
@@ -410,25 +431,13 @@
     <div class="card">
       <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
         <h2 class="section" style="margin:0">Produtos em estoque (kg)</h2>
-        <button class="secondary" id="btnAddEstoqueItem">+ Produto</button>
+        <button class="secondary" id="btnVerificarDuplicatas" style="padding:6px 10px; font-size:12px;">🔗 Verificar duplicatas</button>
       </div>
       <input type="search" id="buscaEstoque" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Ordenado do maior pro menor estoque. O kg é só leitura — some da soma de compras e vendas registradas. Pra corrigir, use "Ajuste de inventário" na aba Produtos. Nome pode ser editado direto (é só rótulo, não mexe na quantidade).
+        Ordenado do maior pro menor estoque. Só consulta — pra cadastrar produto novo use a aba Produtos; pra corrigir quantidade, "Ajuste de inventário".
       </div>
       <div id="listaEstoque"></div>
-    </div>
-
-    <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Planilha de contagem de inventário</h2>
-      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Baixe a planilha com todos os produtos, preencha o estoque que você contou fisicamente na coluna de kg, e importe de volta — o site ajusta cada produto automaticamente (registrando o motivo "Contagem física").
-      </div>
-      <div class="actions" style="margin-bottom:0">
-        <button class="secondary" id="btnExportarInventarioCsv">⬇ Baixar planilha (.csv)</button>
-        <button class="secondary" id="btnImportarInventarioCsv">⬆ Importar planilha preenchida</button>
-        <input type="file" id="inputImportarInventarioCsv" accept=".csv,text/csv" style="display:none">
-      </div>
     </div>
   </div>
 
@@ -460,6 +469,48 @@
       <div id="painelMovimentos"></div>
     </div>
   </div>
+
+  <div id="tabProducao" class="tabpanel">
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Agenda semanal de produção</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:10px;">
+        Escolha quais produtos você produz em cada dia da semana. Toque no dia pra editar a lista dele.
+      </div>
+      <div class="dias-semana">
+        <button class="dia-btn" data-dia="domingo">Dom</button>
+        <button class="dia-btn" data-dia="segunda">Seg</button>
+        <button class="dia-btn" data-dia="terca">Ter</button>
+        <button class="dia-btn" data-dia="quarta">Qua</button>
+        <button class="dia-btn" data-dia="quinta">Qui</button>
+        <button class="dia-btn" data-dia="sexta">Sex</button>
+        <button class="dia-btn" data-dia="sabado">Sáb</button>
+      </div>
+      <div class="produto-picker" style="margin:12px 0 8px;">
+        <input type="text" id="buscaProducaoProduto" placeholder="Pesquisar produto para adicionar…" autocomplete="off">
+        <select id="selProducaoProduto"></select>
+      </div>
+      <div class="actions" style="margin-bottom:8px">
+        <button class="secondary" id="btnAdicionarProducaoProduto">+ Adicionar a esse dia</button>
+      </div>
+      <div id="listaProducaoDia"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 4px">Produção de hoje</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Quantidade sugerida por variação, com base na média de vendas de cada uma — marque conforme for produzindo. Só aparece a partir de vendas registradas depois que essa função foi ligada.
+      </div>
+      <div id="listaProducaoHoje"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 4px">Produção da semana</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Quantidade sugerida pra cobrir as vendas até a próxima vez que o produto entrar na agenda — descontando o estoque atual só na próxima produção de cada um.
+      </div>
+      <div id="listaProducaoSemana"></div>
+    </div>
+  </div>
   </main>
 
   <div class="card">
@@ -484,7 +535,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  addDoc, updateDoc,
+  setDoc, deleteDoc, query, where,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -524,6 +575,7 @@ const resultadoEl = document.getElementById('resultado');
 let originalBytes = null;   // ArrayBuffer for pdf-lib
 let orderedIndices = [];    // final page order (0-based, original PDF)
 let groupsForExport = [];   // for txt list
+let separacaoParaExport = [];   // for the "lista de separação" txt export
 
 function setStatus(msg, spinning) {
   statusEl.classList.add('show');
@@ -572,10 +624,11 @@ async function handleFile(file) {
   }
 
   setStatus('Organizando…', true);
-  aprenderIdentidadesDasPaginas(pages);
   const units = buildUnits(pages);
   const { produtos, kits, combos, unmatched } = groupUnits(units);
   render(produtos, kits, combos, unmatched, totalPages);
+  separacaoParaExport = calcularListaSeparacao(pages);
+  renderSeparacaoLista(document.getElementById('listaSeparacao'), separacaoParaExport);
   setStatus('', false);
   statusEl.classList.remove('show');
   resultadoEl.classList.add('show');
@@ -638,12 +691,146 @@ const ALIASES_PRODUTO = [
   ['Psyllium Husk', 'Psyllium'],
 ];
 
+// Uma palavra sozinha tipo "de"/"da"/"do" não identifica produto nenhum —
+// impede que um nome curto e genérico demais (ex: um cadastro corrompido
+// "Farinha de", sem o resto do nome) seja aceito como prefixo válido. Sem
+// essa trava, "Farinha de" bateria como prefixo TANTO de "Farinha de
+// Linhaça Dourada" QUANTO de "Farinha de Linhaça Marrom" — e nas fusões de
+// duplicata isso fundiria os dois sabores diferentes num só, por tabela.
+const PALAVRAS_IGNORADAS_PREFIXO = new Set(['de', 'da', 'do', 'das', 'dos', 'com', 'sem', 'e']);
+function palavrasSignificativas(s) {
+  return s.split(' ').filter(w => w.length > 1 && !PALAVRAS_IGNORADAS_PREFIXO.has(w));
+}
+function prefixoValido(curtoLower, longoLower) {
+  if (!curtoLower || !longoLower.startsWith(curtoLower)) return false;
+  const proximoChar = longoLower[curtoLower.length];
+  if (proximoChar !== undefined && proximoChar !== ' ') return false;
+  return palavrasSignificativas(curtoLower).length >= 2;
+}
+
+// Acha, entre os produtos já cadastrados no estoque, um cujo nome seja
+// prefixo do texto do anúncio — "Semente de Chia Premium 1kg 500g 250g"
+// reconhece "Semente de Chia" porque o nome cadastrado é o COMEÇO do
+// título (o resto é peso/marca/adjetivo de marketing, sempre no final).
+// Prefixo mais longo primeiro, e sempre casando numa borda de palavra
+// (senão "Farinha de Linhaça" bateria errado com "Farinha de Linhaça Marrom").
+// Ignora candidato igual ao próprio texto buscado: se o nome cheio de
+// marketing também já estiver cadastrado (duplicata antiga), ele não pode
+// "se auto-confirmar" e impedir a normalização pro nome curto correto.
+function acharPorPrefixoNoEstoque(alvoLower) {
+  const candidatos = estoque
+    .filter(item => {
+      const nomeLower = item.nome.toLowerCase();
+      if (!nomeLower || nomeLower === alvoLower) return false;
+      return prefixoValido(nomeLower, alvoLower);
+    })
+    .map(item => item.nome)
+    .sort((a, b) => b.length - a.length);
+  return candidatos[0] || null;
+}
+
+// Além de bater o nome exato de um alias, aceita quando o texto do anúncio
+// começa por um alias conhecido seguido de sufixo de marketing — cobre
+// "Linhaça Dourada Semente Premium 1kg 500g" (que não é igual a nenhum
+// alias cadastrado, mas COMEÇA com "Linhaça Dourada Semente").
+function acharPorPrefixoNosAliases(alvo) {
+  let melhor = null;
+  for (const grupo of ALIASES_PRODUTO) {
+    for (const n of grupo) {
+      const nLower = n.toLowerCase();
+      if (prefixoValido(nLower, alvo) && (!melhor || nLower.length > melhor.nLower.length)) {
+        melhor = { nLower, canonico: grupo[0] };
+      }
+    }
+  }
+  return melhor ? melhor.canonico : null;
+}
+
 function normalizeProdutoNome(nome) {
   const alvo = norm(nome).toLowerCase();
   for (const grupo of ALIASES_PRODUTO) {
     if (grupo.some(n => n.toLowerCase() === alvo)) return grupo[0];
   }
+  const porAlias = acharPorPrefixoNosAliases(alvo);
+  if (porAlias) return porAlias;
+  const existente = acharPorPrefixoNoEstoque(alvo);
+  if (existente) return existente;
   return norm(nome);
+}
+
+// Dois nomes cadastrados no estoque são o "mesmo produto" se estiverem no
+// mesmo grupo de aliases conhecidos (ex: "Camomila Flor" e "Chá de Camomila
+// Flor") ou se um for prefixo do outro numa borda de palavra (mesma conta
+// de normalizeProdutoNome/acharPorPrefixoNoEstoque) — usado pra achar
+// duplicata a fundir, não pra decidir nome de etiqueta.
+function mesmoProdutoNome(nomeA, nomeB) {
+  const a = norm(nomeA).toLowerCase(), b = norm(nomeB).toLowerCase();
+  if (a === b) return false;
+  for (const grupo of ALIASES_PRODUTO) {
+    const gl = grupo.map(n => n.toLowerCase());
+    if (gl.includes(a) && gl.includes(b)) return true;
+  }
+  const [curto, longo] = a.length <= b.length ? [a, b] : [b, a];
+  return prefixoValido(curto, longo);
+}
+
+// Varre o estoque cadastrado e monta a lista de fusões (produto principal +
+// duplicata) usando mesmoProdutoNome — o nome mais curto vira o principal
+// (geralmente o mais "limpo"), a soma do kg vai pra ele, e a duplicata some.
+function encontrarDuplicatasEstoque() {
+  const ordenados = [...estoque].sort((a, b) => a.nome.length - b.nome.length);
+  const jaFundido = new Set();
+  const fusoes = [];
+  ordenados.forEach((principal, i) => {
+    if (jaFundido.has(principal.id)) return;
+    ordenados.slice(i + 1).forEach(candidato => {
+      if (jaFundido.has(candidato.id) || jaFundido.has(principal.id)) return;
+      if (mesmoProdutoNome(principal.nome, candidato.nome)) {
+        fusoes.push({ principal, duplicata: candidato });
+        jaFundido.add(candidato.id);
+      }
+    });
+  });
+  return fusoes;
+}
+
+// Algumas variações do Shopee vêm com "de cada" no final (comum em anúncios
+// pensados pra combo) e outras não, mesmo sendo o mesmíssimo peso — "250g"
+// e "250g de cada" têm que contar juntos, senão o mesmo peso aparece
+// duplicado na lista de separação.
+function normalizarVariacaoTxt(v) {
+  return norm(v).replace(/\s*de\s+cada\s*$/i, '').trim();
+}
+
+// Depois de agrupar por nome de produto (já normalizado no parse), funde
+// grupos que ainda escaparam como nomes diferentes — mesma regra do
+// "Verificar duplicatas" do estoque (aliases/prefixo), útil quando a
+// etiqueta foi processada antes do produto estar cadastrado no estoque e
+// por isso não deu pra normalizar o nome ainda no parsePage. O grupo de
+// nome mais curto vira o principal; soma quantidade e junta as variações
+// (inclusive as listas de "units", usadas pra reordenar o PDF).
+function fundirGruposMesmoProduto(mapaPorNome) {
+  const nomes = Object.keys(mapaPorNome).sort((a, b) => a.length - b.length);
+  const fundidos = new Set();
+  nomes.forEach((nomeA, i) => {
+    if (fundidos.has(nomeA)) return;
+    nomes.slice(i + 1).forEach(nomeB => {
+      if (fundidos.has(nomeB) || fundidos.has(nomeA)) return;
+      if (!mesmoProdutoNome(nomeA, nomeB)) return;
+      const alvo = mapaPorNome[nomeA];
+      const origem = mapaPorNome[nomeB];
+      alvo.totalQtd += origem.totalQtd;
+      if (alvo.totalEtiquetas !== undefined) alvo.totalEtiquetas += (origem.totalEtiquetas || 0);
+      Object.values(origem.variacoes).forEach(v => {
+        if (!alvo.variacoes[v.variacao]) alvo.variacoes[v.variacao] = { variacao: v.variacao, totalQtd: 0, units: [] };
+        alvo.variacoes[v.variacao].totalQtd += v.totalQtd;
+        if (v.units) alvo.variacoes[v.variacao].units.push(...v.units);
+      });
+      delete mapaPorNome[nomeB];
+      fundidos.add(nomeB);
+    });
+  });
+  return mapaPorNome;
 }
 
 function parsePage(text, pageNumber) {
@@ -654,13 +841,13 @@ function parsePage(text, pageNumber) {
     let m = ln.match(RE_ITEM_COM_VARIACAO_QTD_COLADA);
     if (m) {
       const nomeBruto = norm(m[2]);
-      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
+      items.push({ variacao: normalizarVariacaoTxt(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_COM_VARIACAO);
     if (m) {
       const nomeBruto = norm(m[2]);
-      items.push({ variacao: norm(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
+      items.push({ variacao: normalizarVariacaoTxt(m[1]), produto: normalizeProdutoNome(nomeBruto), produtoBruto: nomeBruto, qtd: parseInt(m[3], 10) });
       continue;
     }
     m = ln.match(RE_ITEM_SEM_VARIACAO_QTD_COLADA);
@@ -683,23 +870,6 @@ function parsePage(text, pageNumber) {
     items,
     rawText: text
   };
-}
-
-// A etiqueta traz o nome do produto/kit sempre por extenso (sem corte),
-// diferente da Lista de Resumo. Aproveita isso pra ir aprendendo e salvando
-// a identidade de cada nome visto, pra reforçar a identificação de nomes
-// cortados nos relatórios no futuro.
-function aprenderIdentidadesDasPaginas(pages) {
-  const pares = [];
-  pages.forEach(p => {
-    p.items.forEach(it => {
-      if (!it.produtoBruto) return;
-      const kit = decomporKit(it.produtoBruto);
-      if (kit) pares.push({ nomeBruto: it.produtoBruto, tipo: 'kit', valor: kit });
-      else pares.push({ nomeBruto: it.produtoBruto, tipo: 'produto', valor: it.produto });
-    });
-  });
-  if (pares.length) aprenderIdentidades(pares);
 }
 
 function parseGramas(variacao) {
@@ -727,282 +897,6 @@ function decomporKit(nomeProduto) {
   if (partes.length < 2) return null;
   return partes.map(normalizeProdutoNome);
 }
-
-// ──────────────────────────────────────────────
-// LISTA DE RESUMO — relatório de SKUs vendidos (UpSeller/Shopee).
-// Os títulos vêm cortados pela largura da coluna do PDF ("Camomila Flor chá
-// natural 1kg 500g 25…"), então aqui casamos por PREFIXO em vez de nome
-// exato. Kits também vêm cortados no 2º/3º componente ("Kit Farinha de
-// Linhaça Dourada + Farin…") — por isso mantemos uma lista dos kits
-// conhecidos (títulos completos) pra reconhecer pelo prefixo visível: se só
-// aparecer texto novo que não bate com nada daqui, cai em "não identificado"
-// em vez de arriscar um componente errado.
-const KIT_COMPOSICAO = [
-  { titulo: 'Kit Farinha de Linhaça Dourada + Farinha de Chia', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Chia'] },
-  { titulo: 'Kit Semente de Girassol + Semente de Abóbora', componentes: ['Semente de Girassol Sem Casca', 'Semente de Abóbora Sem Casca'] },
-  { titulo: 'Kit 3 - Farinha de Linhaça dourada + Farinha de Chia + Psyllium', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Chia', 'Psyllium Husk'] },
-  { titulo: 'Kit Gergelim Branco + Gergelim Preto', componentes: ['Gergelim Branco', 'Gergelim Preto'] },
-  { titulo: 'Kit Quinoa Branca + Amaranto em Grão', componentes: ['Quinoa Branca', 'Amaranto em Grão'] },
-  { titulo: 'Kit semente linhaça dourada + linhaça marrom', componentes: ['Semente de Linhaça Dourada', 'Semente de Linhaça Marrom'] },
-  { titulo: 'Kit Açúcar Mascavo + Açúcar Demerara', componentes: ['Açúcar Mascavo', 'Açúcar Demerara'] },
-  { titulo: 'Kit Semente de Chia + Linhaça Marrom', componentes: ['Semente de Chia', 'Semente de Linhaça Marrom'] },
-  { titulo: 'Kit Frutas Cristalizadas + Uva passa preta', componentes: ['Frutas Cristalizadas', 'Uva Passa Preta'] },
-  { titulo: 'Kit uva passa preta + uva passa branca', componentes: ['Uva Passa Preta', 'Uva Passa Branca'] },
-  { titulo: 'Kit 3x Semente de Girassol Pepita Sem Casca', componentes: ['Semente de Girassol Sem Casca'] },
-  { titulo: 'Kit Semente de Girassol + Linhaça Dourada', componentes: ['Semente de Girassol Sem Casca', 'Semente de Linhaça Dourada'] },
-  { titulo: 'Kit Gergelim Branco + Chia Preta', componentes: ['Gergelim Branco', 'Semente de Chia'] },
-  { titulo: 'Kit Amaranto em grão + Semente de Girassol', componentes: ['Amaranto em Grão', 'Semente de Girassol Sem Casca'] },
-  { titulo: 'Kit semente de abóbora + chia semente', componentes: ['Semente de Abóbora Sem Casca', 'Semente de Chia'] },
-  { titulo: 'Kit Chia Semente + Psyllium', componentes: ['Semente de Chia', 'Psyllium Husk'] },
-  { titulo: 'Kit Semente de Girassol + Gergelim Branco', componentes: ['Semente de Girassol Sem Casca', 'Gergelim Branco'] },
-  { titulo: 'Kit Semente de Girassol + Semente de Chia', componentes: ['Semente de Girassol Sem Casca', 'Semente de Chia'] },
-  { titulo: 'Kit Gergelim Branco + Linhaça Dourada', componentes: ['Gergelim Branco', 'Semente de Linhaça Dourada'] },
-  { titulo: 'Kit Semente Linhaça Dourada + Semente de Chia', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia'] },
-  { titulo: 'Kit Gergelim Preto + Psyllium Pó', componentes: ['Gergelim Preto', 'Psyllium Husk'] },
-  { titulo: 'Kit Gergelim Branco + Psyllium', componentes: ['Gergelim Branco', 'Psyllium Husk'] },
-  { titulo: 'Kit Farinha de Linhaça Dourada + Farinha de Beterraba', componentes: ['Farinha de Linhaça Dourada', 'Farinha de Beterraba'] },
-  { titulo: 'Kit Copa do Mundo Amendoim Crocante', componentes: ['Amendoim Crocante Cebola e Salsa', 'Amendoim Crocante Tradicional'] },
-  { titulo: 'kit sementes Linhaça, Chia, Gergelim, Sem abobora, Sem girassol embalagens individuais', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia', 'Gergelim Branco', 'Semente de Abóbora Sem Casca', 'Semente de Girassol Sem Casca'] },
-  { titulo: 'Kit Sementes (Linhaça, chia e gergelim branco)', componentes: ['Semente de Linhaça Dourada', 'Semente de Chia', 'Gergelim Branco'] },
-];
-
-const CANONICOS_CONHECIDOS = [...new Set([
-  ...ALIASES_PRODUTO.map(g => g[0]),
-  ...KIT_COMPOSICAO.flatMap(k => k.componentes),
-])].sort((a, b) => b.length - a.length);
-
-function semReticencias(s) { return norm(s).replace(/…+$/, '').trim(); }
-
-// Casa um título (possivelmente cortado) com um nome canônico por prefixo:
-// "Camomila Flor chá natural 1kg 500g 25…" reconhece "Camomila Flor" porque
-// o texto visível COMEÇA com o nome canônico — funciona mesmo cortado,
-// porque o corte sempre acontece no final, nunca no começo do título.
-function matchCanonicalPrefix(nomeAnuncio) {
-  const t = semReticencias(nomeAnuncio).toLowerCase();
-  for (const grupo of ALIASES_PRODUTO) {
-    for (const nome of grupo) {
-      if (t.startsWith(nome.toLowerCase())) return grupo[0];
-    }
-  }
-  for (const nome of CANONICOS_CONHECIDOS) {
-    if (t.startsWith(nome.toLowerCase())) return nome;
-  }
-  return semReticencias(nomeAnuncio);
-}
-
-// Resolve um kit (possivelmente com nome cortado) nos seus produtos
-// individuais. Primeiro tenta achar na lista de kits conhecidos (pelo
-// prefixo visível); se não achar, tenta decompor ao vivo pelo "+" — que só
-// funciona bem se o título não estiver cortado no meio de um componente.
-function resolverKitTruncado(nomeAnuncio) {
-  const t = semReticencias(nomeAnuncio).toLowerCase();
-  const candidatos = KIT_COMPOSICAO.filter(k => k.titulo.toLowerCase().startsWith(t));
-  if (candidatos.length) return { componentes: candidatos[0].componentes, ambiguo: candidatos.length > 1 };
-  const fallback = decomporKit(nomeAnuncio);
-  return fallback ? { componentes: fallback, ambiguo: false } : null;
-}
-
-// Confere o título (possivelmente cortado) da Lista de Resumo contra os
-// nomes já vistos por extenso nas etiquetas de envio (identidadesAprendidas,
-// carregada da pasta) — mesma ideia do matchCanonicalPrefix, mas usando o
-// histórico real do dia a dia em vez da tabela fixa de kits conhecidos.
-// Prefixo mais longo primeiro, pra não confundir um kit com outro parecido.
-function matchIdentidadeAprendida(nomeAnuncio) {
-  const t = semReticencias(nomeAnuncio).toLowerCase();
-  const chaves = Object.keys(identidadesAprendidas).sort((a, b) => b.length - a.length);
-  for (const chave of chaves) {
-    if (t.startsWith(chave)) return identidadesAprendidas[chave];
-  }
-  return null;
-}
-
-// SKU do Anúncio nunca vem cortado (ao contrário do nome) e não muda entre
-// relatórios diferentes (30 dias, 90 dias, etc) — é o mesmo SKU sempre que o
-// mesmo anúncio+variação é vendido. Por isso ele é a PRIMEIRA tentativa de
-// identificação na Lista de Resumo; o nome cortado só entra como plano B
-// pra SKU que ainda não apareceu aqui. Lista aprendida a partir dos
-// relatórios já enviados — quando aparecer um SKU novo, ele cai como "não
-// identificado" (produto) ou usa o prefixo do nome (kit) até ser adicionado.
-const SKU_CONHECIDOS = {
-  "109727354308": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "139655679429": { tipo: "produto", valor: "Alfazema" },
-  "139655679430": { tipo: "produto", valor: "Alfazema" },
-  "149553066049": { tipo: "produto", valor: "Melissa (Erva Cidreira)" },
-  "159788601037": { tipo: "kit", valor: ["Uva Passa Preta", "Uva Passa Branca"] },
-  "169409465538": { tipo: "produto", valor: "Aveia Flocos Grossos" },
-  "179410098413": { tipo: "produto", valor: "Açúcar Demerara" },
-  "179415338484": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
-  "179415338485": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
-  "179415338486": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia", "Psyllium Husk"] },
-  "189183864082": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Abóbora Sem Casca"] },
-  "189183864083": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Abóbora Sem Casca"] },
-  "189188251871": { tipo: "produto", valor: "Erva Doce" },
-  "189188251872": { tipo: "produto", valor: "Erva Doce" },
-  "189613452624": { tipo: "produto", valor: "Aveia Flocos Finos" },
-  "199184614878": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "199184614879": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "199184614880": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "199186096378": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "199186096379": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "199190269400": { tipo: "produto", valor: "Semente de Chia" },
-  "199190269401": { tipo: "produto", valor: "Semente de Chia" },
-  "199190269402": { tipo: "produto", valor: "Semente de Chia" },
-  "199190445214": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "199190445215": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "199190445216": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "209186734188": { tipo: "produto", valor: "Capim Limão" },
-  "209186734189": { tipo: "produto", valor: "Capim Limão" },
-  "209186734190": { tipo: "produto", valor: "Capim Limão" },
-  "209619286572": { tipo: "produto", valor: "Arruda" },
-  "209619286573": { tipo: "produto", valor: "Arruda" },
-  "209625438919": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia"] },
-  "209625438920": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia"] },
-  "219189835828": { tipo: "produto", valor: "Alfazema" },
-  "219613300049": { tipo: "produto", valor: "Batata Doce em Pó" },
-  "219617352637": { tipo: "kit", valor: ["Açúcar Mascavo", "Açúcar Demerara"] },
-  "219618491538": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "219618491539": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "219618491540": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "22699447817": { tipo: "produto", valor: "Arruda" },
-  "228801991869": { tipo: "produto", valor: "Mulungu Rasura" },
-  "228801991870": { tipo: "produto", valor: "Mulungu Rasura" },
-  "228801991871": { tipo: "produto", valor: "Mulungu Rasura" },
-  "229432903910": { tipo: "produto", valor: "Farinha de Linhaça Dourada" },
-  "229432903911": { tipo: "produto", valor: "Farinha de Linhaça Dourada" },
-  "229434884094": { tipo: "kit", valor: ["Quinoa Branca", "Amaranto em Grão"] },
-  "229434884095": { tipo: "kit", valor: ["Quinoa Branca", "Amaranto em Grão"] },
-  "239446460658": { tipo: "produto", valor: "Erva Baleeira" },
-  "239446460659": { tipo: "produto", valor: "Erva Baleeira" },
-  "239446460660": { tipo: "produto", valor: "Erva Baleeira" },
-  "ACA250": { tipo: "produto", valor: "Amendoim Crocante Tradicional" },
-  "AMARG1K": { tipo: "produto", valor: "Amaranto em Grão" },
-  "ART500": { tipo: "produto", valor: "Artemísia" },
-  "AVGROSSOS1K": { tipo: "produto", valor: "Aveia Flocos Grossos" },
-  "AÇUMASC1K": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "AÇUMASC500": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "BANCHÁ": { tipo: "produto", valor: "Banchá Chá Verde" },
-  "CAMOMILA 250G": { tipo: "produto", valor: "Camomila Flor" },
-  "CAMOMILA 500G": { tipo: "produto", valor: "Camomila Flor" },
-  "CARQUEJA": { tipo: "produto", valor: "Carqueja Amarga" },
-  "CENTELLA250": { tipo: "produto", valor: "Centella Asiática" },
-  "CENTELLA500": { tipo: "produto", valor: "Centella Asiática" },
-  "COCOG250": { tipo: "produto", valor: "Coco Chips" },
-  "FARCHIA1K": { tipo: "produto", valor: "Farinha de Chia" },
-  "FARCHIA500": { tipo: "produto", valor: "Farinha de Chia" },
-  "GERGP250": { tipo: "produto", valor: "Gergelim Preto" },
-  "GERGP500": { tipo: "produto", valor: "Gergelim Preto" },
-  "Hort": { tipo: "produto", valor: "Hortelã Egípcia" },
-  "PARA250": { tipo: "produto", valor: "Castanha do Pará" },
-  "alec": { tipo: "produto", valor: "Alecrim" },
-  "calend1k": { tipo: "produto", valor: "Calêndula Flor" },
-  "calend250": { tipo: "produto", valor: "Calêndula Flor" },
-  "calend50": { tipo: "produto", valor: "Calêndula Flor" },
-  "calend500": { tipo: "produto", valor: "Calêndula Flor" },
-  "camo1k": { tipo: "produto", valor: "Camomila Flor" },
-  "camo250": { tipo: "produto", valor: "Camomila Flor" },
-  "camo500": { tipo: "produto", valor: "Camomila Flor" },
-  "hib500": { tipo: "produto", valor: "Hibisco Flor" },
-
-  // ---- aprendidos do relatório "Vendas por Produtos" (títulos completos,
-  // sem corte) — usa o "SKU Principal", que é o mesmo em qualquer período ----
-  "CAMO": { tipo: "produto", valor: "Camomila Flor" },
-  "BANCHA": { tipo: "produto", valor: "Banchá Chá Verde" },
-  "AVGROSSOS": { tipo: "produto", valor: "Aveia Flocos Grossos" },
-  "CAPLIMAO": { tipo: "produto", valor: "Capim Limão" },
-  "ARTEMISIA": { tipo: "produto", valor: "Artemísia" },
-  "AVEIAF": { tipo: "produto", valor: "Aveia Flocos Finos" },
-  "CALEND": { tipo: "produto", valor: "Calêndula Flor" },
-  "Alec": { tipo: "produto", valor: "Alecrim" },
-  "Hortela": { tipo: "produto", valor: "Hortelã Egípcia" },
-  "CAMOMILA": { tipo: "produto", valor: "Camomila Flor" },
-  "SEMCHI": { tipo: "produto", valor: "Semente de Chia" },
-  "LINDOU": { tipo: "produto", valor: "Semente de Linhaça Dourada" },
-  "AMOBR": { tipo: "produto", valor: "Amora Branca" },
-  "HIBISCO": { tipo: "produto", valor: "Hibisco Flor" },
-  "FRCR": { tipo: "produto", valor: "Frutas Cristalizadas" },
-  "ARROZN": { tipo: "produto", valor: "Arroz Negro" },
-  "AMARG": { tipo: "produto", valor: "Amaranto em Grão" },
-  "FARCHIA": { tipo: "produto", valor: "Farinha de Chia" },
-  "CENTELLA": { tipo: "produto", valor: "Centella Asiática" },
-  "AÇUMASC": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "FARLIN": { tipo: "produto", valor: "Farinha de Linhaça Marrom" },
-  "PARA": { tipo: "produto", valor: "Castanha do Pará" },
-  "CACAU": { tipo: "produto", valor: "Cacau em Pó 100%" },
-  "cava": { tipo: "produto", valor: "Cavalinha" },
-  "AMAR": { tipo: "produto", valor: "Amaranto Peruano em Flocos" },
-  "ERV": { tipo: "produto", valor: "Ervilha Inteira Seca" },
-  "cp": { tipo: "produto", valor: "Canela em Pau" },
-  "GERGP": { tipo: "produto", valor: "Gergelim Preto" },
-  "quinoabranca": { tipo: "produto", valor: "Quinoa Branca" },
-  "COEN": { tipo: "produto", valor: "Coentro em Grão" },
-  "ABOBORA": { tipo: "produto", valor: "Semente de Abóbora Sem Casca" },
-  "GERGELIM": { tipo: "produto", valor: "Gergelim Branco" },
-  "AROEIRA": { tipo: "produto", valor: "Aroeira" },
-  "BERIN": { tipo: "produto", valor: "Berinjela em Pó" },
-  "ANIS": { tipo: "produto", valor: "Anis Estrelado" },
-  "BICARBONATO": { tipo: "produto", valor: "Bicarbonato de Sódio" },
-  "ATSS": { tipo: "produto", valor: "Amendoim Torrado Sem Casca (sem sal)" },
-  "Fibrademaça": { tipo: "produto", valor: "Fibra de Maçã em Pó" },
-  "UVAPR": { tipo: "produto", valor: "Uva Passa Preta" },
-  "MIXQ": { tipo: "produto", valor: "Quinoa Peruana Mix de Grãos" },
-  "mixs": { tipo: "produto", valor: "Mix de Sementes" },
-  "ACEB": { tipo: "produto", valor: "Amendoim Crocante Cebola e Salsa" },
-  "GIRASSOL": { tipo: "produto", valor: "Semente de Girassol Sem Casca" },
-  "CAJUS": { tipo: "produto", valor: "Castanha de Caju Inteira com Sal" },
-  "APIM": { tipo: "produto", valor: "Amendoim Crocante Pimenta" },
-  "AMJ": { tipo: "produto", valor: "Amendoim Crocante Japonês" },
-  "GENGI": { tipo: "produto", valor: "Gengibre Moído" },
-  "GRANOLA": { tipo: "produto", valor: "Granola Completa" },
-  "MIXU": { tipo: "produto", valor: "Uvas Passas Mistas" },
-  "BICO": { tipo: "produto", valor: "Grão de Bico" },
-  "LINHMA": { tipo: "produto", valor: "Semente de Linhaça Marrom" },
-  "ACO": { tipo: "produto", valor: "Açúcar de Coco" },
-  "COCOG": { tipo: "produto", valor: "Coco Chips" },
-  "ACA": { tipo: "produto", valor: "Amendoim Crocante Tradicional" },
-  "LENVER": { tipo: "produto", valor: "Lentilha Vermelha Canadense" },
-  "TEMP POTE": { tipo: "produto", valor: "Tempero Premium (Potes Dosadores)" },
-  "DOLOMITA": { tipo: "produto", valor: "Dolomita em Pó" },
-  "NOZ": { tipo: "produto", valor: "Nozes Chilena" },
-  "TAMARAS": { tipo: "produto", valor: "Tâmara sem Caroço" },
-  "AMTCS": { tipo: "produto", valor: "Amendoim Torrado Sem Casca (com sal)" },
-  "CHIMI": { tipo: "produto", valor: "Tempero Chimichurri" },
-  "chia": { tipo: "produto", valor: "Semente de Chia" },
-  "BETERRABA": { tipo: "produto", valor: "Farinha de Beterraba" },
-  "LENTILHA": { tipo: "produto", valor: "Lentilha Vermelha Canadense" },
-  "CAJUC": { tipo: "produto", valor: "Castanha de Caju Caramelizada com Gergelim" },
-  "AMASC": { tipo: "produto", valor: "Açúcar Mascavo" },
-  "GOJI": { tipo: "produto", valor: "Goji Berry" },
-  "PECAN": { tipo: "produto", valor: "Noz Pecã Inteira" },
-  "BLUE": { tipo: "produto", valor: "Blueberry (Mirtilo)" },
-  "UVABR": { tipo: "produto", valor: "Uva Passa Branca" },
-  "SABC5K": { tipo: "produto", valor: "Semente de Abóbora Sem Casca" },
-  "BAIANO": { tipo: "produto", valor: "Tempero Baiano" },
-  "PAPDEF": { tipo: "produto", valor: "Tempero Páprica Defumada" },
-  "TAMARA": { tipo: "produto", valor: "Tâmara com Caroço" },
-  "CEBASAL": { tipo: "produto", valor: "Tempero Cebola, Alho e Salsa" },
-  "AMEN": { tipo: "produto", valor: "Amendoim Crocante Sabores (mix)" },
-  "C01": { tipo: "produto", valor: "Castanha de Caju Inteira com Sal" },
-  "CAMO1KG": { tipo: "produto", valor: "Camomila Flor" },
-  "GUARANA": { tipo: "produto", valor: "Guaraná em Pó" },
-  "LEMON": { tipo: "produto", valor: "Tempero Lemon Pepper" },
-  "MIXC": { tipo: "produto", valor: "Mix de Castanhas" },
-  "CHIIMICP": { tipo: "produto", valor: "Tempero Chimichurri com Pimenta" },
-  "CALABRESA": { tipo: "produto", valor: "Tempero Pimenta Calabresa" },
-  "COLORAL": { tipo: "produto", valor: "Temperos Naturais Condimentos" },
-  "AMEIXA": { tipo: "produto", valor: "Ameixa Preta sem Caroço" },
-  "PMARIDO": { tipo: "produto", valor: "Tempero Pega Marido" },
-  "CRAVO": { tipo: "produto", valor: "Cravo da Índia em Pó" },
-  "KFLC": { tipo: "kit", valor: ["Farinha de Linhaça Dourada", "Farinha de Chia"] },
-  "KameGi": { tipo: "kit", valor: ["Amaranto em Grão", "Semente de Girassol Sem Casca"] },
-  "SG+LD": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Linhaça Dourada"] },
-  "SG+GB": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Gergelim Branco"] },
-  "kgl": { tipo: "kit", valor: ["Gergelim Branco", "Semente de Linhaça Dourada"] },
-  "SG+SC": { tipo: "kit", valor: ["Semente de Girassol Sem Casca", "Semente de Chia"] },
-  "GP+PS": { tipo: "kit", valor: ["Gergelim Preto", "Psyllium Husk"] },
-  "KGB+PS": { tipo: "kit", valor: ["Gergelim Branco", "Psyllium Husk"] },
-  "KIT5S": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia", "Gergelim Branco", "Semente de Abóbora Sem Casca", "Semente de Girassol Sem Casca"] },
-  "MIXSE": { tipo: "kit", valor: ["Semente de Linhaça Dourada", "Semente de Chia", "Gergelim Branco"] },
-};
 
 // ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
 // (cobre o caso de uma etiqueta com vários produtos que ocupa 2+ páginas seguidas)
@@ -1064,8 +958,8 @@ function groupUnits(units) {
     return list;
   }
 
-  const produtos = toSortedList(produtoMap);
-  const kits = toSortedList(kitMap);
+  const produtos = toSortedList(fundirGruposMesmoProduto(produtoMap));
+  const kits = toSortedList(fundirGruposMesmoProduto(kitMap));
   const combos = Object.values(comboMap).sort((a, b) => b.units.length - a.units.length || a.label.localeCompare(b.label, 'pt-BR'));
 
   return { produtos, kits, combos, unmatched };
@@ -1193,6 +1087,7 @@ document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
   const iosWin = isIOS() ? window.open('', '_blank') : null;
   btn.disabled = true;
   btn.textContent = 'Gerando PDF…';
+  let baixou = false;
   try {
     const { PDFDocument } = PDFLib;
     const srcDoc = await PDFDocument.load(originalBytes.slice(0));
@@ -1200,13 +1095,18 @@ document.getElementById('btnBaixarPdf').addEventListener('click', async () => {
     const copiedPages = await newDoc.copyPages(srcDoc, orderedIndices);
     copiedPages.forEach(p => newDoc.addPage(p));
     const bytes = await newDoc.save();
-    downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'), iosWin);
+    await downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivo('pdf'), iosWin);
+    baixou = true;
   } catch (err) {
     if (iosWin) iosWin.close();
     alert('Não consegui gerar o PDF: ' + err.message);
   }
   btn.disabled = false;
   btn.textContent = '⬇ Baixar PDF organizado';
+
+  if (baixou && auth?.currentUser && confirm('PDF baixado! Deseja descontar esses produtos do estoque agora?')) {
+    await descontarEstoqueAtual();
+  }
 });
 
 // ---- Baixar lista de conferência em texto ----
@@ -1259,129 +1159,13 @@ function nomeArquivo(ext) {
 }
 
 // ──────────────────────────────────────────────
-// LISTA DE RESUMO — lê o relatório de SKUs vendidos (UpSeller/Shopee) e
-// organiza do mesmo jeito que as etiquetas: por produto + variação, do mais
-// vendido pro menos vendido, kits decompostos no peso de cada componente.
+// LISTA DE SEPARAÇÃO — a mesma leva de etiquetas, só que agrupada de outro
+// jeito: cada kit vira seus produtos individuais (com a variação/peso do
+// kit), somados junto com o mesmo produto vendido avulso. É o que precisa
+// ser fisicamente separado do estoque, não o que vai em cada etiqueta.
 // ──────────────────────────────────────────────
-const dropzoneResumo = document.getElementById('dropzoneResumo');
-const fileInputResumo = document.getElementById('fileInputResumo');
-const statusResumoEl = document.getElementById('statusResumo');
-const resultadoResumoEl = document.getElementById('resultadoResumo');
-let resumoParaExport = null;
-
-function setStatusResumo(msg, spinning) {
-  statusResumoEl.classList.add('show');
-  statusResumoEl.innerHTML = (spinning ? '<span class="spinner"></span>' : '') + msg;
-}
-
-if (!(window.__cdnFail || typeof pdfjsLib === 'undefined')) {
-  dropzoneResumo.addEventListener('click', () => fileInputResumo.click());
-  ['dragover', 'dragenter'].forEach(ev => dropzoneResumo.addEventListener(ev, e => { e.preventDefault(); dropzoneResumo.classList.add('drag'); }));
-  ['dragleave', 'drop'].forEach(ev => dropzoneResumo.addEventListener(ev, e => { e.preventDefault(); dropzoneResumo.classList.remove('drag'); }));
-  dropzoneResumo.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFileResumo(f); });
-  fileInputResumo.addEventListener('change', e => { if (e.target.files[0]) handleFileResumo(e.target.files[0]); });
-} else {
-  setStatusResumo('Não consegui carregar os componentes necessários (sem internet ou conexão bloqueada). Verifique sua conexão e recarregue a página.', false);
-}
-
-// ---- Reconstrói as linhas de texto da página mantendo a posição de cada
-// item (preciso pra depois separar as colunas da tabela) ----
-function buildLinhas(items) {
-  const linhas = [];
-  items.forEach(it => {
-    if (!it.str || !it.str.trim()) return;
-    const x = it.transform[4], y = it.transform[5];
-    let linha = linhas.find(l => Math.abs(l.y - y) < 2.5);
-    if (!linha) { linha = { y, items: [] }; linhas.push(linha); }
-    linha.items.push({ x, str: it.str, width: it.width || (it.str.length * 4) });
-  });
-  linhas.sort((a, b) => b.y - a.y);
-  linhas.forEach(l => l.items.sort((a, b) => a.x - b.x));
-  return linhas;
-}
-
-// ---- Junta o texto dos itens de uma linha que caem dentro de uma faixa de
-// X — é assim que separamos "Anúncios / Variação / SKU / Qtd." sem depender
-// de um delimitador explícito no texto ----
-function celulaTexto(items, xStart, xEnd) {
-  const naColuna = items.filter(it => it.x >= xStart - 3 && it.x < xEnd - 3);
-  naColuna.sort((a, b) => a.x - b.x);
-  let texto = '', fimAnterior = null;
-  naColuna.forEach(it => {
-    if (fimAnterior !== null && (it.x - fimAnterior) > 1) texto += ' ';
-    texto += it.str;
-    fimAnterior = it.x + it.width;
-  });
-  return texto.trim();
-}
-
-async function handleFileResumo(file) {
-  resultadoResumoEl.classList.remove('show');
-  setStatusResumo('Lendo o PDF…', true);
-
-  let pdfDoc;
-  try {
-    const buf = await file.arrayBuffer();
-    pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
-  } catch (err) {
-    setStatusResumo('Não consegui abrir esse PDF. Confirme se é a Lista de Resumo exportada da UpSeller/Shopee.', false);
-    return;
-  }
-
-  const totalPages = pdfDoc.numPages;
-  let cols = null;
-  const linhasTabela = [];
-
-  for (let i = 1; i <= totalPages; i++) {
-    setStatusResumo(`Lendo página ${i} de ${totalPages}…`, true);
-    const page = await pdfDoc.getPage(i);
-    const tc = await page.getTextContent();
-    const linhas = buildLinhas(tc.items);
-
-    for (const linha of linhas) {
-      const textoLinha = linha.items.map(it => it.str).join(' ');
-      if (!cols) {
-        const hAnuncio = linha.items.find(it => it.str.trim() === 'Anúncios');
-        const hVar = linha.items.find(it => it.str.trim() === 'Variação');
-        const hSku = linha.items.find(it => it.str.trim() === 'SKU do Anúncio');
-        const hQtd = linha.items.find(it => it.str.trim().startsWith('Qtd'));
-        if (hAnuncio && hVar && hSku && hQtd) {
-          cols = { anuncio: hAnuncio.x, variacao: hVar.x, sku: hSku.x, qtd: hQtd.x, qtdEnd: hQtd.x + 200 };
-        }
-        continue;
-      }
-      if (/upseller\.com|Página \d+ de \d+/i.test(textoLinha)) continue;
-      const anuncio = celulaTexto(linha.items, cols.anuncio, cols.variacao);
-      const variacao = celulaTexto(linha.items, cols.variacao, cols.sku);
-      const sku = celulaTexto(linha.items, cols.sku, cols.qtd);
-      const qtd = parseInt(celulaTexto(linha.items, cols.qtd, cols.qtdEnd), 10);
-      if (!anuncio || isNaN(qtd)) continue;
-      linhasTabela.push({ anuncio, variacao, sku, qtd });
-    }
-  }
-
-  if (!cols) {
-    setStatusResumo('Não encontrei a tabela "Anúncios / Variação / SKU do Anúncio / Qtd." nesse PDF. Confirme se é a Lista de Resumo.', false);
-    return;
-  }
-  if (!linhasTabela.length) {
-    setStatusResumo('Não encontrei nenhuma linha de produto nesse PDF.', false);
-    return;
-  }
-
-  setStatusResumo('Organizando…', true);
-  const resultado = processarListaResumo(linhasTabela);
-  renderResumo(resultado, linhasTabela.length);
-  setStatusResumo('', false);
-  statusResumoEl.classList.remove('show');
-  resultadoResumoEl.classList.add('show');
-}
-
-function processarListaResumo(linhasTabela) {
+function calcularListaSeparacao(pages) {
   const produtoMap = {};
-  const naoIdentificados = [];
-  const ambiguos = [];
-
   function somar(nome, variacaoTxt, qtd) {
     if (!produtoMap[nome]) produtoMap[nome] = { produto: nome, totalQtd: 0, variacoes: {} };
     const pm = produtoMap[nome];
@@ -1389,66 +1173,20 @@ function processarListaResumo(linhasTabela) {
     if (!pm.variacoes[variacaoTxt]) pm.variacoes[variacaoTxt] = { variacao: variacaoTxt, totalQtd: 0 };
     pm.variacoes[variacaoTxt].totalQtd += qtd;
   }
-
-  linhasTabela.forEach(r => {
-    const conhecido = SKU_CONHECIDOS[r.sku];
-    if (conhecido) {
-      if (conhecido.tipo === 'kit') conhecido.valor.forEach(nome => somar(nome, r.variacao, r.qtd));
-      else somar(conhecido.valor, r.variacao, r.qtd);
-      return;
-    }
-    const aprendido = matchIdentidadeAprendida(r.anuncio);
-    if (aprendido) {
-      if (aprendido.tipo === 'kit') aprendido.valor.forEach(nome => somar(nome, r.variacao, r.qtd));
-      else somar(aprendido.valor, r.variacao, r.qtd);
-      return;
-    }
-    if (/^kit\b/i.test(r.anuncio)) {
-      const resolvido = resolverKitTruncado(r.anuncio);
-      if (!resolvido) { naoIdentificados.push(r); return; }
-      if (resolvido.ambiguo) ambiguos.push(r);
-      resolvido.componentes.forEach(nome => somar(nome, r.variacao, r.qtd));
-    } else {
-      somar(matchCanonicalPrefix(r.anuncio), r.variacao, r.qtd);
-    }
+  pages.forEach(p => {
+    p.items.forEach(it => {
+      const componentes = decomporKit(it.produto);
+      if (componentes) componentes.forEach(nome => somar(nome, it.variacao, it.qtd));
+      else somar(it.produto, it.variacao, it.qtd);
+    });
   });
-
-  const produtos = Object.values(produtoMap).map(pm => {
+  return Object.values(fundirGruposMesmoProduto(produtoMap)).map(pm => {
     pm.variacoesSorted = Object.values(pm.variacoes).sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
     return pm;
   }).sort((a, b) => b.totalQtd - a.totalQtd || a.produto.localeCompare(b.produto, 'pt-BR'));
-
-  return { produtos, naoIdentificados, ambiguos };
 }
 
-function renderResumo(resultado, totalLinhas) {
-  const { produtos, naoIdentificados, ambiguos } = resultado;
-  resumoParaExport = resultado;
-
-  document.getElementById('statResumoItens').textContent = totalLinhas;
-  document.getElementById('statResumoProdutos').textContent = produtos.length;
-  document.getElementById('statResumoNaoIdent').textContent = naoIdentificados.length;
-
-  const avisoAmbiguo = document.getElementById('avisoResumoAmbiguo');
-  if (ambiguos.length) {
-    avisoAmbiguo.style.display = 'block';
-    avisoAmbiguo.innerHTML = `⚠ ${ambiguos.length} kit(s) com nome cortado pela tabela e mais de uma combinação conhecida possível — usei a combinação mais comum, mas vale conferir: ${ambiguos.map(a => escapeHtml(a.anuncio)).join('; ')}`;
-  } else {
-    avisoAmbiguo.style.display = 'none';
-  }
-
-  const avisoNaoIdent = document.getElementById('avisoResumoNaoIdent');
-  if (naoIdentificados.length) {
-    avisoNaoIdent.style.display = 'block';
-    avisoNaoIdent.innerHTML = `⚠ ${naoIdentificados.length} linha(s) não reconhecida(s) automaticamente — confira manualmente: ${naoIdentificados.map(n => escapeHtml(n.anuncio + ' (' + n.variacao + ')')).join('; ')}`;
-  } else {
-    avisoNaoIdent.style.display = 'none';
-  }
-
-  renderResumoLista(document.getElementById('listaResumoGrupos'), produtos);
-}
-
-function renderResumoLista(container, list) {
+function renderSeparacaoLista(container, list) {
   container.innerHTML = '';
   if (!list.length) {
     container.innerHTML = '<div class="estoque-vazio">Nenhum produto encontrado.</div>';
@@ -1474,27 +1212,65 @@ function renderResumoLista(container, list) {
   });
 }
 
-document.getElementById('btnBaixarResumoTxt').addEventListener('click', () => {
-  if (!resumoParaExport) return;
-  const { produtos, naoIdentificados } = resumoParaExport;
-  let out = 'NATUNUTRI — LISTA DE RESUMO ORGANIZADA\n';
-  out += new Date().toLocaleString('pt-BR') + '\n\n';
-  out += '== PRODUTOS (do mais vendido ao menos vendido) ==\n';
-  produtos.forEach((pm, i) => {
-    out += `#${i + 1}  ${pm.produto} — ${pm.totalQtd} unidades\n`;
-    pm.variacoesSorted.forEach(v => { out += `      ${v.variacao}: ${v.totalQtd} un\n`; });
-  });
-  if (naoIdentificados.length) {
-    out += '\n== NÃO IDENTIFICADOS (conferir manualmente) ==\n';
-    naoIdentificados.forEach(n => { out += `${n.anuncio} (${n.variacao}): ${n.qtd} un — SKU ${n.sku}\n`; });
+// Monta um PDF do zero (não reordena páginas existentes, como o PDF das
+// etiquetas) — uma tabela simples: produto, peso/variação, quantidade a
+// separar, com uma caixinha pra marcar conforme vai separando.
+async function gerarPdfSeparacao(lista) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fonte = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fonteNegrito = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const LARGURA = 595.28, ALTURA = 841.89; // A4 em pontos
+  const MARGEM = 40;
+  const colCheck = MARGEM, colProduto = MARGEM + 28, colPeso = 350, colQtd = 500;
+  const ALTURA_LINHA = 28;
+  const cinza = rgb(0.45, 0.45, 0.45);
+  const cinzaClaro = rgb(0.75, 0.75, 0.75);
+
+  let page, y;
+  function novaPagina() {
+    page = pdfDoc.addPage([LARGURA, ALTURA]);
+    y = ALTURA - MARGEM;
+    page.drawText('NATUNUTRI — LISTA DE SEPARAÇÃO', { x: MARGEM, y, size: 18, font: fonteNegrito });
+    y -= 20;
+    page.drawText(new Date().toLocaleString('pt-BR'), { x: MARGEM, y, size: 11, font: fonte, color: cinza });
+    y -= 26;
+    page.drawText('Produto', { x: colProduto, y, size: 13, font: fonteNegrito });
+    page.drawText('Peso', { x: colPeso, y, size: 13, font: fonteNegrito });
+    page.drawText('Qtd', { x: colQtd, y, size: 13, font: fonteNegrito });
+    y -= 8;
+    page.drawLine({ start: { x: MARGEM, y }, end: { x: LARGURA - MARGEM, y }, thickness: 0.75, color: cinzaClaro });
+    y -= 22;
   }
-  downloadBlob(new Blob([out], { type: 'text/plain' }), nomeArquivoResumo('txt'));
+  novaPagina();
+
+  lista.forEach(pm => {
+    pm.variacoesSorted.forEach(v => {
+      if (y < MARGEM + ALTURA_LINHA) novaPagina();
+      page.drawRectangle({ x: colCheck, y: y - 2, width: 12, height: 12, borderColor: cinza, borderWidth: 1 });
+      let nome = pm.produto;
+      if (nome.length > 38) nome = nome.slice(0, 37) + '…';
+      page.drawText(nome, { x: colProduto, y, size: 13, font: fonte });
+      page.drawText(v.variacao, { x: colPeso, y, size: 13, font: fonte });
+      page.drawText(String(v.totalQtd), { x: colQtd, y, size: 13, font: fonte });
+      y -= ALTURA_LINHA;
+    });
+  });
+
+  return pdfDoc.save();
+}
+
+document.getElementById('btnBaixarSeparacaoPdf').addEventListener('click', async () => {
+  if (!separacaoParaExport.length) return;
+  const bytes = await gerarPdfSeparacao(separacaoParaExport);
+  downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivoSeparacao('pdf'));
 });
 
-function nomeArquivoResumo(ext) {
+function nomeArquivoSeparacao(ext) {
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
-  return `natunutri-lista-resumo-organizada-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
+  return `natunutri-lista-separacao-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.${ext}`;
 }
 
 function isIOS() {
@@ -1531,6 +1307,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('ativo');
     document.getElementById('tab' + btn.dataset.tab[0].toUpperCase() + btn.dataset.tab.slice(1)).classList.add('ativo');
     if (btn.dataset.tab === 'comprar') renderPainel();
+    if (btn.dataset.tab === 'producao') renderProducao();
   });
 });
 
@@ -1542,20 +1319,22 @@ const BUFFER_DIAS_MINIMO = 15;   // abaixo disso, o painel marca "comprar urgent
 const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tanto de estoque
 let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
 let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
-// Nomes completos (sem corte) já vistos e identificados nas etiquetas de envio,
-// aprendidos automaticamente conforme o dia a dia — chave = nome bruto em
-// minúsculas como aparece na etiqueta, valor = identidade já resolvida.
-// { "kit semente linhaça dourada + semente de chia": { tipo:'kit', valor:[...] } }
-let identidadesAprendidas = {};
+let agendaProducao = {}; // { segunda: ['Produto A', ...], terca: [...], ... }
+let producaoFeitaHoje = {}; // { "<idProducaoFeita>": true|false }
 
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
 }
 
-let unsubEstoque = null, unsubMovimentos = null, unsubIdentidades = null;
+let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null, unsubProducaoFeita = null;
 
 function painelAtivo() {
   const el = document.getElementById('tabComprar');
+  return el && el.classList.contains('ativo');
+}
+
+function producaoAtiva() {
+  const el = document.getElementById('tabProducao');
   return el && el.classList.contains('ativo');
 }
 
@@ -1569,26 +1348,37 @@ function iniciarSincronizacao() {
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
     renderEstoqueLista();
     if (painelAtivo()) renderPainel();
+    if (producaoAtiva()) renderProducao();
   }, () => { document.getElementById('contaStatus').textContent = 'Conectado, mas sem conseguir ler o estoque agora (verifique sua internet).'; });
 
   unsubMovimentos = onSnapshot(collection(db, 'movimentos'), snap => {
     movimentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (painelAtivo()) renderPainel();
+    if (producaoAtiva()) renderProducao();
   });
 
-  unsubIdentidades = onSnapshot(collection(db, 'identidades'), snap => {
+  unsubProducaoAgenda = onSnapshot(collection(db, 'producaoAgenda'), snap => {
     const nova = {};
-    snap.docs.forEach(d => { nova[d.id] = d.data(); });
-    identidadesAprendidas = nova;
+    snap.docs.forEach(d => { nova[d.id] = d.data().produtos || []; });
+    agendaProducao = nova;
+    if (producaoAtiva()) renderProducao();
+  });
+
+  unsubProducaoFeita = onSnapshot(query(collection(db, 'producaoFeita'), where('data', '==', hoje())), snap => {
+    const novo = {};
+    snap.docs.forEach(d => { novo[d.id] = !!d.data().concluido; });
+    producaoFeitaHoje = novo;
+    if (producaoAtiva()) renderProducao();
   });
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos, unsubIdentidades].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = unsubIdentidades = null;
+  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda, unsubProducaoFeita].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = unsubProducaoFeita = null;
   estoque = [];
   movimentos = [];
-  identidadesAprendidas = {};
+  agendaProducao = {};
+  producaoFeitaHoje = {};
 }
 
 function traduzErroAuth(code) {
@@ -1621,7 +1411,7 @@ if (FIREBASE_CONFIGURADO) {
   document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
   document.getElementById('btnBackup').addEventListener('click', () => {
-    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, identidadesAprendidas };
+    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos };
     downloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), `natunutri-backup-${hoje()}.json`);
   });
 
@@ -1641,29 +1431,6 @@ if (FIREBASE_CONFIGURADO) {
   document.getElementById('loginGate').innerHTML = '<div class="pasta-status">Configuração da nuvem ainda não concluída neste site.</div>';
 }
 
-// Aprende, a partir de uma etiqueta já lida (nome sempre completo, nunca
-// cortado), a identidade de cada item. Sem login, ainda vale aprender em
-// memória (ajuda a própria Lista de Resumo nesta sessão), mas não tenta
-// salvar na nuvem — organizar etiquetas é o uso do dia a dia e não deve
-// depender da área administrativa.
-async function aprenderIdentidades(pares) {
-  const novos = [];
-  pares.forEach(({ nomeBruto, tipo, valor }) => {
-    const chave = norm(nomeBruto).toLowerCase();
-    if (!chave || chave.length < 4) return;
-    const atual = identidadesAprendidas[chave];
-    if (atual && atual.tipo === tipo && JSON.stringify(atual.valor) === JSON.stringify(valor)) return;
-    identidadesAprendidas[chave] = { tipo, valor };
-    novos.push({ chave, tipo, valor });
-  });
-  if (!novos.length || !auth?.currentUser) return;
-  try {
-    const batch = writeBatch(db);
-    novos.forEach(({ chave, tipo, valor }) => batch.set(doc(db, 'identidades', chave), { tipo, valor }));
-    await batch.commit();
-  } catch (err) { /* falha de rede não deve travar o uso do dia a dia */ }
-}
-
 function renderEstoqueLista() {
   const el = document.getElementById('listaEstoque');
   const termo = norm(document.getElementById('buscaEstoque')?.value || '').toLowerCase();
@@ -1680,8 +1447,8 @@ function renderEstoqueLista() {
       const row = document.createElement('div');
       row.className = 'estoque-row';
       row.innerHTML = `
-        <input type="text" value="${escapeHtml(item.nome)}" data-id="${item.id}" data-f="nome">
-        <span class="estoque-kg-leitura" title="Só leitura — use Registrar compra ou Ajuste de inventário para mudar">${item.kg.toFixed(3)} kg</span>
+        <span class="estoque-nome">${escapeHtml(item.nome)}</span>
+        <span class="estoque-kg-leitura">${item.kg.toFixed(3)} kg</span>
       `;
       el.appendChild(row);
     });
@@ -1691,11 +1458,33 @@ function renderEstoqueLista() {
 
 document.getElementById('buscaEstoque').addEventListener('input', renderEstoqueLista);
 
+document.getElementById('btnVerificarDuplicatas').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const fusoes = encontrarDuplicatasEstoque();
+  if (!fusoes.length) { alert('Nenhuma duplicata encontrada — todos os nomes parecem produtos diferentes.'); return; }
+
+  let msg = `Encontrei ${fusoes.length} duplicata(s). Confirma fundir?\n\n`;
+  fusoes.forEach(({ principal, duplicata }) => {
+    const somaKg = Math.round((principal.kg + duplicata.kg) * 1000) / 1000;
+    msg += `"${duplicata.nome}" (${duplicata.kg.toFixed(3)} kg) → "${principal.nome}" (${principal.kg.toFixed(3)} → ${somaKg.toFixed(3)} kg)\n`;
+  });
+  if (!confirm(msg)) return;
+
+  const batch = writeBatch(db);
+  fusoes.forEach(({ principal, duplicata }) => {
+    const somaKg = Math.round((principal.kg + duplicata.kg) * 1000) / 1000;
+    batch.update(doc(db, 'estoque', principal.id), { kg: somaKg });
+    batch.delete(doc(db, 'estoque', duplicata.id));
+  });
+  await batch.commit();
+  alert(`${fusoes.length} duplicata(s) fundida(s).`);
+});
+
 // Cada seletor de produto (compra/ajuste) tem uma busca em cima e um <select>
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
 // todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto']].forEach(([selId, buscaId]) => {
+  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto'], ['selExcluirProduto', 'buscaExcluirProduto']].forEach(([selId, buscaId]) => {
     const sel = document.getElementById(selId);
     const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
     const atual = sel.value;
@@ -1709,10 +1498,50 @@ function preencherSelects() {
 
 document.getElementById('buscaCompraProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
+document.getElementById('buscaProducaoProduto').addEventListener('input', preencherSelects);
+document.getElementById('buscaExcluirProduto').addEventListener('input', preencherSelects);
 
-document.getElementById('btnAddEstoqueItem').addEventListener('click', async () => {
+document.getElementById('btnExcluirProduto').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
-  await addDoc(collection(db, 'estoque'), { nome: '', kg: 0 });
+  const nome = document.getElementById('selExcluirProduto').value;
+  if (!nome) { alert('Escolha um produto pra excluir.'); return; }
+  const item = estoque.find(i => i.nome === nome);
+  if (!item) { alert('Produto não encontrado.'); return; }
+
+  const avisoKg = item.kg !== 0
+    ? `\n\n⚠ Esse produto ainda tem ${item.kg.toFixed(3)} kg registrado em estoque — excluir apaga esse valor, não desconta em outro lugar.`
+    : '';
+  if (!confirm(`Excluir "${item.nome}" do estoque? Isso não pode ser desfeito.${avisoKg}`)) return;
+
+  await deleteDoc(doc(db, 'estoque', item.id));
+  document.getElementById('buscaExcluirProduto').value = '';
+  alert('Produto excluído.');
+});
+
+document.getElementById('btnCadastrarNovoProduto').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const nome = norm(document.getElementById('inputNovoProdutoNome').value);
+  const kg = parseFloat(document.getElementById('inputNovoProdutoKg').value) || 0;
+  const fornecedor = norm(document.getElementById('inputNovoProdutoFornecedor').value);
+  const custoTotal = parseFloat(document.getElementById('inputNovoProdutoCusto').value);
+  if (!nome) { alert('Digite o nome do produto.'); return; }
+  if (acharEstoque(nome)) { alert('Esse produto já existe no estoque.'); return; }
+
+  const batch = writeBatch(db);
+  batch.set(doc(collection(db, 'estoque')), { nome, kg: Math.round(kg * 1000) / 1000 });
+  if (kg > 0) {
+    const mov = { data: hoje(), tipo: 'compra', produto: nome, kg };
+    if (fornecedor) mov.fornecedor = fornecedor;
+    if (!isNaN(custoTotal) && custoTotal > 0) mov.custoTotal = custoTotal;
+    batch.set(doc(collection(db, 'movimentos')), mov);
+  }
+  await batch.commit();
+
+  document.getElementById('inputNovoProdutoNome').value = '';
+  document.getElementById('inputNovoProdutoKg').value = '';
+  document.getElementById('inputNovoProdutoFornecedor').value = '';
+  document.getElementById('inputNovoProdutoCusto').value = '';
+  alert(`Produto "${nome}" cadastrado${kg > 0 ? ` com ${kg} kg` : ''}.`);
 });
 
 document.getElementById('btnImportarEstoque').addEventListener('click', async () => {
@@ -1726,12 +1555,6 @@ document.getElementById('btnImportarEstoque').addEventListener('click', async ()
   await batch.commit();
   txt.value = '';
   alert(`${novos.length} produto(s) novo(s) importado(s). ${nomes.length - novos.length} já existiam e foram ignorados.`);
-});
-
-document.getElementById('listaEstoque').addEventListener('change', async e => {
-  const id = e.target.dataset.id, f = e.target.dataset.f;
-  if (id === undefined || f !== 'nome') return;
-  await updateDoc(doc(db, 'estoque', id), { nome: e.target.value });
 });
 
 function hoje() { return new Date().toISOString().slice(0, 10); }
@@ -1791,36 +1614,34 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
   alert('Ajuste registrado.');
 });
 
+// Reaproveita a lista de separação (já desmembra kits e soma por produto +
+// variação) pra saber quanto descontar de cada produto em kg — mesma fonte
+// de dados, sem precisar decompor os kits de novo.
 function calcularConsumoEstoque() {
-  const { produtos = [], kits = [] } = groupsForExport;
-  const consumo = {}; // nome do produto individual -> kg vendidos
-  function somar(nome, kg) { consumo[nome] = (consumo[nome] || 0) + kg; }
-  [...produtos, ...kits].forEach(pm => {
+  const consumo = {};
+  separacaoParaExport.forEach(pm => {
     pm.variacoesSorted.forEach(v => {
       const g = parseGramas(v.variacao);
       if (!isFinite(g)) return; // variação sem peso reconhecível (ex: "Único") não entra no cálculo
-      const kg = (g * v.totalQtd) / 1000;
-      const componentes = decomporKit(pm.produto);
-      if (componentes) componentes.forEach(nome => somar(nome, kg));
-      else somar(pm.produto, kg);
+      consumo[pm.produto] = (consumo[pm.produto] || 0) + (g * v.totalQtd) / 1000;
     });
   });
   return consumo;
 }
 
-document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
-  if (!auth?.currentUser) { alert('Entre na conta administrativa primeiro (aba Administrativo) pra descontar do estoque.'); return; }
-
+// Compartilhado entre o botão "Descontar do estoque" e o aviso automático
+// que aparece depois de baixar o PDF organizado.
+async function descontarEstoqueAtual() {
   const consumo = calcularConsumoEstoque();
   const aplicaveis = [];
-  const semCadastro = [];
+  const novos = []; // produtos sem cadastro — cria automaticamente, partindo de 0 kg
   Object.keys(consumo).forEach(nome => {
     const item = acharEstoque(nome);
     if (item) aplicaveis.push({ item, kg: consumo[nome] });
-    else semCadastro.push(nome);
+    else novos.push({ nome, kg: consumo[nome] });
   });
 
-  if (aplicaveis.length === 0 && semCadastro.length === 0) {
+  if (aplicaveis.length === 0 && novos.length === 0) {
     alert('Nenhum produto com variação em peso (kg/g) pra descontar.');
     return;
   }
@@ -1829,21 +1650,42 @@ document.getElementById('btnDescontarEstoque').addEventListener('click', async (
   aplicaveis.forEach(({ item, kg }) => {
     msg += `${item.nome}: -${kg.toFixed(3)} kg  (${item.kg.toFixed(3)} → ${(item.kg - kg).toFixed(3)} kg)\n`;
   });
-  if (semCadastro.length) {
-    msg += `\nSem cadastro no estoque (ignorados):\n- ${semCadastro.join('\n- ')}`;
+  if (novos.length) {
+    msg += `\nProduto(s) novo(s) (cadastra automaticamente, partindo de 0 kg):\n`;
+    novos.forEach(({ nome, kg }) => { msg += `${nome}: -${kg.toFixed(3)} kg  (0.000 → ${(-kg).toFixed(3)} kg)\n`; });
   }
-  if (aplicaveis.length === 0) { alert(msg); return; }
   if (!confirm(msg)) return;
 
   const data = hoje();
   const batch = writeBatch(db);
+  const nomesAplicaveis = new Set([...aplicaveis.map(a => a.item.nome.toLowerCase()), ...novos.map(n => n.nome.toLowerCase())]);
   aplicaveis.forEach(({ item, kg }) => {
     const novoKg = Math.round((item.kg - kg) * 1000) / 1000;
     batch.update(doc(db, 'estoque', item.id), { kg: novoKg });
-    batch.set(doc(collection(db, 'movimentos')), { data, tipo: 'venda', produto: item.nome, kg });
+  });
+  novos.forEach(({ nome, kg }) => {
+    const novoKg = Math.round(-kg * 1000) / 1000;
+    batch.set(doc(collection(db, 'estoque')), { nome, kg: novoKg });
+  });
+  // Um movimento de venda por produto + variação (não só o total em kg) —
+  // é o que alimenta a sugestão de produção por variação mais abaixo.
+  separacaoParaExport.forEach(pm => {
+    if (!nomesAplicaveis.has(pm.produto.toLowerCase())) return;
+    pm.variacoesSorted.forEach(v => {
+      const g = parseGramas(v.variacao);
+      const kgLinha = isFinite(g) ? (g * v.totalQtd) / 1000 : 0;
+      batch.set(doc(collection(db, 'movimentos')), {
+        data, tipo: 'venda', produto: pm.produto, variacao: v.variacao, qtd: v.totalQtd, kg: kgLinha,
+      });
+    });
   });
   await batch.commit();
   alert('Estoque atualizado.');
+}
+
+document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta administrativa primeiro (aba Administrativo) pra descontar do estoque.'); return; }
+  await descontarEstoqueAtual();
 });
 
 // ──────────────────────────────────────────────
@@ -1879,6 +1721,239 @@ function calcularPainel() {
     return { nome: item.nome, estoqueKg: item.kg, mediaDia, diasRestantes, sugestaoCompra, custoMedioKg };
   }).sort((a, b) => a.diasRestantes - b.diasRestantes);
 }
+
+// ──────────────────────────────────────────────
+// PRODUÇÃO — agenda semanal (quais produtos são produzidos em cada dia) mais
+// a quantidade sugerida de cada um, salvos no Firestore (coleção
+// producaoAgenda, um documento por dia da semana).
+// ──────────────────────────────────────────────
+const DIAS_SEMANA = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
+const DIAS_LABEL = { domingo: 'Domingo', segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado' };
+let diaProducaoSelecionado = DIAS_SEMANA[new Date().getDay()];
+
+// Pra cada dia em que um produto aparece na agenda, calcula o intervalo (em
+// dias) até a próxima vez que ele aparece de novo — ciclando a semana — e a
+// distância desse dia até hoje. Usado tanto pela sugestão semanal em kg
+// quanto pela sugestão de hoje por variação, pra manter a mesma conta.
+function intervalosDeProducao(nome) {
+  const hojeIdx = new Date().getDay();
+  const idxs = [];
+  DIAS_SEMANA.forEach((dia, i) => {
+    if ((agendaProducao[dia] || []).some(p => p.toLowerCase() === nome.toLowerCase())) idxs.push(i);
+  });
+  return idxs.map((diaIdx, k) => {
+    const proxIdx = idxs[(k + 1) % idxs.length];
+    let intervalo = proxIdx - diaIdx;
+    if (intervalo <= 0) intervalo += 7;
+    let distanciaDeHoje = diaIdx - hojeIdx;
+    if (distanciaDeHoje < 0) distanciaDeHoje += 7;
+    return { diaIdx, intervalo, distanciaDeHoje };
+  });
+}
+
+// Pra cada produto agendado, calcula quanto produzir em cada dia em que ele
+// aparece: média de venda/dia × dias até a próxima vez que ele entra na
+// agenda de novo. Só desconta o estoque atual na ocorrência mais próxima a
+// partir de hoje — as demais no resto da semana são uma projeção, não dá
+// pra saber o estoque exato de dias futuros sem simular venda a venda.
+function calcularProducaoSemana() {
+  const painel = calcularPainel();
+  const porNome = {};
+  painel.forEach(p => { porNome[p.nome.toLowerCase()] = p; });
+
+  const resultado = {};
+  DIAS_SEMANA.forEach(dia => { resultado[dia] = []; });
+
+  const todosProdutos = new Set();
+  DIAS_SEMANA.forEach(dia => (agendaProducao[dia] || []).forEach(p => todosProdutos.add(p)));
+
+  todosProdutos.forEach(nome => {
+    const ocorrencias = intervalosDeProducao(nome);
+    if (!ocorrencias.length) return;
+    const p = porNome[nome.toLowerCase()];
+    const mediaDia = p ? p.mediaDia : 0;
+    const estoqueAtual = p ? p.estoqueKg : 0;
+    const menorDistancia = Math.min(...ocorrencias.map(o => o.distanciaDeHoje));
+
+    ocorrencias.forEach(({ diaIdx, intervalo, distanciaDeHoje }) => {
+      let kg = mediaDia * intervalo;
+      if (distanciaDeHoje === menorDistancia) kg = Math.max(0, kg - estoqueAtual);
+      kg = Math.round(kg * 10) / 10;
+      if (kg > 0) resultado[DIAS_SEMANA[diaIdx]].push({ produto: nome, kg });
+    });
+  });
+
+  Object.keys(resultado).forEach(dia => resultado[dia].sort((a, b) => b.kg - a.kg));
+  return resultado;
+}
+
+// Média de unidades vendidas por dia nos últimos 30 dias, por produto +
+// variação — só existe pra vendas registradas depois que "Descontar do
+// estoque" passou a gravar a variação de cada linha (dados antigos não têm
+// essa granularidade e ficam de fora daqui).
+function calcularVendaMediaPorVariacao() {
+  const hojeMs = Date.now();
+  const desdeMs = hojeMs - 30 * 24 * 60 * 60 * 1000;
+  const vendas = movimentos.filter(m => m.tipo === 'venda' && m.variacao && m.qtd != null);
+  if (!vendas.length) return {};
+  const primeiraVendaMs = Math.min(...vendas.map(m => new Date(m.data).getTime()));
+  const diasComHistorico = Math.max(1, Math.min(30, Math.round((hojeMs - primeiraVendaMs) / 86400000) + 1));
+
+  const porChave = {};
+  vendas.forEach(m => {
+    if (new Date(m.data).getTime() < desdeMs) return;
+    const chave = m.produto.toLowerCase() + '||' + m.variacao.toLowerCase();
+    if (!porChave[chave]) porChave[chave] = { produto: m.produto, variacao: m.variacao, qtdTotal: 0 };
+    porChave[chave].qtdTotal += m.qtd;
+  });
+
+  const resultado = {};
+  Object.entries(porChave).forEach(([chave, v]) => {
+    resultado[chave] = { produto: v.produto, variacao: v.variacao, mediaDia: v.qtdTotal / diasComHistorico };
+  });
+  return resultado;
+}
+
+// Sugestão de hoje, desmembrada por variação (não só o kg agregado): usa o
+// mesmo intervalo até a próxima produção de cada produto, aplicado à média
+// de venda de CADA variação separadamente.
+function calcularProducaoHojeVariacoes() {
+  const hojeIdx = new Date().getDay();
+  const produtosHoje = agendaProducao[DIAS_SEMANA[hojeIdx]] || [];
+  const vendaVar = calcularVendaMediaPorVariacao();
+
+  const variacoesPorProduto = {};
+  Object.values(vendaVar).forEach(v => {
+    const chaveProd = v.produto.toLowerCase();
+    if (!variacoesPorProduto[chaveProd]) variacoesPorProduto[chaveProd] = [];
+    variacoesPorProduto[chaveProd].push(v);
+  });
+
+  const resultado = [];
+  produtosHoje.forEach(nome => {
+    const ocorrencias = intervalosDeProducao(nome);
+    const ocorrenciaHoje = ocorrencias.find(o => o.diaIdx === hojeIdx);
+    if (!ocorrenciaHoje) return;
+    const variacoes = variacoesPorProduto[nome.toLowerCase()] || [];
+    const itens = variacoes
+      .map(v => ({ variacao: v.variacao, qtd: Math.round(v.mediaDia * ocorrenciaHoje.intervalo) }))
+      .filter(it => it.qtd > 0)
+      .sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
+    if (itens.length) resultado.push({ produto: nome, itens });
+  });
+  return resultado;
+}
+
+function idProducaoFeita(produto, variacao) {
+  const limpa = s => norm(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return `${hoje()}__${limpa(produto)}__${limpa(variacao)}`;
+}
+
+function renderProducaoDiaEdicao() {
+  document.querySelectorAll('.dia-btn').forEach(b => b.classList.toggle('ativo', b.dataset.dia === diaProducaoSelecionado));
+  const lista = agendaProducao[diaProducaoSelecionado] || [];
+  const el = document.getElementById('listaProducaoDia');
+  el.innerHTML = '';
+  if (!lista.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum produto nesse dia ainda.</div>';
+    return;
+  }
+  lista.forEach(nome => {
+    const row = document.createElement('div');
+    row.className = 'estoque-row';
+    row.innerHTML = `<span style="flex:1">${escapeHtml(nome)}</span><button class="secondary" data-remover="${escapeHtml(nome)}" style="padding:4px 10px; font-size:12px;">Remover</button>`;
+    el.appendChild(row);
+  });
+}
+
+function renderProducaoHoje() {
+  const el = document.getElementById('listaProducaoHoje');
+  const itens = calcularProducaoHojeVariacoes();
+  el.innerHTML = '';
+  if (!itens.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nada agendado pra hoje, ou ainda sem histórico de vendas por variação.</div>';
+    return;
+  }
+  itens.forEach(pm => {
+    const bloco = document.createElement('div');
+    bloco.className = 'producao-dia-bloco';
+    bloco.innerHTML = `
+      <div class="producao-dia-titulo">${escapeHtml(pm.produto)}</div>
+      ${pm.itens.map(it => {
+        const idFeito = idProducaoFeita(pm.produto, it.variacao);
+        const marcado = !!producaoFeitaHoje[idFeito];
+        return `
+          <label class="painel-row" style="cursor:pointer;">
+            <span class="painel-nome">${escapeHtml(it.variacao)} — ${it.qtd} un</span>
+            <input type="checkbox" data-id-feito="${idFeito}" data-produto="${escapeHtml(pm.produto)}" data-variacao="${escapeHtml(it.variacao)}" ${marcado ? 'checked' : ''} style="width:20px; height:20px;">
+          </label>
+        `;
+      }).join('')}
+    `;
+    el.appendChild(bloco);
+  });
+}
+
+document.getElementById('listaProducaoHoje').addEventListener('change', async e => {
+  if (!e.target.matches('input[type="checkbox"]')) return;
+  if (!auth?.currentUser) return;
+  await setDoc(doc(db, 'producaoFeita', e.target.dataset.idFeito), {
+    data: hoje(), produto: e.target.dataset.produto, variacao: e.target.dataset.variacao, concluido: e.target.checked,
+  });
+});
+
+function renderProducao() {
+  renderProducaoDiaEdicao();
+  renderProducaoHoje();
+  const resultado = calcularProducaoSemana();
+  const el = document.getElementById('listaProducaoSemana');
+  el.innerHTML = '';
+  const hojeIdx = new Date().getDay();
+  const diasRotacionados = DIAS_SEMANA.map((_, i) => DIAS_SEMANA[(hojeIdx + i) % 7]);
+  let algumaCoisa = false;
+  diasRotacionados.forEach((dia, i) => {
+    const itens = resultado[dia] || [];
+    if (!itens.length) return;
+    algumaCoisa = true;
+    const bloco = document.createElement('div');
+    bloco.className = 'producao-dia-bloco';
+    const rotulo = i === 0 ? `${DIAS_LABEL[dia]} (hoje)` : DIAS_LABEL[dia];
+    bloco.innerHTML = `
+      <div class="producao-dia-titulo">${escapeHtml(rotulo)}</div>
+      ${itens.map(it => `
+        <div class="painel-row">
+          <span class="painel-nome">${escapeHtml(it.produto)}</span>
+          <span class="painel-badge ok">${it.kg.toFixed(1)} kg</span>
+        </div>
+      `).join('')}
+    `;
+    el.appendChild(bloco);
+  });
+  if (!algumaCoisa) el.innerHTML = '<div class="estoque-vazio">Nenhum produto agendado ainda. Escolha os produtos de cada dia acima.</div>';
+}
+
+document.querySelectorAll('.dia-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    diaProducaoSelecionado = btn.dataset.dia;
+    renderProducaoDiaEdicao();
+  });
+});
+
+document.getElementById('btnAdicionarProducaoProduto').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const nome = document.getElementById('selProducaoProduto').value;
+  if (!nome) { alert('Escolha um produto.'); return; }
+  const atual = agendaProducao[diaProducaoSelecionado] || [];
+  if (atual.some(p => p.toLowerCase() === nome.toLowerCase())) { alert('Esse produto já está nesse dia.'); return; }
+  await setDoc(doc(db, 'producaoAgenda', diaProducaoSelecionado), { produtos: [...atual, nome] });
+});
+
+document.getElementById('listaProducaoDia').addEventListener('click', async e => {
+  const nome = e.target.dataset.remover;
+  if (!nome || !auth?.currentUser) return;
+  const atual = agendaProducao[diaProducaoSelecionado] || [];
+  await setDoc(doc(db, 'producaoAgenda', diaProducaoSelecionado), { produtos: atual.filter(p => p !== nome) });
+});
 
 function serieDiaria(nomeProduto, dias) {
   const hoje0 = new Date();
@@ -1996,20 +2071,34 @@ document.getElementById('btnExportarEstoqueCsv').addEventListener('click', () =>
 });
 
 document.getElementById('btnExportarMovimentosCsv').addEventListener('click', () => {
-  const linhas = ['Data;Tipo;Produto;Kg;Fornecedor;Custo total (R$);Motivo'];
+  const linhas = ['Data;Tipo;Produto;Variação;Qtd;Kg;Fornecedor;Custo total (R$);Motivo'];
   [...movimentos].sort((a, b) => a.data.localeCompare(b.data)).forEach(m => {
     linhas.push([
-      m.data, m.tipo, csvEscape(m.produto), m.kg.toFixed(3),
+      m.data, m.tipo, csvEscape(m.produto), csvEscape(m.variacao || ''), m.qtd ?? '', m.kg.toFixed(3),
       csvEscape(m.fornecedor || ''), m.custoTotal ? m.custoTotal.toFixed(2) : '', csvEscape(m.motivo || ''),
     ].join(';'));
   });
   downloadBlob(csvBlob(linhas), `natunutri-movimentacoes-${hoje()}.csv`);
 });
 
+// Pesos/variações que o produto já teve registrados em venda — só
+// informativo na planilha de contagem, ajuda a conferir o estoque físico
+// batendo com os tamanhos de pacote que existem pra aquele produto.
+function variacoesConhecidasPorProduto(nomeProdutoLower) {
+  const vistos = new Set();
+  movimentos.forEach(m => {
+    if (m.tipo === 'venda' && m.variacao && m.produto && m.produto.toLowerCase() === nomeProdutoLower) {
+      vistos.add(m.variacao);
+    }
+  });
+  return [...vistos].sort((a, b) => parseGramas(a) - parseGramas(b));
+}
+
 document.getElementById('btnExportarInventarioCsv').addEventListener('click', () => {
-  const linhas = ['Produto;Estoque atual (kg)'];
+  const linhas = ['Produto;Variações conhecidas;Estoque atual (kg);Estoque contado (kg)'];
   [...estoque].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).forEach(item => {
-    linhas.push([csvEscape(item.nome), item.kg.toFixed(3)].join(';'));
+    const variacoes = variacoesConhecidasPorProduto(item.nome.toLowerCase()).join(', ');
+    linhas.push([csvEscape(item.nome), csvEscape(variacoes), item.kg.toFixed(3), ''].join(';'));
   });
   downloadBlob(csvBlob(linhas), `natunutri-inventario-${hoje()}.csv`);
 });
@@ -2031,11 +2120,14 @@ function parseCsvLinha(linha) {
   return campos;
 }
 
+// A planilha tem 4 colunas (Produto;Variações conhecidas;Estoque atual;
+// Estoque contado) — só a 1ª (nome) e a 4ª (estoque contado) importam pra
+// atualizar; as outras duas são só referência pra quem está preenchendo.
 function parseCsvInventario(texto) {
   const linhas = texto.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   return linhas.slice(1) // pula o cabeçalho
     .map(parseCsvLinha)
-    .map(([produto, kg]) => ({ produto: norm(produto || ''), kg: parseFloat(String(kg || '').replace(',', '.')) }))
+    .map(campos => ({ produto: norm(campos[0] || ''), kg: parseFloat(String(campos[3] || '').replace(',', '.')) }))
     .filter(r => r.produto);
 }
 
