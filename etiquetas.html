@@ -399,6 +399,17 @@
         <input type="text" id="inputAjusteMotivo" placeholder="Motivo (ex: contagem mensal, perda)" style="flex:2; min-width:180px;">
         <button class="secondary" id="btnRegistrarAjuste">⚖ Registrar ajuste</button>
       </div>
+
+      <div style="border-top:1px solid var(--linha); margin:16px 0 12px;"></div>
+      <h3 style="margin:0 0 8px; font-size:13.5px;">Ou ajuste tudo de uma vez por planilha</h3>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Baixe a planilha com todos os produtos, as variações que cada um já vendeu (pra te ajudar a conferir) e o estoque atual. Escreva o estoque contado na última coluna, salve e importe de volta — o site ajusta cada produto automaticamente (registrando o motivo "Contagem física"). Deixar a última coluna em branco pula o produto, sem alterar nada.
+      </div>
+      <div class="actions" style="margin-bottom:0">
+        <button class="secondary" id="btnExportarInventarioCsv">⬇ Baixar planilha (.csv)</button>
+        <button class="secondary" id="btnImportarInventarioCsv">⬆ Importar planilha preenchida</button>
+        <input type="file" id="inputImportarInventarioCsv" accept=".csv,text/csv" style="display:none">
+      </div>
     </div>
 
     <div class="card">
@@ -427,18 +438,6 @@
         Ordenado do maior pro menor estoque. Só consulta — pra cadastrar produto novo use a aba Produtos; pra corrigir quantidade, "Ajuste de inventário".
       </div>
       <div id="listaEstoque"></div>
-    </div>
-
-    <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Planilha de contagem de inventário</h2>
-      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Baixe a planilha com todos os produtos, preencha o estoque que você contou fisicamente na coluna de kg, e importe de volta — o site ajusta cada produto automaticamente (registrando o motivo "Contagem física").
-      </div>
-      <div class="actions" style="margin-bottom:0">
-        <button class="secondary" id="btnExportarInventarioCsv">⬇ Baixar planilha (.csv)</button>
-        <button class="secondary" id="btnImportarInventarioCsv">⬆ Importar planilha preenchida</button>
-        <input type="file" id="inputImportarInventarioCsv" accept=".csv,text/csv" style="display:none">
-      </div>
     </div>
   </div>
 
@@ -2082,10 +2081,24 @@ document.getElementById('btnExportarMovimentosCsv').addEventListener('click', ()
   downloadBlob(csvBlob(linhas), `natunutri-movimentacoes-${hoje()}.csv`);
 });
 
+// Pesos/variações que o produto já teve registrados em venda — só
+// informativo na planilha de contagem, ajuda a conferir o estoque físico
+// batendo com os tamanhos de pacote que existem pra aquele produto.
+function variacoesConhecidasPorProduto(nomeProdutoLower) {
+  const vistos = new Set();
+  movimentos.forEach(m => {
+    if (m.tipo === 'venda' && m.variacao && m.produto && m.produto.toLowerCase() === nomeProdutoLower) {
+      vistos.add(m.variacao);
+    }
+  });
+  return [...vistos].sort((a, b) => parseGramas(a) - parseGramas(b));
+}
+
 document.getElementById('btnExportarInventarioCsv').addEventListener('click', () => {
-  const linhas = ['Produto;Estoque atual (kg)'];
+  const linhas = ['Produto;Variações conhecidas;Estoque atual (kg);Estoque contado (kg)'];
   [...estoque].sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).forEach(item => {
-    linhas.push([csvEscape(item.nome), item.kg.toFixed(3)].join(';'));
+    const variacoes = variacoesConhecidasPorProduto(item.nome.toLowerCase()).join(', ');
+    linhas.push([csvEscape(item.nome), csvEscape(variacoes), item.kg.toFixed(3), ''].join(';'));
   });
   downloadBlob(csvBlob(linhas), `natunutri-inventario-${hoje()}.csv`);
 });
@@ -2107,11 +2120,14 @@ function parseCsvLinha(linha) {
   return campos;
 }
 
+// A planilha tem 4 colunas (Produto;Variações conhecidas;Estoque atual;
+// Estoque contado) — só a 1ª (nome) e a 4ª (estoque contado) importam pra
+// atualizar; as outras duas são só referência pra quem está preenchendo.
 function parseCsvInventario(texto) {
   const linhas = texto.replace(/^﻿/, '').split(/\r?\n/).map(l => l.trim()).filter(Boolean);
   return linhas.slice(1) // pula o cabeçalho
     .map(parseCsvLinha)
-    .map(([produto, kg]) => ({ produto: norm(produto || ''), kg: parseFloat(String(kg || '').replace(',', '.')) }))
+    .map(campos => ({ produto: norm(campos[0] || ''), kg: parseFloat(String(campos[3] || '').replace(',', '.')) }))
     .filter(r => r.produto);
 }
 
