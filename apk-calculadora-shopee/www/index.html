@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Calculadora de Preços Shopee — Natunutri</title>
+<meta name="description" content="Ferramenta interna Natunutri para calcular margem de lucro e preço ideal de venda na Shopee.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B3A2B">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --verde:   #1B3A2B;
+    --verde-m: #2C5A3F;
+    --verde-l: #EBF1EA;
+    --terra:   #A8763E;
+    --areia:   #FAF7F0;
+    --branco:  #FFFFFF;
+    --cinza1:  #22261F;
+    --cinza2:  #5B5C4E;
+    --cinza3:  #8B8A78;
+    --cinza4:  #E2DFD3;
+    --vermelho: #B3432E;
+    --amarelo: #B8862E;
+    --sombra:  0 2px 12px rgba(27,58,43,0.07);
+    --sombra2: 0 10px 32px rgba(27,58,43,0.14);
+    --r: 14px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--areia);
+    color: var(--cinza1);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--verde);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(27,58,43,0.25);
+  }
+  .header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 16px 20px;
+  }
+  .header-inner h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 21px;
+    color: #fff;
+  }
+  .header-inner p {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2px;
+  }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 18px 16px 60px;
+  }
+
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+    background: var(--verde-l);
+    padding: 5px;
+    border-radius: 12px;
+  }
+  .tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 13.5px;
+    color: var(--verde-m);
+    border-radius: 9px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .tab-btn.active { background: var(--verde); color: #fff; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .card {
+    background: var(--branco);
+    border-radius: var(--r);
+    box-shadow: var(--sombra);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 16.5px;
+    color: var(--verde);
+    margin-bottom: 14px;
+  }
+  .card h2 small {
+    display: block;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    font-size: 12px;
+    color: var(--cinza3);
+    margin-top: 2px;
+  }
+
+  .field { margin-bottom: 13px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--cinza2);
+    margin-bottom: 5px;
+  }
+  .field .hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--cinza3);
+    margin-left: 4px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1.5px solid var(--cinza4);
+    border-radius: 9px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--cinza1);
+    background: var(--branco);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--verde-m); }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .seg {
+    display: flex;
+    background: var(--verde-l);
+    border-radius: 9px;
+    padding: 3px;
+    margin-bottom: 14px;
+  }
+  .seg button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 9px 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--verde-m);
+    border-radius: 7px;
+    cursor: pointer;
+  }
+  .seg button.active { background: var(--verde); color: #fff; }
+
+  .result-hero {
+    text-align: center;
+    padding: 14px 0 6px;
+  }
+  .result-hero .label {
+    font-size: 12px;
+    color: var(--cinza3);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .result-hero .value {
+    font-family: 'Fraunces', serif;
+    font-size: 34px;
+    color: var(--verde);
+    margin-top: 4px;
+  }
+  .result-hero .value.bad { color: var(--vermelho); }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .metric {
+    background: var(--verde-l);
+    border-radius: 10px;
+    padding: 12px;
+  }
+  .metric .m-label {
+    font-size: 11.5px;
+    color: var(--verde-m);
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .metric .m-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--verde);
+  }
+  .metric .m-sub {
+    font-size: 11px;
+    color: var(--cinza3);
+    margin-top: 1px;
+  }
+
+  .breakdown {
+    margin-top: 14px;
+    border-top: 1px solid var(--cinza4);
+    padding-top: 10px;
+  }
+  .breakdown .b-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    font-size: 13.5px;
+  }
+  .breakdown .b-row span:first-child { color: var(--cinza2); }
+  .breakdown .b-row span:last-child { font-weight: 600; color: var(--cinza1); }
+  .breakdown .b-row.total {
+    border-top: 1px solid var(--cinza4);
+    margin-top: 4px;
+    padding-top: 10px;
+    font-weight: 700;
+  }
+  .breakdown .b-row.total span { color: var(--verde) !important; }
+
+  .warn {
+    background: #FBEAE6;
+    color: var(--vermelho);
+    border-radius: 9px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-top: 12px;
+  }
+
+  .btn {
+    width: 100%;
+    background: var(--verde);
+    color: #fff;
+    border: none;
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 14.5px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .btn.secondary {
+    background: transparent;
+    color: var(--verde);
+    border: 1.5px solid var(--verde);
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--cinza3);
+    font-weight: 600;
+    font-size: 12.5px;
+    padding: 8px;
+  }
+
+  /* produtos */
+  .prod-list { display: flex; flex-direction: column; gap: 10px; }
+  .prod-item {
+    background: var(--branco);
+    border-radius: 12px;
+    box-shadow: var(--sombra);
+    padding: 14px;
+    border-left: 4px solid var(--cinza4);
+  }
+  .prod-item.good { border-left-color: #3E7A4F; }
+  .prod-item.mid { border-left-color: var(--amarelo); }
+  .prod-item.bad { border-left-color: var(--vermelho); }
+  .prod-item .p-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .prod-item .p-name {
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--cinza1);
+  }
+  .prod-item .p-margin {
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .prod-item .p-margin.good { color: #3E7A4F; }
+  .prod-item .p-margin.mid { color: var(--amarelo); }
+  .prod-item .p-margin.bad { color: var(--vermelho); }
+  .prod-item .p-details {
+    display: flex;
+    gap: 14px;
+    font-size: 12px;
+    color: var(--cinza3);
+    flex-wrap: wrap;
+  }
+  .prod-item .p-details b { color: var(--cinza2); }
+  .prod-item .p-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .prod-item .p-actions button {
+    flex: 1;
+    border: none;
+    background: var(--verde-l);
+    color: var(--verde-m);
+    padding: 7px;
+    border-radius: 7px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .prod-item .p-actions button.del { background: #FBEAE6; color: var(--vermelho); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--cinza3);
+    font-size: 13.5px;
+  }
+
+  .totals-card {
+    background: var(--verde);
+    border-radius: var(--r);
+    padding: 16px 18px;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .totals-card .t-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 4px 0;
+    color: rgba(255,255,255,0.85);
+  }
+  .totals-card .t-row b { color: #fff; font-size: 14.5px; }
+
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(27,58,43,0.45);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-bg.active { display: flex; }
+  .modal {
+    background: var(--branco);
+    width: 100%;
+    max-width: 720px;
+    border-radius: 18px 18px 0 0;
+    padding: 20px 18px 26px;
+    max-height: 88vh;
+    overflow-y: auto;
+  }
+  .modal h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    color: var(--verde);
+    margin-bottom: 14px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 11.5px;
+    color: var(--cinza3);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>🧮 Calculadora Shopee</h1>
+    <p>Ferramenta interna Natunutri — margem e precificação</p>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="sim">Simulador de Preço</button>
+    <button class="tab-btn" data-tab="prod">Meus Produtos</button>
+  </div>
+
+  <!-- SIMULADOR -->
+  <section id="view-sim" class="view active">
+    <div class="card">
+      <h2>Custos e taxas
+        <small>Preencha os valores do produto e as taxas cobradas pela Shopee</small>
+      </h2>
+
+      <div class="field">
+        <label>Preço de custo do produto (R$)</label>
+        <input type="number" inputmode="decimal" id="custo" placeholder="Ex: 15,00" step="0.01" min="0">
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Comissão Shopee <span class="hint">%</span></label>
+          <input type="number" inputmode="decimal" id="comissao" placeholder="Ex: 20" step="0.01" min="0" value="20">
+        </div>
+        <div class="field">
+          <label>Taxa de serviço/fixa <span class="hint">R$</span></label>
+          <input type="number" inputmode="decimal" id="taxaFixa" placeholder="Ex: 4,00" step="0.01" min="0" value="4">
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label>Shopee Ads (ACOS) <span class="hint">%</span></label>
+          <input type="number" inputmode="decimal" id="ads" placeholder="Ex: 8" step="0.01" min="0" value="0">
+        </div>
+        <div class="field">
+          <label>Imposto <span class="hint">%</span></label>
+          <input type="number" inputmode="decimal" id="imposto" placeholder="Ex: 6" step="0.01" min="0" value="0">
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>O que você quer calcular?</h2>
+      <div class="seg">
+        <button class="seg-btn active" data-mode="preco">Já tenho um preço</button>
+        <button class="seg-btn" data-mode="margem">Quero definir a margem</button>
+      </div>
+
+      <div class="field" id="wrap-preco">
+        <label>Preço de venda no anúncio (R$)</label>
+        <input type="number" inputmode="decimal" id="precoVenda" placeholder="Ex: 39,90" step="0.01" min="0">
+      </div>
+
+      <div class="field" id="wrap-margem" style="display:none;">
+        <label>Margem líquida desejada <span class="hint">%</span></label>
+        <input type="number" inputmode="decimal" id="margemDesejada" placeholder="Ex: 15" step="0.01" min="0" value="15">
+      </div>
+    </div>
+
+    <div class="card" id="card-resultado" style="display:none;">
+      <div class="result-hero">
+        <div class="label" id="res-titulo">Preço sugerido de venda</div>
+        <div class="value" id="res-preco">R$ 0,00</div>
+      </div>
+
+      <div class="metric-grid">
+        <div class="metric">
+          <div class="m-label">Margem bruta</div>
+          <div class="m-value" id="res-margem-bruta">R$ 0,00</div>
+          <div class="m-sub" id="res-margem-bruta-pct">0%</div>
+        </div>
+        <div class="metric">
+          <div class="m-label">Margem líquida</div>
+          <div class="m-value" id="res-margem-liquida">R$ 0,00</div>
+          <div class="m-sub" id="res-margem-liquida-pct">0%</div>
+        </div>
+      </div>
+
+      <div class="breakdown" id="res-breakdown"></div>
+
+      <div class="warn" id="res-warn" style="display:none;"></div>
+    </div>
+  </section>
+
+  <!-- MEUS PRODUTOS -->
+  <section id="view-prod" class="view">
+    <div class="totals-card" id="prod-totais" style="display:none;">
+      <div class="t-row"><span>Produtos cadastrados</span><b id="tot-qtd">0</b></div>
+      <div class="t-row"><span>Margem líquida média</span><b id="tot-margem">0%</b></div>
+    </div>
+
+    <button class="btn" id="btn-novo-produto">+ Cadastrar produto</button>
+
+    <div class="prod-list" id="prod-list" style="margin-top:14px;"></div>
+    <div class="empty" id="prod-empty">Nenhum produto cadastrado ainda.<br>Toque em "Cadastrar produto" para começar.</div>
+  </section>
+</main>
+
+<footer>Natunutri · Uso interno · dados salvos apenas neste dispositivo</footer>
+
+<!-- MODAL PRODUTO -->
+<div class="modal-bg" id="modal-bg">
+  <div class="modal">
+    <h3 id="modal-titulo">Cadastrar produto</h3>
+    <input type="hidden" id="p-id">
+    <div class="field">
+      <label>Nome do produto</label>
+      <input type="text" id="p-nome" placeholder="Ex: Óleo de Coco 500ml">
+    </div>
+    <div class="field">
+      <label>Preço de custo (R$)</label>
+      <input type="number" inputmode="decimal" id="p-custo" step="0.01" min="0">
+    </div>
+    <div class="field">
+      <label>Preço de venda no anúncio (R$)</label>
+      <input type="number" inputmode="decimal" id="p-venda" step="0.01" min="0">
+    </div>
+    <div class="field">
+      <label>Valor que a Shopee repassa <span class="hint">após todas as taxas (R$)</span></label>
+      <input type="number" inputmode="decimal" id="p-repasse" step="0.01" min="0">
+    </div>
+    <button class="btn" id="btn-salvar-produto">Salvar produto</button>
+    <button class="btn ghost" id="btn-cancelar-produto">Cancelar</button>
+  </div>
+</div>
+
+<script>
+  // ---------- helpers ----------
+  const fmtBRL = v => (isFinite(v) ? v : 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmtPct = v => (isFinite(v) ? v : 0).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) + '%';
+  const num = id => parseFloat(document.getElementById(id).value.replace(',', '.')) || 0;
+
+  // ---------- SIMULADOR ----------
+  const segBtns = document.querySelectorAll('.seg-btn');
+  const wrapPreco = document.getElementById('wrap-preco');
+  const wrapMargem = document.getElementById('wrap-margem');
+  let modo = 'preco';
+
+  segBtns.forEach(btn => btn.addEventListener('click', () => {
+    segBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    modo = btn.dataset.mode;
+    wrapPreco.style.display = modo === 'preco' ? 'block' : 'none';
+    wrapMargem.style.display = modo === 'margem' ? 'block' : 'none';
+    calcular();
+  }));
+
+  ['custo','comissao','taxaFixa','ads','imposto','precoVenda','margemDesejada'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calcular);
+  });
+
+  function calcular() {
+    const custo = num('custo');
+    const comissaoPct = num('comissao') / 100;
+    const taxaFixa = num('taxaFixa');
+    const adsPct = num('ads') / 100;
+    const impostoPct = num('imposto') / 100;
+    const taxasPctTotal = comissaoPct + adsPct + impostoPct;
+
+    let preco = 0;
+    const card = document.getElementById('card-resultado');
+    const titulo = document.getElementById('res-titulo');
+    const warn = document.getElementById('res-warn');
+    warn.style.display = 'none';
+
+    if (modo === 'preco') {
+      preco = num('precoVenda');
+      titulo.textContent = 'Preço de venda informado';
+      if (preco <= 0) { card.style.display = 'none'; return; }
+    } else {
+      const margemAlvo = num('margemDesejada') / 100;
+      titulo.textContent = 'Preço sugerido de venda';
+      const denom = 1 - taxasPctTotal - margemAlvo;
+      if (denom <= 0) {
+        card.style.display = 'block';
+        document.getElementById('res-preco').textContent = '—';
+        document.getElementById('res-preco').classList.add('bad');
+        warn.style.display = 'block';
+        warn.textContent = 'As taxas percentuais somadas à margem desejada ultrapassam 100% do preço de venda. Reduza a margem alvo ou revise as taxas.';
+        document.getElementById('res-margem-bruta').textContent = '—';
+        document.getElementById('res-margem-liquida').textContent = '—';
+        document.getElementById('res-margem-bruta-pct').textContent = '';
+        document.getElementById('res-margem-liquida-pct').textContent = '';
+        document.getElementById('res-breakdown').innerHTML = '';
+        return;
+      }
+      preco = (custo + taxaFixa) / denom;
+    }
+
+    document.getElementById('res-preco').classList.remove('bad');
+
+    const comissaoR = preco * comissaoPct;
+    const adsR = preco * adsPct;
+    const impostoR = preco * impostoPct;
+    const totalTaxas = comissaoR + taxaFixa + adsR + impostoR;
+    const recebido = preco - totalTaxas;
+
+    const margemBrutaR = preco - custo;
+    const margemBrutaPct = preco > 0 ? (margemBrutaR / preco) * 100 : 0;
+    const margemLiquidaR = recebido - custo;
+    const margemLiquidaPct = preco > 0 ? (margemLiquidaR / preco) * 100 : 0;
+
+    card.style.display = 'block';
+    document.getElementById('res-preco').textContent = fmtBRL(preco);
+    document.getElementById('res-margem-bruta').textContent = fmtBRL(margemBrutaR);
+    document.getElementById('res-margem-bruta-pct').textContent = fmtPct(margemBrutaPct) + ' sobre a venda';
+    document.getElementById('res-margem-liquida').textContent = fmtBRL(margemLiquidaR);
+    document.getElementById('res-margem-liquida-pct').textContent = fmtPct(margemLiquidaPct) + ' sobre a venda';
+
+    if (margemLiquidaR < 0) {
+      document.getElementById('res-margem-liquida').classList.add('bad');
+      warn.style.display = 'block';
+      warn.textContent = 'Atenção: com esse preço e essas taxas, o produto está dando prejuízo.';
+    } else {
+      document.getElementById('res-margem-liquida').classList.remove('bad');
+    }
+
+    document.getElementById('res-breakdown').innerHTML = `
+      <div class="b-row"><span>Preço de custo</span><span>${fmtBRL(custo)}</span></div>
+      <div class="b-row"><span>Comissão Shopee (${fmtPct(comissaoPct*100)})</span><span>- ${fmtBRL(comissaoR)}</span></div>
+      <div class="b-row"><span>Taxa de serviço/fixa</span><span>- ${fmtBRL(taxaFixa)}</span></div>
+      <div class="b-row"><span>Shopee Ads (${fmtPct(adsPct*100)})</span><span>- ${fmtBRL(adsR)}</span></div>
+      <div class="b-row"><span>Imposto (${fmtPct(impostoPct*100)})</span><span>- ${fmtBRL(impostoR)}</span></div>
+      <div class="b-row"><span>Valor líquido recebido</span><span>${fmtBRL(recebido)}</span></div>
+      <div class="b-row total"><span>Margem líquida</span><span>${fmtBRL(margemLiquidaR)}</span></div>
+    `;
+  }
+
+  // ---------- MEUS PRODUTOS ----------
+  const LS_KEY = 'natunutri_calc_produtos';
+  let produtos = [];
+  try { produtos = JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { produtos = []; }
+
+  function salvarProdutos() {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(produtos)); } catch(e) {}
+  }
+
+  function classeMargem(pct) {
+    if (pct < 5) return 'bad';
+    if (pct < 20) return 'mid';
+    return 'good';
+  }
+
+  function renderProdutos() {
+    const list = document.getElementById('prod-list');
+    const empty = document.getElementById('prod-empty');
+    const totaisCard = document.getElementById('prod-totais');
+
+    if (produtos.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      totaisCard.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none';
+    totaisCard.style.display = 'block';
+
+    let somaMargemPct = 0;
+    list.innerHTML = produtos.map(p => {
+      const margemR = p.repasse - p.custo;
+      const margemPct = p.venda > 0 ? (margemR / p.venda) * 100 : 0;
+      const taxasR = p.venda - p.repasse;
+      somaMargemPct += margemPct;
+      const cls = classeMargem(margemPct);
+      return `
+        <div class="prod-item ${cls}">
+          <div class="p-top">
+            <div class="p-name">${escapeHtml(p.nome)}</div>
+            <div class="p-margin ${cls}">${fmtPct(margemPct)}</div>
+          </div>
+          <div class="p-details">
+            <span><b>Custo:</b> ${fmtBRL(p.custo)}</span>
+            <span><b>Venda:</b> ${fmtBRL(p.venda)}</span>
+            <span><b>Repasse Shopee:</b> ${fmtBRL(p.repasse)}</span>
+            <span><b>Taxas totais:</b> ${fmtBRL(taxasR)}</span>
+            <span><b>Lucro:</b> ${fmtBRL(margemR)}</span>
+          </div>
+          <div class="p-actions">
+            <button onclick="editarProduto('${p.id}')">Editar</button>
+            <button class="del" onclick="excluirProduto('${p.id}')">Excluir</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    document.getElementById('tot-qtd').textContent = produtos.length;
+    document.getElementById('tot-margem').textContent = fmtPct(somaMargemPct / produtos.length);
+  }
+
+  function escapeHtml(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  const modalBg = document.getElementById('modal-bg');
+  function abrirModal(produto) {
+    document.getElementById('modal-titulo').textContent = produto ? 'Editar produto' : 'Cadastrar produto';
+    document.getElementById('p-id').value = produto ? produto.id : '';
+    document.getElementById('p-nome').value = produto ? produto.nome : '';
+    document.getElementById('p-custo').value = produto ? produto.custo : '';
+    document.getElementById('p-venda').value = produto ? produto.venda : '';
+    document.getElementById('p-repasse').value = produto ? produto.repasse : '';
+    modalBg.classList.add('active');
+  }
+  function fecharModal() { modalBg.classList.remove('active'); }
+
+  document.getElementById('btn-novo-produto').addEventListener('click', () => abrirModal(null));
+  document.getElementById('btn-cancelar-produto').addEventListener('click', fecharModal);
+  modalBg.addEventListener('click', e => { if (e.target === modalBg) fecharModal(); });
+
+  document.getElementById('btn-salvar-produto').addEventListener('click', () => {
+    const nome = document.getElementById('p-nome').value.trim();
+    const custo = parseFloat(document.getElementById('p-custo').value.replace(',', '.')) || 0;
+    const venda = parseFloat(document.getElementById('p-venda').value.replace(',', '.')) || 0;
+    const repasse = parseFloat(document.getElementById('p-repasse').value.replace(',', '.')) || 0;
+    if (!nome) { alert('Informe o nome do produto.'); return; }
+
+    const id = document.getElementById('p-id').value;
+    if (id) {
+      const p = produtos.find(x => x.id === id);
+      if (p) { p.nome = nome; p.custo = custo; p.venda = venda; p.repasse = repasse; }
+    } else {
+      produtos.push({ id: Date.now().toString(36), nome, custo, venda, repasse });
+    }
+    salvarProdutos();
+    renderProdutos();
+    fecharModal();
+  });
+
+  window.editarProduto = function(id) {
+    const p = produtos.find(x => x.id === id);
+    if (p) abrirModal(p);
+  };
+  window.excluirProduto = function(id) {
+    if (!confirm('Excluir este produto da lista?')) return;
+    produtos = produtos.filter(x => x.id !== id);
+    salvarProdutos();
+    renderProdutos();
+  };
+
+  // ---------- TABS ----------
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+
+  renderProdutos();
+
+  // ---------- PWA ----------
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+</body>
+</html>

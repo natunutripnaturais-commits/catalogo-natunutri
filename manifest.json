@@ -1,0 +1,24 @@
+{
+  "name": "Calculadora Shopee - Natunutri",
+  "short_name": "Calc Shopee",
+  "description": "Ferramenta interna Natunutri para calcular margem de lucro e preço ideal de venda na Shopee.",
+  "start_url": "./calculadora.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF7F0",
+  "theme_color": "#1B3A2B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
