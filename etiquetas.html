@@ -898,18 +898,20 @@ function decomporKit(nomeProduto) {
   return partes.map(normalizeProdutoNome);
 }
 
-// ---- Agrupa páginas consecutivas do MESMO pedido em uma única "unidade" ----
-// (cobre o caso de uma etiqueta com vários produtos que ocupa 2+ páginas seguidas)
+// ---- Agrupa todas as páginas do MESMO pedido em uma única "unidade" ----
+// (cobre o caso de um pedido com vários itens que ocupa 2+ páginas — cada
+// item numa página separada). O Shopee nem sempre imprime as páginas de um
+// mesmo pedido em sequência no PDF exportado — pode vir uma etiqueta de
+// OUTRO pedido no meio — então agrupa pelo número do pedido em qualquer
+// posição do arquivo, não só quando as páginas são consecutivas.
 function buildUnits(pages) {
+  const porPedido = new Map();
   const units = [];
-  let current = null;
   pages.forEach(p => {
-    if (current && p.pedido && current.pedido === p.pedido) {
-      current.pages.push(p);
-    } else {
-      current = { pedido: p.pedido, pages: [p] };
-      units.push(current);
-    }
+    if (!p.pedido) { units.push({ pedido: null, pages: [p] }); return; }
+    let u = porPedido.get(p.pedido);
+    if (!u) { u = { pedido: p.pedido, pages: [] }; porPedido.set(p.pedido, u); units.push(u); }
+    u.pages.push(p);
   });
   units.forEach(u => {
     u.items = [];
