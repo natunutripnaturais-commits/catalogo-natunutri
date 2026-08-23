@@ -1486,7 +1486,7 @@ document.getElementById('btnVerificarDuplicatas').addEventListener('click', asyn
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
 // todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto'], ['selExcluirProduto', 'buscaExcluirProduto']].forEach(([selId, buscaId]) => {
+  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto']].forEach(([selId, buscaId]) => {
     const sel = document.getElementById(selId);
     const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
     const atual = sel.value;
@@ -1496,6 +1496,21 @@ function preencherSelects() {
       .join('');
     if (filtrados.some(i => i.nome === atual)) sel.value = atual;
   });
+
+  // Excluir usa o id (não o nome) como valor: um cadastro com nome vazio ou
+  // repetido tem que continuar selecionável e apagável individualmente —
+  // por nome, um item sem nome vira value="" (indistinguível de "nada
+  // selecionado") e vários com nome igual não dariam pra escolher qual.
+  {
+    const sel = document.getElementById('selExcluirProduto');
+    const termo = norm(document.getElementById('buscaExcluirProduto').value || '').toLowerCase();
+    const atual = sel.value;
+    const filtrados = estoque.filter(item => !termo || item.nome.toLowerCase().includes(termo));
+    sel.innerHTML = filtrados
+      .map(item => `<option value="${escapeHtml(item.id)}">${escapeHtml(item.nome) || '(sem nome)'} — ${item.kg.toFixed(3)} kg</option>`)
+      .join('');
+    if (filtrados.some(i => i.id === atual)) sel.value = atual;
+  }
 }
 
 document.getElementById('buscaCompraProduto').addEventListener('input', preencherSelects);
@@ -1505,15 +1520,15 @@ document.getElementById('buscaExcluirProduto').addEventListener('input', preench
 
 document.getElementById('btnExcluirProduto').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
-  const nome = document.getElementById('selExcluirProduto').value;
-  if (!nome) { alert('Escolha um produto pra excluir.'); return; }
-  const item = estoque.find(i => i.nome === nome);
+  const id = document.getElementById('selExcluirProduto').value;
+  if (!id) { alert('Escolha um produto pra excluir.'); return; }
+  const item = estoque.find(i => i.id === id);
   if (!item) { alert('Produto não encontrado.'); return; }
 
   const avisoKg = item.kg !== 0
     ? `\n\n⚠ Esse produto ainda tem ${item.kg.toFixed(3)} kg registrado em estoque — excluir apaga esse valor, não desconta em outro lugar.`
     : '';
-  if (!confirm(`Excluir "${item.nome}" do estoque? Isso não pode ser desfeito.${avisoKg}`)) return;
+  if (!confirm(`Excluir "${item.nome || '(sem nome)'}" do estoque? Isso não pode ser desfeito.${avisoKg}`)) return;
 
   await deleteDoc(doc(db, 'estoque', item.id));
   document.getElementById('buscaExcluirProduto').value = '';
@@ -1622,6 +1637,7 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
 function calcularConsumoEstoque() {
   const consumo = {};
   separacaoParaExport.forEach(pm => {
+    if (!pm.produto) return; // nome vazio (linha de etiqueta malformada) não vira cadastro
     pm.variacoesSorted.forEach(v => {
       const g = parseGramas(v.variacao);
       if (!isFinite(g)) return; // variação sem peso reconhecível (ex: "Único") não entra no cálculo
