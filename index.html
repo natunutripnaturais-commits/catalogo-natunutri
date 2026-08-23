@@ -1696,7 +1696,7 @@ function renderGrid() {
   grid.innerHTML = list.map(p => {
     const minP = Math.min(...p.vars.map(v=>v.preco));
     return `
-    <div class="card" onclick="abrirProd(${p.id})">
+    <div class="card" onclick="abrirProd('${p.id}')">
       ${renderImg(p,'card-img')}
       <div class="card-body">
         <div class="card-cat">${p.cat}</div>
@@ -1705,7 +1705,7 @@ function renderGrid() {
         <div class="card-price">
           <span class="card-price-from">a partir de </span>${fmtPreco(minP)}
         </div>
-        <button class="card-add" onclick="event.stopPropagation();abrirProd(${p.id})">Ver opções</button>
+        <button class="card-add" onclick="event.stopPropagation();abrirProd('${p.id}')">Ver opções</button>
       </div>
     </div>`;
   }).join('');
@@ -1715,7 +1715,7 @@ function renderGrid() {
 // MODAL PRODUTO
 // ──────────────────────────────────────────────
 function abrirProd(id) {
-  prodAtual = produtos.find(p=>p.id===id);
+  prodAtual = produtos.find(p=>String(p.id)===String(id));
   if (!prodAtual) return;
   varSel = 0; qtyAtual = 1;
 
