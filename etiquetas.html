@@ -251,6 +251,7 @@
   .mov-tipo.venda{background:var(--alerta-bg); color:var(--alerta);}
   .mov-tipo.compra{background:var(--verde-100); color:var(--verde-900);}
   .mov-tipo.ajuste{background:#e8e6e0; color:var(--texto-suave);}
+  .mov-usuario{color:var(--texto-suave); font-size:11.5px;}
 </style>
 </head>
 <body>
@@ -345,6 +346,8 @@
       <button class="secondary" id="btnLogout">Sair</button>
     </div>
 
+    <div id="alertaEstoque" class="aviso" style="display:none; margin:12px 16px 0; cursor:pointer;"></div>
+
     <div class="admin-layout">
     <div class="tabs">
       <button class="tab-btn ativo" data-tab="produtos">
@@ -377,6 +380,7 @@
         <input type="number" id="inputNovoProdutoKg" step="0.001" min="0" placeholder="kg inicial (opcional)">
         <input type="text" id="inputNovoProdutoFornecedor" placeholder="Fornecedor (opcional)">
         <input type="number" id="inputNovoProdutoCusto" step="0.01" min="0" placeholder="Custo total R$ (opcional)">
+        <input type="number" id="inputNovoProdutoPrecoVenda" step="0.01" min="0" placeholder="Preço de venda R$/kg (opcional)">
         <button class="secondary" id="btnCadastrarNovoProduto">+ Cadastrar produto</button>
       </div>
     </div>
@@ -438,6 +442,21 @@
     </div>
 
     <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Preço de venda</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Define o preço de venda (R$/kg) de um produto já cadastrado — usado só pra calcular a margem em "O que comprar", comparando com o custo médio de compra.
+      </div>
+      <div class="compra-form">
+        <div class="produto-picker">
+          <input type="text" id="buscaPrecoProduto" placeholder="Pesquisar produto…" autocomplete="off">
+          <select id="selPrecoProduto"></select>
+        </div>
+        <input type="number" id="inputPrecoVendaKg" step="0.01" min="0" placeholder="Preço de venda R$/kg">
+        <button class="secondary" id="btnSalvarPrecoVenda">💲 Salvar preço</button>
+      </div>
+    </div>
+
+    <div class="card">
       <h2 class="section" style="margin:0 0 8px">Excluir produto</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Remove o cadastro do produto do estoque — use pra limpar nome errado, duplicata ou produto que parou de vender. Se o produto ainda tiver kg em estoque, você vai ver um aviso antes de confirmar.
@@ -478,6 +497,7 @@
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Estimativa a partir da média de vendas dos últimos 30 dias. Colchão mínimo: 15 dias de estoque. Toque num produto pra ver o gráfico de vendas.
       </div>
+      <input type="search" id="buscaPainelLista" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div id="painelLista"></div>
     </div>
 
@@ -491,6 +511,7 @@
 
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Últimas movimentações</h2>
+      <input type="search" id="buscaMovimentos" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div id="painelMovimentos"></div>
     </div>
   </div>
@@ -544,7 +565,14 @@
     <div class="pasta-status" style="margin-bottom:8px">
       Tudo já é salvo automaticamente na nuvem — esse botão é só uma cópia extra pra guardar por conta própria de vez em quando.
     </div>
-    <button class="secondary" id="btnBackup">⬇ Baixar backup completo (.json)</button>
+    <div class="actions" style="margin:0">
+      <button class="secondary" id="btnBackup">⬇ Baixar backup completo (.json)</button>
+      <button class="secondary" id="btnRestaurarBackup" style="color:#b91c1c; border-color:#b91c1c;">⬆ Restaurar backup (.json)</button>
+      <input type="file" id="inputRestaurarBackup" accept=".json,application/json" style="display:none">
+    </div>
+    <div class="pasta-status" style="margin-top:8px">
+      Restaurar apaga TODO o estoque e movimentações atuais e substitui pelo conteúdo do arquivo — use só em emergência (ex: dado apagado sem querer).
+    </div>
   </div>
   </div>
 </div>
@@ -1356,6 +1384,28 @@ function acharEstoque(nomeProduto) {
 
 let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null, unsubProducaoFeita = null;
 
+// Banner no topo da área administrativa avisando de estoque negativo ou
+// abaixo do mínimo — só client-side (não é notificação por e-mail/push,
+// que precisaria de um backend/serviço de envio que esse sistema não tem;
+// isso aqui avisa quando alguém abre a aba Administrativo).
+function atualizarAlertaEstoque() {
+  const el = document.getElementById('alertaEstoque');
+  if (!el) return;
+  const negativos = estoque.filter(item => item.kg < 0);
+  const urgentes = calcularPainel().filter(p => isFinite(p.diasRestantes) && p.diasRestantes < BUFFER_DIAS_MINIMO && p.estoqueKg >= 0);
+
+  if (!negativos.length && !urgentes.length) { el.style.display = 'none'; return; }
+
+  const partes = [];
+  if (negativos.length) partes.push(`${negativos.length} produto(s) com estoque negativo`);
+  if (urgentes.length) partes.push(`${urgentes.length} produto(s) precisando de compra urgente`);
+  el.textContent = `⚠ ${partes.join(' · ')} — toque pra ver em "O que comprar".`;
+  el.style.display = 'block';
+}
+document.getElementById('alertaEstoque').addEventListener('click', () => {
+  document.querySelector('[data-tab="comprar"]')?.click();
+});
+
 function painelAtivo() {
   const el = document.getElementById('tabComprar');
   return el && el.classList.contains('ativo');
@@ -1377,12 +1427,14 @@ function iniciarSincronizacao() {
     renderEstoqueLista();
     if (painelAtivo()) renderPainel();
     if (producaoAtiva()) renderProducao();
+    atualizarAlertaEstoque();
   }, () => { document.getElementById('contaStatus').textContent = 'Conectado, mas sem conseguir ler o estoque agora (verifique sua internet).'; });
 
   unsubMovimentos = onSnapshot(collection(db, 'movimentos'), snap => {
     movimentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (painelAtivo()) renderPainel();
     if (producaoAtiva()) renderProducao();
+    atualizarAlertaEstoque();
   });
 
   unsubProducaoAgenda = onSnapshot(collection(db, 'producaoAgenda'), snap => {
@@ -1407,6 +1459,7 @@ function pararSincronizacao() {
   movimentos = [];
   agendaProducao = {};
   producaoFeitaHoje = {};
+  document.getElementById('alertaEstoque').style.display = 'none';
 }
 
 function traduzErroAuth(code) {
@@ -1439,8 +1492,53 @@ if (FIREBASE_CONFIGURADO) {
   document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
   document.getElementById('btnBackup').addEventListener('click', () => {
-    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos };
+    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, agendaProducao };
     downloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), `natunutri-backup-${hoje()}.json`);
+  });
+
+  document.getElementById('btnRestaurarBackup').addEventListener('click', () => {
+    document.getElementById('inputRestaurarBackup').click();
+  });
+
+  document.getElementById('inputRestaurarBackup').addEventListener('change', async e => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+
+    let dump;
+    try { dump = JSON.parse(await file.text()); } catch { alert('Não consegui ler esse arquivo — confirma que é um backup baixado por esse mesmo botão.'); return; }
+    if (!Array.isArray(dump.estoque) || !Array.isArray(dump.movimentos)) {
+      alert('Esse arquivo não parece ser um backup do sistema (faltam os campos "estoque" e "movimentos").');
+      return;
+    }
+
+    const dataBackup = dump.geradoEm ? new Date(dump.geradoEm).toLocaleString('pt-BR') : 'data desconhecida';
+    const aviso = `Restaurar o backup de ${dataBackup}?\n\n`
+      + `Isso APAGA o estoque e as movimentações atuais (${estoque.length} produto(s), ${movimentos.length} movimentação(ões)) `
+      + `e substitui pelo conteúdo do arquivo (${dump.estoque.length} produto(s), ${dump.movimentos.length} movimentação(ões)).\n\n`
+      + `Essa ação não pode ser desfeita.`;
+    if (!confirm(aviso)) return;
+    if (!confirm('Confirma mesmo? Essa é a última chance de cancelar antes de apagar os dados atuais.')) return;
+
+    const opsApagar = [
+      ...estoque.map(item => batch => batch.delete(doc(db, 'estoque', item.id))),
+      ...movimentos.map(m => batch => batch.delete(doc(db, 'movimentos', m.id))),
+    ];
+    await commitEmLotes(opsApagar);
+
+    const opsCriar = [
+      ...dump.estoque.map(item => batch => { const { id, ...resto } = item; batch.set(doc(db, 'estoque', id), resto); }),
+      ...dump.movimentos.map(m => batch => { const { id, ...resto } = m; batch.set(doc(db, 'movimentos', id), resto); }),
+    ];
+    if (dump.agendaProducao) {
+      Object.entries(dump.agendaProducao).forEach(([dia, produtos]) => {
+        opsCriar.push(batch => batch.set(doc(db, 'producaoAgenda', dia), { produtos }));
+      });
+    }
+    await commitEmLotes(opsCriar);
+
+    alert('Backup restaurado.');
   });
 
   onAuthStateChanged(auth, user => {
@@ -1485,34 +1583,55 @@ function renderEstoqueLista() {
 }
 
 document.getElementById('buscaEstoque').addEventListener('input', renderEstoqueLista);
+document.getElementById('buscaPainelLista').addEventListener('input', renderPainel);
+document.getElementById('buscaMovimentos').addEventListener('input', renderMovimentos);
+
+// Executa uma lista de operações de writeBatch em lotes de até 400 (limite
+// do Firestore é 500 por batch) — usado sempre que uma ação pode gerar mais
+// operações do que cabe num único commit (fundir duplicata com muito
+// histórico de venda, restaurar backup inteiro).
+async function commitEmLotes(ops) {
+  for (let i = 0; i < ops.length; i += 400) {
+    const batch = writeBatch(db);
+    ops.slice(i, i + 400).forEach(op => op(batch));
+    await batch.commit();
+  }
+}
 
 document.getElementById('btnVerificarDuplicatas').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
   const fusoes = encontrarDuplicatasEstoque();
   if (!fusoes.length) { alert('Nenhuma duplicata encontrada — todos os nomes parecem produtos diferentes.'); return; }
 
-  let msg = `Encontrei ${fusoes.length} duplicata(s). Confirma fundir?\n\n`;
+  let msg = `Encontrei ${fusoes.length} duplicata(s). Confirma fundir? (o histórico de vendas de cada duplicata também é migrado pro produto principal)\n\n`;
   fusoes.forEach(({ principal, duplicata }) => {
     const somaKg = Math.round((principal.kg + duplicata.kg) * 1000) / 1000;
     msg += `"${duplicata.nome}" (${duplicata.kg.toFixed(3)} kg) → "${principal.nome}" (${principal.kg.toFixed(3)} → ${somaKg.toFixed(3)} kg)\n`;
   });
   if (!confirm(msg)) return;
 
-  const batch = writeBatch(db);
+  const ops = [];
   fusoes.forEach(({ principal, duplicata }) => {
     const somaKg = Math.round((principal.kg + duplicata.kg) * 1000) / 1000;
-    batch.update(doc(db, 'estoque', principal.id), { kg: somaKg });
-    batch.delete(doc(db, 'estoque', duplicata.id));
+    ops.push(batch => batch.update(doc(db, 'estoque', principal.id), { kg: somaKg }));
+    ops.push(batch => batch.delete(doc(db, 'estoque', duplicata.id)));
+    // Migra o histórico de movimentos gravado com o nome da duplicata pro
+    // nome principal — senão essas vendas somem da média/sugestão de
+    // produção assim que a duplicata é apagada.
+    const duplicataLower = duplicata.nome.toLowerCase();
+    movimentos
+      .filter(m => (m.produto || '').toLowerCase() === duplicataLower)
+      .forEach(m => ops.push(batch => batch.update(doc(db, 'movimentos', m.id), { produto: principal.nome })));
   });
-  await batch.commit();
-  alert(`${fusoes.length} duplicata(s) fundida(s).`);
+  await commitEmLotes(ops);
+  alert(`${fusoes.length} duplicata(s) fundida(s), com o histórico de vendas migrado.`);
 });
 
 // Cada seletor de produto (compra/ajuste) tem uma busca em cima e um <select>
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
 // todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto']].forEach(([selId, buscaId]) => {
+  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto'], ['selPrecoProduto', 'buscaPrecoProduto']].forEach(([selId, buscaId]) => {
     const sel = document.getElementById(selId);
     const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
     const atual = sel.value;
@@ -1543,6 +1662,25 @@ document.getElementById('buscaCompraProduto').addEventListener('input', preenche
 document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaProducaoProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaExcluirProduto').addEventListener('input', preencherSelects);
+document.getElementById('buscaPrecoProduto').addEventListener('input', preencherSelects);
+
+document.getElementById('selPrecoProduto').addEventListener('change', () => {
+  const item = acharEstoque(document.getElementById('selPrecoProduto').value);
+  document.getElementById('inputPrecoVendaKg').value = item?.precoVendaKg ? item.precoVendaKg.toFixed(2) : '';
+});
+
+document.getElementById('btnSalvarPrecoVenda').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const nome = document.getElementById('selPrecoProduto').value;
+  const preco = parseFloat(document.getElementById('inputPrecoVendaKg').value);
+  if (!nome) { alert('Escolha um produto.'); return; }
+  if (isNaN(preco) || preco < 0) { alert('Informe o preço de venda (R$/kg).'); return; }
+  const item = acharEstoque(nome);
+  if (!item) { alert('Produto não encontrado.'); return; }
+
+  await setDoc(doc(db, 'estoque', item.id), { precoVendaKg: Math.round(preco * 100) / 100 }, { merge: true });
+  alert(`Preço de venda de "${item.nome}" salvo: R$ ${preco.toFixed(2)}/kg.`);
+});
 
 document.getElementById('btnExcluirProduto').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
@@ -1567,13 +1705,16 @@ document.getElementById('btnCadastrarNovoProduto').addEventListener('click', asy
   const kg = parseFloat(document.getElementById('inputNovoProdutoKg').value) || 0;
   const fornecedor = norm(document.getElementById('inputNovoProdutoFornecedor').value);
   const custoTotal = parseFloat(document.getElementById('inputNovoProdutoCusto').value);
+  const precoVenda = parseFloat(document.getElementById('inputNovoProdutoPrecoVenda').value);
   if (!nome) { alert('Digite o nome do produto.'); return; }
   if (acharEstoque(nome)) { alert('Esse produto já existe no estoque.'); return; }
 
+  const novoProduto = { nome, kg: Math.round(kg * 1000) / 1000 };
+  if (!isNaN(precoVenda) && precoVenda > 0) novoProduto.precoVendaKg = Math.round(precoVenda * 100) / 100;
   const batch = writeBatch(db);
-  batch.set(doc(collection(db, 'estoque')), { nome, kg: Math.round(kg * 1000) / 1000 });
+  batch.set(doc(collection(db, 'estoque')), novoProduto);
   if (kg > 0) {
-    const mov = { data: hoje(), tipo: 'compra', produto: nome, kg };
+    const mov = { data: hoje(), tipo: 'compra', produto: nome, kg, usuario: auth.currentUser.email };
     if (fornecedor) mov.fornecedor = fornecedor;
     if (!isNaN(custoTotal) && custoTotal > 0) mov.custoTotal = custoTotal;
     batch.set(doc(collection(db, 'movimentos')), mov);
@@ -1584,6 +1725,7 @@ document.getElementById('btnCadastrarNovoProduto').addEventListener('click', asy
   document.getElementById('inputNovoProdutoKg').value = '';
   document.getElementById('inputNovoProdutoFornecedor').value = '';
   document.getElementById('inputNovoProdutoCusto').value = '';
+  document.getElementById('inputNovoProdutoPrecoVenda').value = '';
   alert(`Produto "${nome}" cadastrado${kg > 0 ? ` com ${kg} kg` : ''}.`);
 });
 
@@ -1616,7 +1758,7 @@ document.getElementById('btnRegistrarCompra').addEventListener('click', async ()
   const item = acharEstoque(nome);
   if (!item) { alert('Produto não encontrado no estoque. Escolha um nome sugerido na busca, ou cadastre esse produto primeiro na aba "Estoque atual".'); return; }
   const novoKg = Math.round((item.kg + kg) * 1000) / 1000;
-  const mov = { data, tipo: 'compra', produto: item.nome, kg };
+  const mov = { data, tipo: 'compra', produto: item.nome, kg, usuario: auth.currentUser.email };
   if (fornecedor) mov.fornecedor = fornecedor;
   if (!isNaN(custoTotal) && custoTotal > 0) mov.custoTotal = custoTotal;
 
@@ -1649,7 +1791,7 @@ document.getElementById('btnRegistrarAjuste').addEventListener('click', async ()
   const kgFinal = Math.round(novoValor * 1000) / 1000;
   const batch = writeBatch(db);
   batch.update(doc(db, 'estoque', item.id), { kg: kgFinal });
-  batch.set(doc(collection(db, 'movimentos')), { data: hoje(), tipo: 'ajuste', produto: item.nome, kg: diff, motivo });
+  batch.set(doc(collection(db, 'movimentos')), { data: hoje(), tipo: 'ajuste', produto: item.nome, kg: diff, motivo, usuario: auth.currentUser.email });
   await batch.commit();
 
   document.getElementById('inputAjusteKg').value = '';
@@ -1719,7 +1861,7 @@ async function descontarEstoqueAtual() {
       const g = parseGramas(v.variacao);
       const kgLinha = isFinite(g) ? (g * v.totalQtd) / 1000 : 0;
       batch.set(doc(collection(db, 'movimentos')), {
-        data, tipo: 'venda', produto: pm.produto, variacao: v.variacao, qtd: v.totalQtd, kg: kgLinha,
+        data, tipo: 'venda', produto: pm.produto, variacao: v.variacao, qtd: v.totalQtd, kg: kgLinha, usuario: auth.currentUser.email,
       });
     });
   });
@@ -1762,7 +1904,11 @@ function calcularPainel() {
     const kgComCusto = comprasProduto.reduce((s, m) => s + m.kg, 0);
     const custoMedioKg = kgComCusto > 0 ? custoTotalAcum / kgComCusto : null;
 
-    return { nome: item.nome, estoqueKg: item.kg, mediaDia, diasRestantes, sugestaoCompra, custoMedioKg };
+    const precoVendaKg = item.precoVendaKg || null;
+    const margemKg = (custoMedioKg != null && precoVendaKg != null) ? precoVendaKg - custoMedioKg : null;
+    const margemPct = (margemKg != null && precoVendaKg > 0) ? (margemKg / precoVendaKg) * 100 : null;
+
+    return { nome: item.nome, estoqueKg: item.kg, mediaDia, diasRestantes, sugestaoCompra, custoMedioKg, precoVendaKg, margemKg, margemPct };
   }).sort((a, b) => a.diasRestantes - b.diasRestantes);
 }
 
@@ -2036,8 +2182,11 @@ function renderPainel() {
     elParado.innerHTML = '<div class="estoque-vazio">Cadastre produtos na aba Estoque pra ver o painel.</div>';
   } else {
     const painel = calcularPainel();
+    const termoPainel = norm(document.getElementById('buscaPainelLista')?.value || '').toLowerCase();
+    const painelFiltrado = painel.filter(p => !termoPainel || p.nome.toLowerCase().includes(termoPainel));
+    if (termoPainel && painelFiltrado.length === 0) el.innerHTML = '<div class="estoque-vazio">Nenhum produto encontrado para essa busca.</div>';
 
-    painel.forEach(p => {
+    painelFiltrado.forEach(p => {
       let badgeClasse, badgeTexto;
       if (!isFinite(p.diasRestantes)) { badgeClasse = 'semdados'; badgeTexto = 'sem vendas em 30d'; }
       else if (p.diasRestantes < BUFFER_DIAS_MINIMO) { badgeClasse = 'urgente'; badgeTexto = 'comprar urgente'; }
@@ -2049,6 +2198,8 @@ function renderPainel() {
             + (p.sugestaoCompra > 0 ? ` · sugestão: comprar ~${p.sugestaoCompra.toFixed(0)} kg` : '')
         : `${p.estoqueKg.toFixed(1)} kg em estoque · nenhuma venda registrada nos últimos 30 dias`;
       if (p.custoMedioKg) detalhe += ` · custo médio: R$ ${p.custoMedioKg.toFixed(2)}/kg`;
+      if (p.precoVendaKg) detalhe += ` · venda: R$ ${p.precoVendaKg.toFixed(2)}/kg`;
+      if (p.margemKg != null) detalhe += ` · margem: R$ ${p.margemKg.toFixed(2)}/kg (${p.margemPct.toFixed(0)}%)`;
 
       const det = document.createElement('details');
       det.className = 'painel-item';
@@ -2115,11 +2266,11 @@ document.getElementById('btnExportarEstoqueCsv').addEventListener('click', () =>
 });
 
 document.getElementById('btnExportarMovimentosCsv').addEventListener('click', () => {
-  const linhas = ['Data;Tipo;Produto;Variação;Qtd;Kg;Fornecedor;Custo total (R$);Motivo'];
+  const linhas = ['Data;Tipo;Produto;Variação;Qtd;Kg;Fornecedor;Custo total (R$);Motivo;Usuário'];
   [...movimentos].sort((a, b) => a.data.localeCompare(b.data)).forEach(m => {
     linhas.push([
       m.data, m.tipo, csvEscape(m.produto), csvEscape(m.variacao || ''), m.qtd ?? '', m.kg.toFixed(3),
-      csvEscape(m.fornecedor || ''), m.custoTotal ? m.custoTotal.toFixed(2) : '', csvEscape(m.motivo || ''),
+      csvEscape(m.fornecedor || ''), m.custoTotal ? m.custoTotal.toFixed(2) : '', csvEscape(m.motivo || ''), csvEscape(m.usuario || ''),
     ].join(';'));
   });
   downloadBlob(csvBlob(linhas), `natunutri-movimentacoes-${hoje()}.csv`);
@@ -2217,7 +2368,7 @@ document.getElementById('inputImportarInventarioCsv').addEventListener('change',
   const batch = writeBatch(db);
   mudancas.forEach(({ item, kgArred, diff }) => {
     batch.update(doc(db, 'estoque', item.id), { kg: kgArred });
-    batch.set(doc(collection(db, 'movimentos')), { data, tipo: 'ajuste', produto: item.nome, kg: diff, motivo: 'Contagem física (planilha importada)' });
+    batch.set(doc(collection(db, 'movimentos')), { data, tipo: 'ajuste', produto: item.nome, kg: diff, motivo: 'Contagem física (planilha importada)', usuario: auth.currentUser.email });
   });
   await batch.commit();
   alert(`Estoque atualizado: ${mudancas.length} produto(s).`);
@@ -2226,9 +2377,15 @@ document.getElementById('inputImportarInventarioCsv').addEventListener('change',
 function renderMovimentos() {
   const el = document.getElementById('painelMovimentos');
   el.innerHTML = '';
-  const recentes = [...movimentos].sort((a, b) => b.data.localeCompare(a.data)).slice(0, 30);
+  const termo = norm(document.getElementById('buscaMovimentos')?.value || '').toLowerCase();
+  const recentes = [...movimentos]
+    .filter(m => !termo || (m.produto || '').toLowerCase().includes(termo))
+    .sort((a, b) => b.data.localeCompare(a.data))
+    .slice(0, 30);
   if (recentes.length === 0) {
-    el.innerHTML = '<div class="estoque-vazio">Nenhuma movimentação registrada ainda.</div>';
+    el.innerHTML = termo
+      ? '<div class="estoque-vazio">Nenhuma movimentação encontrada para essa busca.</div>'
+      : '<div class="estoque-vazio">Nenhuma movimentação registrada ainda.</div>';
     return;
   }
   recentes.forEach(m => {
@@ -2244,8 +2401,9 @@ function renderMovimentos() {
       if (m.custoTotal) partes.push('R$ ' + m.custoTotal.toFixed(2));
       extraTxt = ` (${partes.join(' · ')})`;
     }
+    const usuarioTxt = m.usuario ? `<span class="mov-usuario" title="${escapeHtml(m.usuario)}"> · ${escapeHtml(m.usuario.split('@')[0])}</span>` : '';
     row.innerHTML = `
-      <span>${m.data} — ${escapeHtml(m.produto)}${extraTxt}</span>
+      <span>${m.data} — ${escapeHtml(m.produto)}${extraTxt}${usuarioTxt}</span>
       <span><span class="mov-tipo ${m.tipo}">${sinalTxt} kg</span></span>
     `;
     el.appendChild(row);
