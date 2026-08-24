@@ -495,7 +495,7 @@
         </div>
       </div>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Estimativa a partir da média de vendas dos últimos 30 dias. Colchão mínimo: 15 dias de estoque. Toque num produto pra ver o gráfico de vendas.
+        Estimativa a partir da média de vendas dos últimos 30 dias. Meta de estoque: 15 dias · comprar urgente abaixo de 7 dias. Toque num produto pra ver o gráfico de vendas.
       </div>
       <input type="search" id="buscaPainelLista" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div id="painelLista"></div>
@@ -552,7 +552,7 @@
     <div class="card">
       <h2 class="section" style="margin:0 0 4px">Produção da semana</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Quantidade sugerida pra cobrir as vendas até a próxima vez que o produto entrar na agenda — descontando o estoque atual só na próxima produção de cada um.
+        Quantidade sugerida por variação (tamanho de pacote) pra cobrir as vendas até a próxima vez que o produto entrar na agenda, com base na média de venda diária de cada variação — descontando o estoque atual só na próxima produção de cada um. Produto ainda sem histórico de venda por variação aparece só em kg total.
       </div>
       <div id="listaProducaoSemana"></div>
     </div>
@@ -1371,8 +1371,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // ESTOQUE — salvo no Firestore (nuvem), sincronizado em tempo real entre
 // todos os aparelhos logados na mesma conta.
 // ──────────────────────────────────────────────
-const BUFFER_DIAS_MINIMO = 15;   // abaixo disso, o painel marca "comprar urgente"
-const ALVO_DIAS_REPOSICAO = 30;  // quantidade sugerida de compra mira esse tanto de estoque
+const BUFFER_DIAS_MINIMO = 7;    // abaixo disso, o painel marca "comprar urgente"
+const ALVO_DIAS_REPOSICAO = 15;  // quantidade sugerida de compra mira esse tanto de estoque
 let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
 let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
 let agendaProducao = {}; // { segunda: ['Produto A', ...], terca: [...], ... }
@@ -2004,12 +2004,15 @@ function calcularVendaMediaPorVariacao() {
   return resultado;
 }
 
-// Sugestão de hoje, desmembrada por variação (não só o kg agregado): usa o
-// mesmo intervalo até a próxima produção de cada produto, aplicado à média
-// de venda de CADA variação separadamente.
-function calcularProducaoHojeVariacoes() {
-  const hojeIdx = new Date().getDay();
-  const produtosHoje = agendaProducao[DIAS_SEMANA[hojeIdx]] || [];
+// Sugestão desmembrada por variação (não só o kg agregado) pra um dia
+// qualquer da semana: usa o mesmo intervalo até a próxima produção de cada
+// produto, aplicado à média de venda de CADA variação separadamente — é o
+// que mantém o estoque de cada tamanho de pacote renovado sem precisar
+// produzir tudo todo dia. Só cobre produto com histórico de venda por
+// variação (calcularVendaMediaPorVariacao); o que ainda não tem cai no
+// resumo em kg de calcularProducaoSemana como reserva.
+function calcularProducaoVariacoesPorDia(diaIdx) {
+  const produtosDoDia = agendaProducao[DIAS_SEMANA[diaIdx]] || [];
   const vendaVar = calcularVendaMediaPorVariacao();
 
   const variacoesPorProduto = {};
@@ -2020,16 +2023,36 @@ function calcularProducaoHojeVariacoes() {
   });
 
   const resultado = [];
-  produtosHoje.forEach(nome => {
+  produtosDoDia.forEach(nome => {
     const ocorrencias = intervalosDeProducao(nome);
-    const ocorrenciaHoje = ocorrencias.find(o => o.diaIdx === hojeIdx);
-    if (!ocorrenciaHoje) return;
+    const ocorrenciaDia = ocorrencias.find(o => o.diaIdx === diaIdx);
+    if (!ocorrenciaDia) return;
     const variacoes = variacoesPorProduto[nome.toLowerCase()] || [];
     const itens = variacoes
-      .map(v => ({ variacao: v.variacao, qtd: Math.round(v.mediaDia * ocorrenciaHoje.intervalo) }))
+      .map(v => ({ variacao: v.variacao, qtd: Math.round(v.mediaDia * ocorrenciaDia.intervalo) }))
       .filter(it => it.qtd > 0)
       .sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
     if (itens.length) resultado.push({ produto: nome, itens });
+  });
+  return resultado;
+}
+
+function calcularProducaoHojeVariacoes() {
+  return calcularProducaoVariacoesPorDia(new Date().getDay());
+}
+
+// Junta a sugestão por variação (quando o produto já tem histórico de venda
+// por tamanho de pacote) com o resumo em kg de calcularProducaoSemana como
+// reserva pros produtos que ainda não têm essa granularidade — assim nenhum
+// produto agendado desaparece da visão da semana.
+function calcularProducaoSemanaCompleta() {
+  const semanaKg = calcularProducaoSemana();
+  const resultado = {};
+  DIAS_SEMANA.forEach((dia, diaIdx) => {
+    const porVariacao = calcularProducaoVariacoesPorDia(diaIdx);
+    const cobertos = new Set(porVariacao.map(p => p.produto.toLowerCase()));
+    const reservaKg = (semanaKg[dia] || []).filter(it => !cobertos.has(it.produto.toLowerCase()));
+    resultado[dia] = { porVariacao, reservaKg };
   });
   return resultado;
 }
@@ -2095,22 +2118,30 @@ document.getElementById('listaProducaoHoje').addEventListener('change', async e 
 function renderProducao() {
   renderProducaoDiaEdicao();
   renderProducaoHoje();
-  const resultado = calcularProducaoSemana();
+  const resultado = calcularProducaoSemanaCompleta();
   const el = document.getElementById('listaProducaoSemana');
   el.innerHTML = '';
   const hojeIdx = new Date().getDay();
   const diasRotacionados = DIAS_SEMANA.map((_, i) => DIAS_SEMANA[(hojeIdx + i) % 7]);
   let algumaCoisa = false;
   diasRotacionados.forEach((dia, i) => {
-    const itens = resultado[dia] || [];
-    if (!itens.length) return;
+    const { porVariacao, reservaKg } = resultado[dia];
+    if (!porVariacao.length && !reservaKg.length) return;
     algumaCoisa = true;
     const bloco = document.createElement('div');
     bloco.className = 'producao-dia-bloco';
     const rotulo = i === 0 ? `${DIAS_LABEL[dia]} (hoje)` : DIAS_LABEL[dia];
     bloco.innerHTML = `
       <div class="producao-dia-titulo">${escapeHtml(rotulo)}</div>
-      ${itens.map(it => `
+      ${porVariacao.map(pm => `
+        <div class="painel-row" style="align-items:flex-start;">
+          <span class="painel-nome">${escapeHtml(pm.produto)}</span>
+          <span style="text-align:right;">
+            ${pm.itens.map(it => `<div class="painel-badge ok" style="margin:0 0 4px; display:inline-block;">${escapeHtml(it.variacao)} — ${it.qtd} un</div>`).join('<br>')}
+          </span>
+        </div>
+      `).join('')}
+      ${reservaKg.map(it => `
         <div class="painel-row">
           <span class="painel-nome">${escapeHtml(it.produto)}</span>
           <span class="painel-badge ok">${it.kg.toFixed(1)} kg</span>
