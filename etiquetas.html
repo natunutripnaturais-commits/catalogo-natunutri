@@ -154,23 +154,33 @@
   .tabpanel{display:none;}
   .tabpanel.ativo{display:block;}
 
+  /* Barra da conta: discreta, uma linha só, encostada em cima — não é mais
+     um card grande. */
+  .conta-bar{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:8px 16px; font-size:12px; color:var(--texto-suave);
+    border-bottom:1px solid var(--linha);
+  }
+  .conta-bar button.secondary{padding:5px 11px; font-size:12px;}
+
   /* Área administrativa: as abas (Produtos, Estoque atual, O que comprar,
-     Produção) ficam numa coluna fixa à esquerda, com o conteúdo ao lado —
-     em telas estreitas (celular) volta a ser uma barra horizontal em cima. */
-  .admin-layout{display:flex; align-items:flex-start; gap:20px; max-width:900px; margin:0 auto; padding:0 16px;}
+     Produção) ficam numa coluna fixa encostada na lateral esquerda, com o
+     conteúdo ao lado — em telas estreitas (celular) volta a ser uma barra
+     horizontal em cima. */
+  .admin-layout{display:flex; align-items:flex-start; gap:20px; padding:0 0 0 16px;}
   .admin-layout .tabs{
-    flex-direction:column; flex-shrink:0; width:190px; padding:0; margin-top:0;
+    flex-direction:column; flex-shrink:0; width:190px; padding:0; margin-top:16px;
     position:sticky; top:16px;
   }
   .admin-layout .tab-btn{width:100%; justify-content:flex-start; padding:10px 14px;}
-  .admin-layout main{flex:1; min-width:0; max-width:none; margin:0; padding:16px 0;}
+  .admin-layout main{flex:1; min-width:0; max-width:700px; margin:0; padding:16px 16px 16px 0;}
   @media (max-width: 720px){
     .admin-layout{flex-direction:column; padding:0; gap:0;}
     .admin-layout .tabs{
       flex-direction:row; width:100%; overflow-x:auto; position:static; padding:0 16px; margin-top:14px;
     }
     .admin-layout .tab-btn{width:auto; flex-shrink:0;}
-    .admin-layout main{padding:16px;}
+    .admin-layout main{padding:16px; max-width:none;}
   }
 
   .dias-semana{display:flex; gap:6px; flex-wrap:wrap;}
@@ -330,14 +340,9 @@
   </div>
 
   <div id="areaAdminConteudo" style="display:none">
-    <div class="card pasta-row">
-      <div>
-        <strong style="font-size:13.5px">Conta</strong>
-        <div class="pasta-status" id="contaStatus">—</div>
-      </div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="secondary" id="btnLogout">Sair</button>
-      </div>
+    <div class="conta-bar">
+      <span id="contaStatus">—</span>
+      <button class="secondary" id="btnLogout">Sair</button>
     </div>
 
     <div class="admin-layout">
