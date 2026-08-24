@@ -154,6 +154,25 @@
   .tabpanel{display:none;}
   .tabpanel.ativo{display:block;}
 
+  /* Área administrativa: as abas (Produtos, Estoque atual, O que comprar,
+     Produção) ficam numa coluna fixa à esquerda, com o conteúdo ao lado —
+     em telas estreitas (celular) volta a ser uma barra horizontal em cima. */
+  .admin-layout{display:flex; align-items:flex-start; gap:20px; max-width:900px; margin:0 auto; padding:0 16px;}
+  .admin-layout .tabs{
+    flex-direction:column; flex-shrink:0; width:190px; padding:0; margin-top:0;
+    position:sticky; top:16px;
+  }
+  .admin-layout .tab-btn{width:100%; justify-content:flex-start; padding:10px 14px;}
+  .admin-layout main{flex:1; min-width:0; max-width:none; margin:0; padding:16px 0;}
+  @media (max-width: 720px){
+    .admin-layout{flex-direction:column; padding:0; gap:0;}
+    .admin-layout .tabs{
+      flex-direction:row; width:100%; overflow-x:auto; position:static; padding:0 16px; margin-top:14px;
+    }
+    .admin-layout .tab-btn{width:auto; flex-shrink:0;}
+    .admin-layout main{padding:16px;}
+  }
+
   .dias-semana{display:flex; gap:6px; flex-wrap:wrap;}
   .dia-btn{
     background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
@@ -321,6 +340,7 @@
       </div>
     </div>
 
+    <div class="admin-layout">
     <div class="tabs">
       <button class="tab-btn ativo" data-tab="produtos">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>
@@ -512,6 +532,7 @@
     </div>
   </div>
   </main>
+    </div>
 
   <div class="card">
     <strong style="font-size:13.5px">Backup</strong>
