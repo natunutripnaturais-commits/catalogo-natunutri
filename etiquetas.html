@@ -550,7 +550,10 @@
     </div>
 
     <div class="card">
-      <h2 class="section" style="margin:0 0 4px">Produção da semana</h2>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;">
+        <h2 class="section" style="margin:0">Produção da semana</h2>
+        <button class="secondary" id="btnBaixarProducaoPdf" style="padding:6px 10px; font-size:12px;">⬇ Baixar PDF</button>
+      </div>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Quantidade sugerida por variação (tamanho de pacote) pra cobrir as vendas até a próxima vez que o produto entrar na agenda, com base na média de venda diária de cada variação — descontando o estoque atual só na próxima produção de cada um. Produto ainda sem histórico de venda por variação aparece só em kg total.
       </div>
@@ -630,6 +633,7 @@ let originalBytes = null;   // ArrayBuffer for pdf-lib
 let orderedIndices = [];    // final page order (0-based, original PDF)
 let groupsForExport = [];   // for txt list
 let separacaoParaExport = [];   // for the "lista de separação" txt export
+let producaoSemanaParaExport = []; // [{ rotulo, porVariacao, reservaKg }] — mesma ordem/conteúdo da tela, usado pelo PDF de produção
 
 function setStatus(msg, spinning) {
   statusEl.classList.add('show');
@@ -1321,6 +1325,75 @@ document.getElementById('btnBaixarSeparacaoPdf').addEventListener('click', async
   if (!separacaoParaExport.length) return;
   const bytes = await gerarPdfSeparacao(separacaoParaExport);
   downloadBlob(new Blob([bytes], { type: 'application/pdf' }), nomeArquivoSeparacao('pdf'));
+});
+
+// PDF da produção da semana: mesmo layout da lista de separação (produto,
+// variação/peso, quantidade, com caixinha pra marcar), mas separado por dia
+// — pra levar pra cozinha/produção sem precisar de tela.
+async function gerarPdfProducao(dias) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const pdfDoc = await PDFDocument.create();
+  const fonte = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fonteNegrito = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const LARGURA = 595.28, ALTURA = 841.89; // A4 em pontos
+  const MARGEM = 40;
+  const colCheck = MARGEM, colProduto = MARGEM + 28, colVariacao = 350, colQtd = 500;
+  const ALTURA_LINHA = 26;
+  const cinza = rgb(0.45, 0.45, 0.45);
+  const cinzaClaro = rgb(0.75, 0.75, 0.75);
+  const verde = rgb(0.106, 0.227, 0.169); // --verde-900
+
+  let page, y;
+  function novaPagina() {
+    page = pdfDoc.addPage([LARGURA, ALTURA]);
+    y = ALTURA - MARGEM;
+    page.drawText('NATUNUTRI — PRODUÇÃO DA SEMANA', { x: MARGEM, y, size: 18, font: fonteNegrito });
+    y -= 20;
+    page.drawText(new Date().toLocaleString('pt-BR'), { x: MARGEM, y, size: 11, font: fonte, color: cinza });
+    y -= 28;
+  }
+  function cabecalhoTabela() {
+    page.drawText('Produto', { x: colProduto, y, size: 13, font: fonteNegrito });
+    page.drawText('Variação', { x: colVariacao, y, size: 13, font: fonteNegrito });
+    page.drawText('Qtd', { x: colQtd, y, size: 13, font: fonteNegrito });
+    y -= 8;
+    page.drawLine({ start: { x: MARGEM, y }, end: { x: LARGURA - MARGEM, y }, thickness: 0.75, color: cinzaClaro });
+    y -= 20;
+  }
+  function linha(nome, variacao, qtd) {
+    if (y < MARGEM + ALTURA_LINHA) { novaPagina(); cabecalhoTabela(); }
+    page.drawRectangle({ x: colCheck, y: y - 2, width: 12, height: 12, borderColor: cinza, borderWidth: 1 });
+    let nomeCurto = nome;
+    if (nomeCurto.length > 36) nomeCurto = nomeCurto.slice(0, 35) + '…';
+    page.drawText(nomeCurto, { x: colProduto, y, size: 13, font: fonte });
+    page.drawText(variacao, { x: colVariacao, y, size: 13, font: fonte });
+    page.drawText(qtd, { x: colQtd, y, size: 13, font: fonte });
+    y -= ALTURA_LINHA;
+  }
+
+  novaPagina();
+  dias.forEach(dia => {
+    if (y < MARGEM + ALTURA_LINHA * 2) novaPagina();
+    page.drawText(dia.rotulo.toUpperCase(), { x: MARGEM, y, size: 14, font: fonteNegrito, color: verde });
+    y -= 22;
+    cabecalhoTabela();
+    dia.porVariacao.forEach(pm => {
+      pm.itens.forEach(it => linha(pm.produto, it.variacao, `${it.qtd} un`));
+    });
+    dia.reservaKg.forEach(it => linha(it.produto, '(total)', `${it.kg.toFixed(1)} kg`));
+    y -= 12;
+  });
+
+  return pdfDoc.save();
+}
+
+document.getElementById('btnBaixarProducaoPdf').addEventListener('click', async () => {
+  if (!producaoSemanaParaExport.length) { alert('Nenhum produto agendado ainda — escolha os produtos de cada dia acima primeiro.'); return; }
+  const bytes = await gerarPdfProducao(producaoSemanaParaExport);
+  const d = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  downloadBlob(new Blob([bytes], { type: 'application/pdf' }), `natunutri-producao-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.pdf`);
 });
 
 function nomeArquivoSeparacao(ext) {
@@ -2121,6 +2194,7 @@ function renderProducao() {
   const resultado = calcularProducaoSemanaCompleta();
   const el = document.getElementById('listaProducaoSemana');
   el.innerHTML = '';
+  producaoSemanaParaExport = [];
   const hojeIdx = new Date().getDay();
   const diasRotacionados = DIAS_SEMANA.map((_, i) => DIAS_SEMANA[(hojeIdx + i) % 7]);
   let algumaCoisa = false;
@@ -2128,9 +2202,10 @@ function renderProducao() {
     const { porVariacao, reservaKg } = resultado[dia];
     if (!porVariacao.length && !reservaKg.length) return;
     algumaCoisa = true;
+    const rotulo = i === 0 ? `${DIAS_LABEL[dia]} (hoje)` : DIAS_LABEL[dia];
+    producaoSemanaParaExport.push({ rotulo, porVariacao, reservaKg });
     const bloco = document.createElement('div');
     bloco.className = 'producao-dia-bloco';
-    const rotulo = i === 0 ? `${DIAS_LABEL[dia]} (hoje)` : DIAS_LABEL[dia];
     bloco.innerHTML = `
       <div class="producao-dia-titulo">${escapeHtml(rotulo)}</div>
       ${porVariacao.map(pm => `
