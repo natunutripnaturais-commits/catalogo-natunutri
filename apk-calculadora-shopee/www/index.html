@@ -266,6 +266,38 @@
   }
   .result-hero .value.bad { color: var(--vermelho); }
 
+  .repasse-box {
+    text-align: center;
+    background: var(--verde-l);
+    border-radius: 12px;
+    padding: 14px 12px;
+    margin-top: 10px;
+  }
+  .repasse-box .label {
+    font-size: 11.5px;
+    color: var(--verde-m);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+  }
+  .repasse-box .label .hint {
+    text-transform: none;
+    font-weight: 500;
+    letter-spacing: normal;
+    color: var(--cinza3);
+  }
+  .repasse-box .value {
+    font-family: 'Fraunces', serif;
+    font-size: 26px;
+    color: var(--verde);
+    margin-top: 4px;
+  }
+  .repasse-box .sub {
+    font-size: 11px;
+    color: var(--cinza3);
+    margin-top: 4px;
+  }
+
   .metric-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -550,6 +582,12 @@
         <div class="value" id="res-preco">R$ 0,00</div>
       </div>
 
+      <div class="repasse-box">
+        <div class="label">Valor que a Shopee paga <span class="hint">antes de Ads e Imposto</span></div>
+        <div class="value" id="res-repasse">R$ 0,00</div>
+        <div class="sub">Confira esse número no relatório "Detalhes da renda" do pedido, na Shopee</div>
+      </div>
+
       <div class="metric-grid">
         <div class="metric">
           <div class="m-label">Margem bruta</div>
@@ -681,6 +719,7 @@
         document.getElementById('res-preco').classList.add('bad');
         warn.style.display = 'block';
         warn.textContent = 'As taxas percentuais somadas à margem desejada ultrapassam 100% do preço de venda. Reduza a margem alvo ou revise as taxas.';
+        document.getElementById('res-repasse').textContent = '—';
         document.getElementById('res-margem-bruta').textContent = '—';
         document.getElementById('res-margem-liquida').textContent = '—';
         document.getElementById('res-margem-bruta-pct').textContent = '';
@@ -699,6 +738,7 @@
     const impostoR = preco * impostoPct;
     const totalTaxas = comissaoR + transacaoR + taxaFixa + adsR + impostoR;
     const recebido = preco - totalTaxas;
+    const repasseShopee = preco - comissaoR - transacaoR - taxaFixa;
 
     const margemBrutaR = preco - custo;
     const margemBrutaPct = preco > 0 ? (margemBrutaR / preco) * 100 : 0;
@@ -710,6 +750,7 @@
 
     card.style.display = 'block';
     document.getElementById('res-preco').textContent = fmtBRL(preco);
+    document.getElementById('res-repasse').textContent = fmtBRL(repasseShopee);
     document.getElementById('res-margem-bruta').textContent = fmtBRL(margemBrutaR);
     document.getElementById('res-margem-bruta-pct').textContent = fmtPct(margemBrutaPct) + ' sobre a venda';
     document.getElementById('res-margem-liquida').textContent = fmtBRL(margemLiquidaR);
