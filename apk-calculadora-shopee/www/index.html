@@ -490,7 +490,7 @@
   <section id="view-sim" class="view active">
     <div class="card">
       <h2>Custos e taxas
-        <small>Preencha os valores do produto e as taxas cobradas pela Shopee</small>
+        <small>Os campos abaixo já vêm com os valores padrão da Shopee (conferidos no relatório "Detalhes da renda"). Ajuste só se a sua categoria tiver comissão diferente.</small>
       </h2>
 
       <div class="field">
@@ -501,23 +501,28 @@
       <div class="row2">
         <div class="field">
           <label>Comissão Shopee <span class="hint">%</span></label>
-          <input type="number" inputmode="decimal" id="comissao" placeholder="Ex: 20" step="0.01" min="0" value="20">
+          <input type="number" inputmode="decimal" id="comissao" placeholder="Ex: 18" step="0.01" min="0" value="18">
         </div>
         <div class="field">
-          <label>Taxa de serviço/fixa <span class="hint">R$</span></label>
-          <input type="number" inputmode="decimal" id="taxaFixa" placeholder="Ex: 4,00" step="0.01" min="0" value="4">
+          <label>Taxa de transação <span class="hint">%</span></label>
+          <input type="number" inputmode="decimal" id="transacao" placeholder="Ex: 2" step="0.01" min="0" value="2">
         </div>
       </div>
 
       <div class="row2">
         <div class="field">
-          <label>Shopee Ads (ACOS) <span class="hint">%</span></label>
-          <input type="number" inputmode="decimal" id="ads" placeholder="Ex: 8" step="0.01" min="0" value="0">
+          <label>Taxa por item vendido <span class="hint">R$</span></label>
+          <input type="number" inputmode="decimal" id="taxaFixa" placeholder="Ex: 4,00" step="0.01" min="0" value="4">
         </div>
         <div class="field">
-          <label>Imposto <span class="hint">%</span></label>
-          <input type="number" inputmode="decimal" id="imposto" placeholder="Ex: 6" step="0.01" min="0" value="0">
+          <label>Shopee Ads (ACOS) <span class="hint">% — varia por anúncio</span></label>
+          <input type="number" inputmode="decimal" id="ads" placeholder="Ex: 8" step="0.01" min="0" value="0">
         </div>
+      </div>
+
+      <div class="field">
+        <label>Imposto sobre a venda <span class="hint">% — opcional, ex: Simples Nacional (não vem no relatório da Shopee)</span></label>
+        <input type="number" inputmode="decimal" id="imposto" placeholder="Ex: 6" step="0.01" min="0" value="0">
       </div>
     </div>
 
@@ -643,17 +648,18 @@
     calcular();
   }));
 
-  ['custo','comissao','taxaFixa','ads','imposto','precoVenda','margemDesejada'].forEach(id => {
+  ['custo','comissao','transacao','taxaFixa','ads','imposto','precoVenda','margemDesejada'].forEach(id => {
     document.getElementById(id).addEventListener('input', calcular);
   });
 
   function calcular() {
     const custo = num('custo');
     const comissaoPct = num('comissao') / 100;
+    const transacaoPct = num('transacao') / 100;
     const taxaFixa = num('taxaFixa');
     const adsPct = num('ads') / 100;
     const impostoPct = num('imposto') / 100;
-    const taxasPctTotal = comissaoPct + adsPct + impostoPct;
+    const taxasPctTotal = comissaoPct + transacaoPct + adsPct + impostoPct;
 
     let preco = 0;
     const card = document.getElementById('card-resultado');
@@ -688,9 +694,10 @@
     document.getElementById('res-preco').classList.remove('bad');
 
     const comissaoR = preco * comissaoPct;
+    const transacaoR = preco * transacaoPct;
     const adsR = preco * adsPct;
     const impostoR = preco * impostoPct;
-    const totalTaxas = comissaoR + taxaFixa + adsR + impostoR;
+    const totalTaxas = comissaoR + transacaoR + taxaFixa + adsR + impostoR;
     const recebido = preco - totalTaxas;
 
     const margemBrutaR = preco - custo;
@@ -698,7 +705,7 @@
     const margemLiquidaR = recebido - custo;
     const margemLiquidaPct = preco > 0 ? (margemLiquidaR / preco) * 100 : 0;
 
-    const subtotal1 = preco - custo - comissaoR - taxaFixa;
+    const subtotal1 = preco - custo - comissaoR - transacaoR - taxaFixa;
     const subtotal2 = subtotal1 - adsR;
 
     card.style.display = 'block';
@@ -719,7 +726,8 @@
     document.getElementById('res-breakdown').innerHTML = `
       <div class="b-row"><span>Preço de custo</span><span>${fmtBRL(custo)}</span></div>
       <div class="b-row"><span>Comissão Shopee (${fmtPct(comissaoPct*100)})</span><span>- ${fmtBRL(comissaoR)}</span></div>
-      <div class="b-row"><span>Taxa de serviço/fixa</span><span>- ${fmtBRL(taxaFixa)}</span></div>
+      <div class="b-row"><span>Taxa de transação (${fmtPct(transacaoPct*100)})</span><span>- ${fmtBRL(transacaoR)}</span></div>
+      <div class="b-row"><span>Taxa por item vendido</span><span>- ${fmtBRL(taxaFixa)}</span></div>
       <div class="b-row subtotal"><span>Subtotal</span><span>${fmtBRL(subtotal1)}</span></div>
       <div class="b-row"><span>Shopee Ads (${fmtPct(adsPct*100)})</span><span>- ${fmtBRL(adsR)}</span></div>
       <div class="b-row subtotal"><span>Subtotal</span><span>${fmtBRL(subtotal2)}</span></div>
