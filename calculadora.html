@@ -190,6 +190,40 @@
     transition: border-color .15s;
   }
   .field input:focus, .field select:focus { border-color: var(--verde-m); }
+  .field textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1.5px solid var(--cinza4);
+    border-radius: 9px;
+    font-size: 13.5px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--cinza1);
+    background: var(--branco);
+    outline: none;
+    resize: vertical;
+    transition: border-color .15s;
+  }
+  .field textarea:focus { border-color: var(--verde-m); }
+
+  .import-msg {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--bom);
+    margin-top: 10px;
+  }
+  .import-msg.erro { color: var(--vermelho); }
+
+  .p-codigo {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--verde-m);
+    background: var(--verde-l);
+    padding: 2px 6px;
+    border-radius: 5px;
+    margin-bottom: 3px;
+    letter-spacing: .02em;
+  }
 
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 
@@ -530,10 +564,22 @@
       <div class="t-row"><span>Margem líquida média</span><b id="tot-margem">0%</b></div>
     </div>
 
-    <button class="btn" id="btn-novo-produto">+ Cadastrar produto</button>
+    <div class="card">
+      <h2>Importar custos em lote
+        <small>Cole aqui os itens de uma nota/pedido de compra para atualizar o preço de custo de vários produtos de uma vez</small>
+      </h2>
+      <div class="field">
+        <label>Uma linha por produto <span class="hint">código;nome;custo — separado por ; , ou tab</span></label>
+        <textarea id="import-texto" rows="5" placeholder="0000924;AMARANTO GRÃO;27,00&#10;0000053;ARRUDA;35,00"></textarea>
+      </div>
+      <button class="btn secondary" id="btn-importar">Importar lista</button>
+      <div class="import-msg" id="import-msg"></div>
+    </div>
+
+    <button class="btn" id="btn-novo-produto">+ Cadastrar produto manualmente</button>
 
     <div class="prod-list" id="prod-list" style="margin-top:14px;"></div>
-    <div class="empty" id="prod-empty">Nenhum produto cadastrado ainda.<br>Toque em "Cadastrar produto" para começar.</div>
+    <div class="empty" id="prod-empty">Nenhum produto cadastrado ainda.<br>Importe uma lista ou toque em "Cadastrar produto" para começar.</div>
   </section>
 </main>
 
@@ -544,6 +590,10 @@
   <div class="modal">
     <h3 id="modal-titulo">Cadastrar produto</h3>
     <input type="hidden" id="p-id">
+    <div class="field">
+      <label>Código <span class="hint">opcional, SKU da nota de compra</span></label>
+      <input type="text" id="p-codigo" placeholder="Ex: 0000924">
+    </div>
     <div class="field">
       <label>Nome do produto</label>
       <input type="text" id="p-nome" placeholder="Ex: Óleo de Coco 500ml">
@@ -697,16 +747,46 @@
     totaisCard.style.display = 'block';
 
     let somaMargemPct = 0;
+    let comMargem = 0;
     list.innerHTML = produtos.map(p => {
+      const temVenda = p.venda > 0;
+      const temRepasse = p.repasse > 0;
+      const codigoTag = p.codigo ? `<span class="p-codigo">${escapeHtml(p.codigo)}</span><br>` : '';
+
+      if (!temVenda || !temRepasse) {
+        const faltando = !temVenda && !temRepasse ? 'preço de venda e repasse da Shopee' : (!temVenda ? 'preço de venda' : 'repasse da Shopee');
+        return `
+          <div class="prod-item">
+            <div class="p-top">
+              <div class="p-name">${codigoTag}${escapeHtml(p.nome)}</div>
+              <div class="p-margin" style="color:var(--cinza3);font-size:12px;">custo apenas</div>
+            </div>
+            <div class="p-details">
+              <span><b>Custo:</b> ${fmtBRL(p.custo)}</span>
+              ${temVenda ? `<span><b>Venda:</b> ${fmtBRL(p.venda)}</span>` : ''}
+              ${temRepasse ? `<span><b>Repasse Shopee:</b> ${fmtBRL(p.repasse)}</span>` : ''}
+            </div>
+            <div class="p-details" style="margin-top:4px;">
+              <span>Cadastre ${faltando} para ver a margem real</span>
+            </div>
+            <div class="p-actions">
+              <button onclick="editarProduto('${p.id}')">Editar</button>
+              <button class="del" onclick="excluirProduto('${p.id}')">Excluir</button>
+            </div>
+          </div>
+        `;
+      }
+
       const margemR = p.repasse - p.custo;
-      const margemPct = p.venda > 0 ? (margemR / p.venda) * 100 : 0;
+      const margemPct = (margemR / p.venda) * 100;
       const taxasR = p.venda - p.repasse;
       somaMargemPct += margemPct;
+      comMargem++;
       const cls = classeMargem(margemPct);
       return `
         <div class="prod-item ${cls}">
           <div class="p-top">
-            <div class="p-name">${escapeHtml(p.nome)}</div>
+            <div class="p-name">${codigoTag}${escapeHtml(p.nome)}</div>
             <div class="p-margin ${cls}">${fmtPct(margemPct)}</div>
           </div>
           <div class="p-details">
@@ -725,7 +805,7 @@
     }).join('');
 
     document.getElementById('tot-qtd').textContent = produtos.length;
-    document.getElementById('tot-margem').textContent = fmtPct(somaMargemPct / produtos.length);
+    document.getElementById('tot-margem').textContent = comMargem > 0 ? fmtPct(somaMargemPct / comMargem) : '—';
   }
 
   function escapeHtml(s) {
@@ -738,6 +818,7 @@
   function abrirModal(produto) {
     document.getElementById('modal-titulo').textContent = produto ? 'Editar produto' : 'Cadastrar produto';
     document.getElementById('p-id').value = produto ? produto.id : '';
+    document.getElementById('p-codigo').value = produto ? (produto.codigo || '') : '';
     document.getElementById('p-nome').value = produto ? produto.nome : '';
     document.getElementById('p-custo').value = produto ? produto.custo : '';
     document.getElementById('p-venda').value = produto ? produto.venda : '';
@@ -751,6 +832,7 @@
   modalBg.addEventListener('click', e => { if (e.target === modalBg) fecharModal(); });
 
   document.getElementById('btn-salvar-produto').addEventListener('click', () => {
+    const codigo = document.getElementById('p-codigo').value.trim();
     const nome = document.getElementById('p-nome').value.trim();
     const custo = parseFloat(document.getElementById('p-custo').value.replace(',', '.')) || 0;
     const venda = parseFloat(document.getElementById('p-venda').value.replace(',', '.')) || 0;
@@ -760,9 +842,9 @@
     const id = document.getElementById('p-id').value;
     if (id) {
       const p = produtos.find(x => x.id === id);
-      if (p) { p.nome = nome; p.custo = custo; p.venda = venda; p.repasse = repasse; }
+      if (p) { p.codigo = codigo; p.nome = nome; p.custo = custo; p.venda = venda; p.repasse = repasse; }
     } else {
-      produtos.push({ id: Date.now().toString(36), nome, custo, venda, repasse });
+      produtos.push({ id: Date.now().toString(36), codigo, nome, custo, venda, repasse });
     }
     salvarProdutos();
     renderProdutos();
@@ -779,6 +861,75 @@
     salvarProdutos();
     renderProdutos();
   };
+
+  // ---------- IMPORTAR CUSTOS EM LOTE ----------
+  function parseNumeroBR(s) {
+    return parseFloat(String(s).trim().replace(/\./g, '').replace(',', '.')) || 0;
+  }
+
+  function dividirLinha(linha) {
+    if (linha.includes('\t')) return linha.split('\t');
+    if (linha.includes(';')) return linha.split(';');
+    return linha.split(',');
+  }
+
+  document.getElementById('btn-importar').addEventListener('click', () => {
+    const texto = document.getElementById('import-texto').value;
+    const msg = document.getElementById('import-msg');
+    const linhas = texto.split('\n').map(l => l.trim()).filter(Boolean);
+
+    if (linhas.length === 0) {
+      msg.textContent = 'Cole ao menos uma linha para importar.';
+      msg.classList.add('erro');
+      return;
+    }
+
+    let atualizados = 0, criados = 0, ignorados = 0;
+
+    linhas.forEach(linha => {
+      const partes = dividirLinha(linha).map(p => p.trim()).filter(p => p !== '');
+      if (partes.length < 2) { ignorados++; return; }
+
+      let codigo = '', nome = '', custoTxt = '';
+      if (partes.length >= 3) {
+        [codigo, nome, custoTxt] = [partes[0], partes[1], partes[2]];
+      } else {
+        [nome, custoTxt] = partes;
+      }
+
+      // pula linha de cabeçalho (ex: "codigo;nome;custo")
+      if (/^c[oó]digo$/i.test(codigo) || /^nome$/i.test(nome)) { return; }
+
+      const custo = parseNumeroBR(custoTxt);
+      if (!nome || custo <= 0) { ignorados++; return; }
+
+      let existente = null;
+      if (codigo) existente = produtos.find(p => p.codigo && p.codigo.toLowerCase() === codigo.toLowerCase());
+      if (!existente) existente = produtos.find(p => p.nome.toLowerCase() === nome.toLowerCase());
+
+      if (existente) {
+        existente.custo = custo;
+        existente.nome = nome;
+        if (codigo) existente.codigo = codigo;
+        atualizados++;
+      } else {
+        produtos.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), codigo, nome, custo, venda: 0, repasse: 0 });
+        criados++;
+      }
+    });
+
+    salvarProdutos();
+    renderProdutos();
+
+    msg.classList.remove('erro');
+    if (atualizados + criados === 0) {
+      msg.textContent = 'Nenhuma linha válida encontrada. Confira o formato: código;nome;custo';
+      msg.classList.add('erro');
+    } else {
+      msg.textContent = `Importado: ${criados} produto(s) novo(s), ${atualizados} atualizado(s)` + (ignorados ? `, ${ignorados} linha(s) ignorada(s)` : '') + '.';
+      document.getElementById('import-texto').value = '';
+    }
+  });
 
   // ---------- TABS ----------
   document.querySelectorAll('.tab-btn').forEach(btn => {
