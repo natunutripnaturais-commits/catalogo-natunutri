@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestão de Férias — Beladona</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --roxo:    #3E1F47;
+    --roxo-m:  #6B3F7A;
+    --roxo-l:  #F3ECF5;
+    --dourado: #B8863C;
+    --areia:   #FAF8FB;
+    --branco:  #FFFFFF;
+    --cinza1:  #26222A;
+    --cinza2:  #5C5563;
+    --cinza3:  #8E8695;
+    --cinza4:  #E4DEE8;
+    --verde:   #2C7A4B;
+    --verde-l: #E7F5EC;
+    --amarelo: #B5860B;
+    --amarelo-l: #FBF3DD;
+    --vermelho: #B93A3A;
+    --vermelho-l: #FBEAEA;
+    --sombra:  0 2px 12px rgba(62,31,71,0.08);
+    --sombra2: 0 12px 32px rgba(62,31,71,0.18);
+    --r: 14px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--areia);
+    color: var(--cinza1);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  h1, h2, h3, .brand { font-family: 'Fraunces', serif; }
+
+  header {
+    background: var(--roxo);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(62,31,71,0.3);
+  }
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  .brand {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 500;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+  }
+  .brand small {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.65);
+    font-weight: 400;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .btn {
+    border: none;
+    border-radius: 10px;
+    padding: 11px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform .12s, filter .12s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--dourado); color: #fff; }
+  .btn-primary:hover { filter: brightness(1.06); }
+  .btn-ghost { background: rgba(255,255,255,0.12); color: #fff; }
+  .btn-ghost:hover { background: rgba(255,255,255,0.2); }
+  .btn-outline { background: #fff; color: var(--roxo); border: 1px solid var(--cinza4); }
+  .btn-outline:hover { background: var(--roxo-l); }
+  .btn-small { padding: 7px 12px; font-size: 12.5px; }
+  .btn-danger-text { background: none; color: var(--vermelho); padding: 7px 10px; font-size: 12.5px; }
+  .btn-danger-text:hover { text-decoration: underline; }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap: 14px;
+    margin-bottom: 26px;
+  }
+  .summary-card {
+    background: #fff;
+    border-radius: var(--r);
+    padding: 16px 18px;
+    box-shadow: var(--sombra);
+  }
+  .summary-card .num { font-family:'Fraunces',serif; font-size: 30px; color: var(--roxo); }
+  .summary-card .lbl { font-size: 12.5px; color: var(--cinza3); text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .toolbar h2 { font-size: 20px; font-weight: 500; color: var(--roxo); }
+  .search-input {
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--cinza4);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-width: 220px;
+    background: #fff;
+  }
+  .search-input:focus { outline: none; border-color: var(--roxo-m); }
+
+  .grid-func {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: #fff;
+    border-radius: var(--r);
+    box-shadow: var(--sombra);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card-top { display: flex; align-items: center; gap: 12px; }
+  .avatar {
+    width: 46px; height: 46px; border-radius: 50%;
+    background: var(--roxo-l); color: var(--roxo);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px; flex-shrink: 0;
+  }
+  .card-name { font-weight: 600; font-size: 16px; color: var(--cinza1); }
+  .card-role { font-size: 12.5px; color: var(--cinza3); }
+
+  .card-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .stat-box {
+    background: var(--areia);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .stat-box .v { font-family:'Fraunces',serif; font-size: 22px; color: var(--roxo); }
+  .stat-box .k { font-size: 11.5px; color: var(--cinza3); text-transform: uppercase; letter-spacing: .03em; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 11px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    width: fit-content;
+  }
+  .badge-verde { background: var(--verde-l); color: var(--verde); }
+  .badge-amarelo { background: var(--amarelo-l); color: var(--amarelo); }
+  .badge-vermelho { background: var(--vermelho-l); color: var(--vermelho); }
+  .badge-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .scheduled-tag {
+    font-size: 12.5px;
+    background: var(--roxo-l);
+    color: var(--roxo-m);
+    padding: 8px 10px;
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .scheduled-tag button {
+    border: none; background: none; color: var(--vermelho);
+    cursor: pointer; font-size: 12px; font-weight: 600;
+  }
+
+  .card-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto; padding-top: 4px; }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--cinza3);
+  }
+  .empty-state h3 { color: var(--roxo); font-weight: 500; margin-bottom: 8px; }
+
+  /* Modal */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(38,34,42,0.55);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 16px;
+    overflow-y: auto;
+    z-index: 200;
+  }
+  .overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: var(--sombra2);
+    width: 100%;
+    max-width: 440px;
+    padding: 24px;
+  }
+  .modal.wide { max-width: 560px; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+  .modal-head h3 { font-size: 19px; color: var(--roxo); font-weight: 500; }
+  .modal-close { border: none; background: none; font-size: 20px; color: var(--cinza3); cursor: pointer; line-height: 1; }
+
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; color: var(--cinza2); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 9px;
+    border: 1px solid var(--cinza4);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    background: var(--areia);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--roxo-m); background: #fff; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-hint { font-size: 11.5px; color: var(--cinza3); margin-top: 4px; }
+
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+  /* Calendar */
+  .cal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .cal-head strong { color: var(--roxo); font-size: 15px; text-transform: capitalize; }
+  .cal-nav button {
+    border: 1px solid var(--cinza4); background: #fff; border-radius: 8px;
+    width: 30px; height: 30px; cursor: pointer; font-size: 14px; color: var(--roxo);
+  }
+  .cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 14px;
+  }
+  .cal-dow { text-align: center; font-size: 11px; color: var(--cinza3); font-weight: 600; padding-bottom: 4px; }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 13px; cursor: pointer;
+    color: var(--cinza1); border: 1px solid transparent;
+  }
+  .cal-day.empty { cursor: default; }
+  .cal-day.past { color: var(--cinza4); cursor: default; }
+  .cal-day:not(.empty):not(.past):not(.selected-start):not(.selected-end):not(.in-range):hover { background: var(--roxo-l); }
+  .cal-day.selected-start, .cal-day.selected-end { background: var(--roxo); color: #fff; font-weight: 700; }
+  .cal-day.in-range { background: var(--roxo-l); color: var(--roxo-m); }
+  .cal-day.today { border-color: var(--dourado); }
+
+  .range-summary {
+    background: var(--areia);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-size: 13.5px;
+    color: var(--cinza2);
+    margin-bottom: 6px;
+  }
+  .range-summary b { color: var(--roxo); }
+  .range-warning { color: var(--vermelho); font-weight: 600; margin-top: 4px; }
+
+  .hist-list { max-height: 340px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .hist-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border-radius: 9px; background: var(--areia); font-size: 13px;
+  }
+  .hist-item .t { color: var(--cinza2); }
+  .hist-item .d { font-weight: 600; }
+
+  @media (max-width: 520px) {
+    .field-row { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">Gestão de Férias <small>Beladona</small></div>
+    <button class="btn btn-ghost" id="btnNovo">+ Novo funcionário</button>
+  </div>
+</header>
+
+<main>
+  <div class="summary-row" id="summaryRow"></div>
+
+  <div class="toolbar">
+    <h2>Funcionários</h2>
+    <input class="search-input" id="searchInput" placeholder="Buscar por nome...">
+  </div>
+
+  <div class="grid-func" id="gridFunc"></div>
+</main>
+
+<!-- Modal: Novo/Editar funcionário -->
+<div class="overlay" id="overlayFunc">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="funcModalTitle">Novo funcionário</h3>
+      <button class="modal-close" data-close="overlayFunc">&times;</button>
+    </div>
+    <form id="formFunc">
+      <input type="hidden" id="fId">
+      <div class="field">
+        <label>Nome completo</label>
+        <input type="text" id="fNome" required placeholder="Ex: Tiago Silva">
+      </div>
+      <div class="field">
+        <label>Cargo (opcional)</label>
+        <input type="text" id="fCargo" placeholder="Ex: Vendedor">
+      </div>
+      <div class="field">
+        <label>Data de admissão</label>
+        <input type="date" id="fAdmissao">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Saldo atual de dias</label>
+          <input type="number" id="fSaldo" min="0" value="0" required>
+        </div>
+        <div class="field">
+          <label>Dias do próximo período</label>
+          <input type="number" id="fDiasPeriodo" min="1" value="30" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Data do próximo vencimento</label>
+        <input type="date" id="fVencimento" required>
+        <div class="field-hint">Data em que os dias do próximo período entram automaticamente no saldo. Os vencimentos seguintes são projetados de 12 em 12 meses a partir desta data.</div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline" data-close="overlayFunc">Cancelar</button>
+        <button type="submit" class="btn btn-primary">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Agendar férias -->
+<div class="overlay" id="overlayAgenda">
+  <div class="modal wide">
+    <div class="modal-head">
+      <h3>Agendar férias — <span id="agendaNome"></span></h3>
+      <button class="modal-close" data-close="overlayAgenda">&times;</button>
+    </div>
+
+    <div class="cal-head">
+      <div class="cal-nav"><button type="button" id="calPrev">&#8249;</button></div>
+      <strong id="calLabel"></strong>
+      <div class="cal-nav"><button type="button" id="calNext">&#8250;</button></div>
+    </div>
+    <div class="cal-grid" id="calDow"></div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="range-summary" id="rangeSummary">Selecione a data de início e a data de fim do período de férias.</div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-outline" data-close="overlayAgenda">Cancelar</button>
+      <button type="button" class="btn btn-primary" id="btnConfirmarAgenda" disabled>Agendar férias</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Histórico -->
+<div class="overlay" id="overlayHist">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Histórico — <span id="histNome"></span></h3>
+      <button class="modal-close" data-close="overlayHist">&times;</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "beladona_ferias_v1";
+
+  /* ---------- Date helpers ---------- */
+  function toISO(d){ return d.toISOString().slice(0,10); }
+  function parseISO(s){ var p=s.split("-"); return new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2])); }
+  function todayISO(){ var d=new Date(); return toISO(new Date(d.getFullYear(),d.getMonth(),d.getDate())); }
+  function addMonths(iso, n){
+    var d = parseISO(iso);
+    var day = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth()+n);
+    var lastDay = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+    d.setDate(Math.min(day, lastDay));
+    return toISO(d);
+  }
+  function diffDays(isoA, isoB){
+    var a = parseISO(isoA), b = parseISO(isoB);
+    return Math.round((a - b) / 86400000);
+  }
+  function fmtBR(iso){
+    if(!iso) return "-";
+    var p = iso.split("-");
+    return p[2]+"/"+p[1]+"/"+p[0];
+  }
+  var MESES = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+  var DOW = ["dom","seg","ter","qua","qui","sex","sáb"];
+
+  /* ---------- State ---------- */
+  var state = load();
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(raw) return JSON.parse(raw);
+    }catch(e){}
+    return seedData();
+  }
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+  function seedData(){
+    return {
+      funcionarios: [
+        {
+          id: "f1",
+          nome: "Tiago",
+          cargo: "",
+          admissao: "2020-05-01",
+          saldo: 40,
+          diasProximoPeriodo: 30,
+          proximoVencimento: "2027-05-01",
+          agendamentos: [
+            { id: "a1", inicio: "2026-12-15", fim: "2026-12-30", dias: 16, status: "agendada" }
+          ],
+          historico: []
+        }
+      ]
+    };
+  }
+
+  /* ---------- Business logic ---------- */
+  // Aplica créditos de período vencido e conclui agendamentos cuja data já passou.
+  function processarFuncionario(f, hoje){
+    var mudou = false;
+
+    while (f.proximoVencimento <= hoje) {
+      f.saldo += f.diasProximoPeriodo;
+      f.historico.push({ tipo: "credito", data: f.proximoVencimento, dias: f.diasProximoPeriodo });
+      f.proximoVencimento = addMonths(f.proximoVencimento, 12);
+      mudou = true;
+    }
+
+    f.agendamentos.forEach(function(a){
+      if (a.status === "agendada" && a.fim < hoje) {
+        a.status = "concluida";
+        f.saldo -= a.dias;
+        f.historico.push({ tipo: "descontado", data: a.fim, dias: a.dias, periodo: a.inicio+"_"+a.fim });
+        mudou = true;
+      }
+    });
+
+    return mudou;
+  }
+
+  function processarTodos(){
+    var hoje = todayISO();
+    var mudou = false;
+    state.funcionarios.forEach(function(f){ if(processarFuncionario(f, hoje)) mudou = true; });
+    if (mudou) save();
+  }
+
+  function diasAgendadosFuturos(f){
+    var hoje = todayISO();
+    return f.agendamentos
+      .filter(function(a){ return a.status === "agendada" && a.fim >= hoje; })
+      .reduce(function(s,a){ return s + a.dias; }, 0);
+  }
+
+  function saldoDisponivelParaAgendar(f){
+    return f.saldo - diasAgendadosFuturos(f);
+  }
+
+  function situacaoVencimento(f){
+    var dias = diffDays(f.proximoVencimento, todayISO());
+    var nivel = "verde";
+    if (dias < 0) nivel = "vermelho";
+    else if (dias <= 30) nivel = "vermelho";
+    else if (dias <= 90) nivel = "amarelo";
+    return { dias: dias, nivel: nivel };
+  }
+
+  /* ---------- Rendering ---------- */
+  var gridFunc = document.getElementById("gridFunc");
+  var summaryRow = document.getElementById("summaryRow");
+  var searchInput = document.getElementById("searchInput");
+
+  function initials(nome){
+    var parts = nome.trim().split(/\s+/);
+    var s = parts[0] ? parts[0][0] : "";
+    if (parts.length > 1) s += parts[parts.length-1][0];
+    return s.toUpperCase();
+  }
+
+  function renderSummary(){
+    var total = state.funcionarios.length;
+    var criticos = state.funcionarios.filter(function(f){ return situacaoVencimento(f).nivel === "vermelho"; }).length;
+    var totalDias = state.funcionarios.reduce(function(s,f){ return s + f.saldo; }, 0);
+    var agendados = state.funcionarios.reduce(function(s,f){ return s + diasAgendadosFuturos(f); }, 0);
+
+    summaryRow.innerHTML =
+      '<div class="summary-card"><div class="num">'+total+'</div><div class="lbl">Funcionários</div></div>' +
+      '<div class="summary-card"><div class="num">'+totalDias+'</div><div class="lbl">Dias pendentes (total)</div></div>' +
+      '<div class="summary-card"><div class="num">'+agendados+'</div><div class="lbl">Dias já agendados</div></div>' +
+      '<div class="summary-card"><div class="num" style="color:'+(criticos?"var(--vermelho)":"var(--verde)")+'">'+criticos+'</div><div class="lbl">Vencimento próximo/vencido</div></div>';
+  }
+
+  function renderGrid(){
+    var termo = searchInput.value.trim().toLowerCase();
+    var lista = state.funcionarios
+      .filter(function(f){ return f.nome.toLowerCase().indexOf(termo) !== -1; })
+      .sort(function(a,b){ return situacaoVencimento(a).dias - situacaoVencimento(b).dias; });
+
+    if (lista.length === 0) {
+      gridFunc.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><h3>Nenhum funcionário encontrado</h3><p>Cadastre um funcionário para começar.</p></div>';
+      return;
+    }
+
+    gridFunc.innerHTML = lista.map(function(f){
+      var sit = situacaoVencimento(f);
+      var badgeClass = "badge-" + sit.nivel;
+      var badgeTxt = sit.dias < 0
+        ? "Vencida há " + Math.abs(sit.dias) + " dia(s)"
+        : "Vence em " + sit.dias + " dia(s)";
+
+      var proxAgendada = f.agendamentos
+        .filter(function(a){ return a.status === "agendada"; })
+        .sort(function(a,b){ return a.inicio < b.inicio ? -1 : 1; });
+
+      var tagsHtml = proxAgendada.map(function(a){
+        return '<div class="scheduled-tag"><span>'+fmtBR(a.inicio)+' a '+fmtBR(a.fim)+' &middot; '+a.dias+' dias</span>' +
+          '<button data-cancel-agenda="'+f.id+'|'+a.id+'">cancelar</button></div>';
+      }).join("");
+
+      return '<div class="card">' +
+        '<div class="card-top">' +
+          '<div class="avatar">'+initials(f.nome)+'</div>' +
+          '<div><div class="card-name">'+f.nome+'</div>' + (f.cargo ? '<div class="card-role">'+f.cargo+'</div>' : '') + '</div>' +
+        '</div>' +
+        '<div class="card-stats">' +
+          '<div class="stat-box"><div class="v">'+f.saldo+'</div><div class="k">Dias pendentes</div></div>' +
+          '<div class="stat-box"><div class="v">'+saldoDisponivelParaAgendar(f)+'</div><div class="k">Disp. p/ agendar</div></div>' +
+        '</div>' +
+        '<div class="badge '+badgeClass+'"><span class="badge-dot"></span>'+badgeTxt+' &middot; '+fmtBR(f.proximoVencimento)+' ('+f.diasProximoPeriodo+' dias)</div>' +
+        tagsHtml +
+        '<div class="card-actions">' +
+          '<button class="btn btn-primary btn-small" data-agendar="'+f.id+'">Agendar férias</button>' +
+          '<button class="btn btn-outline btn-small" data-editar="'+f.id+'">Editar</button>' +
+          '<button class="btn btn-outline btn-small" data-hist="'+f.id+'">Histórico</button>' +
+          '<button class="btn btn-danger-text" data-excluir="'+f.id+'">Excluir</button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+  }
+
+  function renderAll(){
+    processarTodos();
+    renderSummary();
+    renderGrid();
+  }
+
+  /* ---------- Modal: funcionário ---------- */
+  var overlayFunc = document.getElementById("overlayFunc");
+  var formFunc = document.getElementById("formFunc");
+
+  document.getElementById("btnNovo").addEventListener("click", function(){
+    formFunc.reset();
+    document.getElementById("fId").value = "";
+    document.getElementById("funcModalTitle").textContent = "Novo funcionário";
+    document.getElementById("fSaldo").value = 0;
+    document.getElementById("fDiasPeriodo").value = 30;
+    overlayFunc.classList.add("open");
+  });
+
+  formFunc.addEventListener("submit", function(e){
+    e.preventDefault();
+    var id = document.getElementById("fId").value;
+    var nome = document.getElementById("fNome").value.trim();
+    var cargo = document.getElementById("fCargo").value.trim();
+    var admissao = document.getElementById("fAdmissao").value;
+    var saldo = parseInt(document.getElementById("fSaldo").value, 10) || 0;
+    var diasProximoPeriodo = parseInt(document.getElementById("fDiasPeriodo").value, 10) || 30;
+    var proximoVencimento = document.getElementById("fVencimento").value;
+
+    if (!nome || !proximoVencimento) return;
+
+    if (id) {
+      var f = state.funcionarios.find(function(x){ return x.id === id; });
+      f.nome = nome; f.cargo = cargo; f.admissao = admissao;
+      f.saldo = saldo; f.diasProximoPeriodo = diasProximoPeriodo; f.proximoVencimento = proximoVencimento;
+    } else {
+      state.funcionarios.push({
+        id: "f" + Date.now(),
+        nome: nome, cargo: cargo, admissao: admissao,
+        saldo: saldo, diasProximoPeriodo: diasProximoPeriodo, proximoVencimento: proximoVencimento,
+        agendamentos: [], historico: []
+      });
+    }
+    save();
+    overlayFunc.classList.remove("open");
+    renderAll();
+  });
+
+  function abrirEdicao(id){
+    var f = state.funcionarios.find(function(x){ return x.id === id; });
+    if (!f) return;
+    document.getElementById("funcModalTitle").textContent = "Editar funcionário";
+    document.getElementById("fId").value = f.id;
+    document.getElementById("fNome").value = f.nome;
+    document.getElementById("fCargo").value = f.cargo || "";
+    document.getElementById("fAdmissao").value = f.admissao || "";
+    document.getElementById("fSaldo").value = f.saldo;
+    document.getElementById("fDiasPeriodo").value = f.diasProximoPeriodo;
+    document.getElementById("fVencimento").value = f.proximoVencimento;
+    overlayFunc.classList.add("open");
+  }
+
+  /* ---------- Modal: histórico ---------- */
+  var overlayHist = document.getElementById("overlayHist");
+  function abrirHistorico(id){
+    var f = state.funcionarios.find(function(x){ return x.id === id; });
+    if (!f) return;
+    document.getElementById("histNome").textContent = f.nome;
+
+    var eventos = [];
+    f.historico.forEach(function(h){
+      if (h.tipo === "credito") eventos.push({ data: h.data, texto: "Novo período creditado", dias: "+"+h.dias });
+      if (h.tipo === "descontado") eventos.push({ data: h.data, texto: "Férias concluídas", dias: "-"+h.dias });
+    });
+    f.agendamentos.filter(function(a){ return a.status === "agendada"; }).forEach(function(a){
+      eventos.push({ data: a.inicio, texto: "Agendada: "+fmtBR(a.inicio)+" a "+fmtBR(a.fim), dias: a.dias+" dias" });
+    });
+    eventos.sort(function(a,b){ return a.data < b.data ? 1 : -1; });
+
+    var list = document.getElementById("histList");
+    if (eventos.length === 0) {
+      list.innerHTML = '<div class="hist-item"><span class="t">Nenhum evento registrado ainda.</span></div>';
+    } else {
+      list.innerHTML = eventos.map(function(e){
+        return '<div class="hist-item"><span class="t">'+fmtBR(e.data)+' &middot; '+e.texto+'</span><span class="d">'+e.dias+'</span></div>';
+      }).join("");
+    }
+    overlayHist.classList.add("open");
+  }
+
+  /* ---------- Modal: agendar férias (calendário) ---------- */
+  var overlayAgenda = document.getElementById("overlayAgenda");
+  var calGrid = document.getElementById("calGrid");
+  var calDow = document.getElementById("calDow");
+  var calLabel = document.getElementById("calLabel");
+  var rangeSummary = document.getElementById("rangeSummary");
+  var btnConfirmarAgenda = document.getElementById("btnConfirmarAgenda");
+
+  var agendaState = { funcId: null, viewYear: 0, viewMonth: 0, start: null, end: null };
+
+  calDow.innerHTML = DOW.map(function(d){ return '<div class="cal-dow">'+d+'</div>'; }).join("");
+
+  function abrirAgenda(id){
+    var f = state.funcionarios.find(function(x){ return x.id === id; });
+    if (!f) return;
+    var hoje = new Date();
+    agendaState = { funcId: id, viewYear: hoje.getFullYear(), viewMonth: hoje.getMonth(), start: null, end: null };
+    document.getElementById("agendaNome").textContent = f.nome;
+    renderCalendar();
+    overlayAgenda.classList.add("open");
+  }
+
+  function renderCalendar(){
+    var y = agendaState.viewYear, m = agendaState.viewMonth;
+    calLabel.textContent = MESES[m] + " de " + y;
+
+    var firstDow = new Date(y, m, 1).getDay();
+    var daysInMonth = new Date(y, m+1, 0).getDate();
+    var hoje = todayISO();
+
+    var html = "";
+    for (var i=0; i<firstDow; i++) html += '<div class="cal-day empty"></div>';
+
+    for (var d=1; d<=daysInMonth; d++){
+      var iso = toISO(new Date(y,m,d));
+      var classes = ["cal-day"];
+      if (iso < hoje) classes.push("past");
+      if (iso === hoje) classes.push("today");
+      if (agendaState.start && iso === agendaState.start) classes.push("selected-start");
+      if (agendaState.end && iso === agendaState.end) classes.push("selected-end");
+      if (agendaState.start && agendaState.end && iso > agendaState.start && iso < agendaState.end) classes.push("in-range");
+      html += '<div class="'+classes.join(" ")+'" data-date="'+iso+'">'+d+'</div>';
+    }
+    calGrid.innerHTML = html;
+    updateRangeSummary();
+  }
+
+  function updateRangeSummary(){
+    var f = state.funcionarios.find(function(x){ return x.id === agendaState.funcId; });
+    if (!agendaState.start) {
+      rangeSummary.innerHTML = "Selecione a data de início e a data de fim do período de férias.";
+      btnConfirmarAgenda.disabled = true;
+      return;
+    }
+    if (!agendaState.end) {
+      rangeSummary.innerHTML = "Início: <b>"+fmtBR(agendaState.start)+"</b>. Agora selecione a data de fim.";
+      btnConfirmarAgenda.disabled = true;
+      return;
+    }
+    var dias = diffDays(agendaState.end, agendaState.start) + 1;
+    var disponivel = saldoDisponivelParaAgendar(f);
+    var html = "De <b>"+fmtBR(agendaState.start)+"</b> até <b>"+fmtBR(agendaState.end)+"</b> &middot; <b>"+dias+" dias corridos</b><br>Saldo disponível para agendar: <b>"+disponivel+" dias</b>";
+    if (dias > disponivel) {
+      html += '<div class="range-warning">Saldo insuficiente para este período.</div>';
+      btnConfirmarAgenda.disabled = true;
+    } else {
+      btnConfirmarAgenda.disabled = false;
+    }
+    rangeSummary.innerHTML = html;
+  }
+
+  calGrid.addEventListener("click", function(e){
+    var el = e.target.closest(".cal-day");
+    if (!el || el.classList.contains("empty") || el.classList.contains("past")) return;
+    var iso = el.getAttribute("data-date");
+
+    if (!agendaState.start || (agendaState.start && agendaState.end)) {
+      agendaState.start = iso; agendaState.end = null;
+    } else {
+      if (iso < agendaState.start) { agendaState.end = agendaState.start; agendaState.start = iso; }
+      else { agendaState.end = iso; }
+    }
+    renderCalendar();
+  });
+
+  document.getElementById("calPrev").addEventListener("click", function(){
+    agendaState.viewMonth--;
+    if (agendaState.viewMonth < 0) { agendaState.viewMonth = 11; agendaState.viewYear--; }
+    renderCalendar();
+  });
+  document.getElementById("calNext").addEventListener("click", function(){
+    agendaState.viewMonth++;
+    if (agendaState.viewMonth > 11) { agendaState.viewMonth = 0; agendaState.viewYear++; }
+    renderCalendar();
+  });
+
+  btnConfirmarAgenda.addEventListener("click", function(){
+    var f = state.funcionarios.find(function(x){ return x.id === agendaState.funcId; });
+    if (!f || !agendaState.start || !agendaState.end) return;
+    var dias = diffDays(agendaState.end, agendaState.start) + 1;
+    f.agendamentos.push({ id: "a"+Date.now(), inicio: agendaState.start, fim: agendaState.end, dias: dias, status: "agendada" });
+    save();
+    overlayAgenda.classList.remove("open");
+    renderAll();
+  });
+
+  /* ---------- Card action delegation ---------- */
+  gridFunc.addEventListener("click", function(e){
+    var t = e.target;
+    if (t.dataset.agendar) abrirAgenda(t.dataset.agendar);
+    else if (t.dataset.editar) abrirEdicao(t.dataset.editar);
+    else if (t.dataset.hist) abrirHistorico(t.dataset.hist);
+    else if (t.dataset.excluir) {
+      var f = state.funcionarios.find(function(x){ return x.id === t.dataset.excluir; });
+      if (f && confirm('Excluir "'+f.nome+'"? Esta ação não pode ser desfeita.')) {
+        state.funcionarios = state.funcionarios.filter(function(x){ return x.id !== t.dataset.excluir; });
+        save();
+        renderAll();
+      }
+    } else if (t.dataset.cancelAgenda) {
+      var parts = t.dataset.cancelAgenda.split("|");
+      var func = state.funcionarios.find(function(x){ return x.id === parts[0]; });
+      if (func && confirm("Cancelar este agendamento de férias?")) {
+        func.agendamentos = func.agendamentos.filter(function(a){ return a.id !== parts[1]; });
+        save();
+        renderAll();
+      }
+    }
+  });
+
+  /* ---------- Generic close / search ---------- */
+  document.querySelectorAll("[data-close]").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      document.getElementById(btn.getAttribute("data-close")).classList.remove("open");
+    });
+  });
+  document.querySelectorAll(".overlay").forEach(function(ov){
+    ov.addEventListener("click", function(e){ if (e.target === ov) ov.classList.remove("open"); });
+  });
+  searchInput.addEventListener("input", renderGrid);
+
+  /* ---------- Init ---------- */
+  renderAll();
+})();
+</script>
+</body>
+</html>
