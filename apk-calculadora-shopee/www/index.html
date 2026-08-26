@@ -190,6 +190,14 @@
     transition: border-color .15s;
   }
   .field input:focus, .field select:focus { border-color: var(--verde-m); }
+  .field input:disabled {
+    background: var(--verde-l);
+    border-color: var(--verde-l);
+    color: var(--verde-m);
+    -webkit-text-fill-color: var(--verde-m);
+    opacity: 1;
+    cursor: not-allowed;
+  }
   .field textarea {
     width: 100%;
     padding: 11px 12px;
@@ -522,7 +530,7 @@
   <section id="view-sim" class="view active">
     <div class="card">
       <h2>Custos e taxas
-        <small>Os campos abaixo já vêm com os valores padrão da Shopee (conferidos no relatório "Detalhes da renda"). Ajuste só se a sua categoria tiver comissão diferente.</small>
+        <small>As taxas da Shopee já vêm travadas nos valores conferidos no relatório "Detalhes da renda". Preencha só o custo e, se usar, o Ads.</small>
       </h2>
 
       <div class="field">
@@ -532,19 +540,19 @@
 
       <div class="row2">
         <div class="field">
-          <label>Comissão Shopee <span class="hint">%</span></label>
-          <input type="number" inputmode="decimal" id="comissao" placeholder="Ex: 18" step="0.01" min="0" value="18">
+          <label>Comissão Shopee <span class="hint">% — fixo</span></label>
+          <input type="number" inputmode="decimal" id="comissao" step="0.01" min="0" value="18" disabled>
         </div>
         <div class="field">
-          <label>Taxa de transação <span class="hint">%</span></label>
-          <input type="number" inputmode="decimal" id="transacao" placeholder="Ex: 2" step="0.01" min="0" value="2">
+          <label>Taxa de transação <span class="hint">% — fixo</span></label>
+          <input type="number" inputmode="decimal" id="transacao" step="0.01" min="0" value="2" disabled>
         </div>
       </div>
 
       <div class="row2">
         <div class="field">
-          <label>Taxa por item vendido <span class="hint">R$</span></label>
-          <input type="number" inputmode="decimal" id="taxaFixa" placeholder="Ex: 4,00" step="0.01" min="0" value="4">
+          <label>Taxa por item vendido <span class="hint">R$ — fixo</span></label>
+          <input type="number" inputmode="decimal" id="taxaFixa" step="0.01" min="0" value="4" disabled>
         </div>
         <div class="field">
           <label>Shopee Ads (ACOS) <span class="hint">% — varia por anúncio</span></label>
