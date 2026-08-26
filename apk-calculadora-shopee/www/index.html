@@ -307,6 +307,13 @@
   }
   .breakdown .b-row span:first-child { color: var(--cinza2); }
   .breakdown .b-row span:last-child { font-weight: 600; color: var(--cinza1); }
+  .breakdown .b-row.subtotal {
+    border-top: 1px dashed var(--cinza4);
+    margin-top: 2px;
+    padding-top: 8px;
+    font-weight: 700;
+  }
+  .breakdown .b-row.subtotal span { color: var(--cinza1); }
   .breakdown .b-row.total {
     border-top: 1px solid var(--cinza4);
     margin-top: 4px;
@@ -691,6 +698,9 @@
     const margemLiquidaR = recebido - custo;
     const margemLiquidaPct = preco > 0 ? (margemLiquidaR / preco) * 100 : 0;
 
+    const subtotal1 = preco - custo - comissaoR - taxaFixa;
+    const subtotal2 = subtotal1 - adsR;
+
     card.style.display = 'block';
     document.getElementById('res-preco').textContent = fmtBRL(preco);
     document.getElementById('res-margem-bruta').textContent = fmtBRL(margemBrutaR);
@@ -710,10 +720,11 @@
       <div class="b-row"><span>Preço de custo</span><span>${fmtBRL(custo)}</span></div>
       <div class="b-row"><span>Comissão Shopee (${fmtPct(comissaoPct*100)})</span><span>- ${fmtBRL(comissaoR)}</span></div>
       <div class="b-row"><span>Taxa de serviço/fixa</span><span>- ${fmtBRL(taxaFixa)}</span></div>
+      <div class="b-row subtotal"><span>Subtotal</span><span>${fmtBRL(subtotal1)}</span></div>
       <div class="b-row"><span>Shopee Ads (${fmtPct(adsPct*100)})</span><span>- ${fmtBRL(adsR)}</span></div>
+      <div class="b-row subtotal"><span>Subtotal</span><span>${fmtBRL(subtotal2)}</span></div>
       <div class="b-row"><span>Imposto (${fmtPct(impostoPct*100)})</span><span>- ${fmtBRL(impostoR)}</span></div>
-      <div class="b-row"><span>Valor líquido recebido</span><span>${fmtBRL(recebido)}</span></div>
-      <div class="b-row total"><span>Margem líquida</span><span>${fmtBRL(margemLiquidaR)}</span></div>
+      <div class="b-row total"><span>Valor líquido</span><span>${fmtBRL(margemLiquidaR)}</span></div>
     `;
   }
 
