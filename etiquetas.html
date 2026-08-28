@@ -614,7 +614,7 @@
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Margem e vendas por anúncio</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Unidades vendidas contadas a partir de "Descontar do estoque". Ordenado do pior pro melhor % de margem líquida.
+        Toda etiqueta processada e descontada do estoque cadastra automaticamente o anúncio (nome exato da etiqueta) se ainda não existir aqui — sem preço, no topo, pra você completar. Assim que informa custo e preço de venda, ele desce pra lista com a margem calculada. Unidades vendidas contadas a partir de "Descontar do estoque".
       </div>
       <input type="search" id="buscaListaAnuncios" placeholder="Pesquisar anúncio…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div id="listaAnuncios"></div>
@@ -2079,6 +2079,14 @@ async function descontarEstoqueAtual() {
     ops.push(batch => batch.set(doc(collection(db, 'vendasAnuncio')), {
       data, nomeAnuncio: v.nomeAnuncio, variacao: v.variacao, qtd: v.qtd, usuario,
     }));
+    // Anúncio ainda não cadastrado em "Gestão de preços" — cadastra
+    // automaticamente sem custo/preço (fica pendente no topo da lista até
+    // alguém completar), igual já fazia com produto novo no estoque.
+    if (!acharAnuncio(v.nomeAnuncio, v.variacao)) {
+      ops.push(batch => batch.set(doc(collection(db, 'anuncios')), {
+        nomeAnuncio: v.nomeAnuncio, variacao: v.variacao, custo: null, precoVenda: null,
+      }));
+    }
   });
   await commitEmLotes(ops);
   alert('Estoque atualizado.');
@@ -2111,32 +2119,71 @@ function preencherSelectAnuncios() {
   if (filtrados.some(a => a.id === atual)) sel.value = atual;
 }
 
+function vendidoTotalAnuncio(a) {
+  return vendasAnuncio
+    .filter(v => v.nomeAnuncio.toLowerCase() === a.nomeAnuncio.toLowerCase() && v.variacao.toLowerCase() === a.variacao.toLowerCase())
+    .reduce((s, v) => s + v.qtd, 0);
+}
+
 function renderListaAnuncios() {
   const el = document.getElementById('listaAnuncios');
   const termo = norm(document.getElementById('buscaListaAnuncios')?.value || '').toLowerCase();
   el.innerHTML = '';
   if (anuncios.length === 0) {
-    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio cadastrado ainda. Use "Cadastrar anúncio" acima.</div>';
+    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio cadastrado ainda. Use "Cadastrar anúncio" acima, ou processe e desconte uma etiqueta que ele aparece aqui sozinho.</div>';
     return;
   }
-  const linhas = anuncios
-    .filter(a => !termo || a.nomeAnuncio.toLowerCase().includes(termo) || a.variacao.toLowerCase().includes(termo))
+  const filtrados = anuncios.filter(a => !termo || a.nomeAnuncio.toLowerCase().includes(termo) || a.variacao.toLowerCase().includes(termo));
+  if (!filtrados.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio encontrado para essa busca.</div>';
+    return;
+  }
+
+  // Cadastrado automaticamente ao descontar etiqueta, mas sem custo/preço
+  // ainda — fica em evidência no topo até alguém completar.
+  const pendentes = filtrados.filter(a => a.custo == null || a.precoVenda == null);
+  const completos = filtrados
+    .filter(a => a.custo != null && a.precoVenda != null)
     .map(a => {
       const margem = calcularMargemAnuncio(a);
-      const vendidoTotal = vendasAnuncio
-        .filter(v => v.nomeAnuncio.toLowerCase() === a.nomeAnuncio.toLowerCase() && v.variacao.toLowerCase() === a.variacao.toLowerCase())
-        .reduce((s, v) => s + v.qtd, 0);
+      const vendidoTotal = vendidoTotalAnuncio(a);
       const lucroTotal = Math.round(margem.margemLiquida * vendidoTotal * 100) / 100;
       return { ...a, margem, vendidoTotal, lucroTotal };
     })
     .sort((a, b) => a.margem.margemPct - b.margem.margemPct);
 
-  if (!linhas.length) {
-    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio encontrado para essa busca.</div>';
-    return;
+  if (pendentes.length) {
+    const aviso = document.createElement('div');
+    aviso.className = 'aviso';
+    aviso.style.marginBottom = '10px';
+    aviso.innerHTML = `⚠ ${pendentes.length} anúncio(s) cadastrado(s) automaticamente pela etiqueta, sem custo/preço ainda — informe pra calcular a margem:`;
+    el.appendChild(aviso);
+
+    pendentes.forEach(a => {
+      const vendidoTotal = vendidoTotalAnuncio(a);
+      const row = document.createElement('div');
+      row.className = 'painel-row';
+      row.style.flexWrap = 'wrap';
+      row.innerHTML = `
+        <div style="flex:1; min-width:180px;">
+          <div class="painel-nome">${escapeHtml(a.nomeAnuncio)} — ${escapeHtml(a.variacao)}</div>
+          <div class="painel-detalhe">${vendidoTotal} vendido(s) até agora</div>
+        </div>
+        <input type="number" step="0.01" min="0" placeholder="Custo R$" data-custo-pendente="${escapeHtml(a.id)}" style="width:100px; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px;">
+        <input type="number" step="0.01" min="0" placeholder="Venda R$" data-venda-pendente="${escapeHtml(a.id)}" style="width:100px; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px;">
+        <button class="secondary" data-completar="${escapeHtml(a.id)}" style="padding:8px 12px; font-size:12px;">💾 Salvar</button>
+      `;
+      el.appendChild(row);
+    });
+
+    if (completos.length) {
+      const separador = document.createElement('div');
+      separador.style.cssText = 'border-top:1px solid var(--linha); margin:12px 0;';
+      el.appendChild(separador);
+    }
   }
 
-  linhas.forEach(a => {
+  completos.forEach(a => {
     const badgeClasse = a.margem.margemPct < 0 ? 'urgente' : a.margem.margemPct < 15 ? 'atencao' : 'ok';
     const det = document.createElement('details');
     det.className = 'painel-item';
@@ -2151,7 +2198,22 @@ function renderListaAnuncios() {
     `;
     el.appendChild(det);
   });
+
+  if (!pendentes.length && !completos.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio encontrado para essa busca.</div>';
+  }
 }
+
+document.getElementById('listaAnuncios').addEventListener('click', async e => {
+  const id = e.target.dataset.completar;
+  if (!id) return;
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const custo = parseFloat(document.querySelector(`[data-custo-pendente="${id}"]`).value);
+  const precoVenda = parseFloat(document.querySelector(`[data-venda-pendente="${id}"]`).value);
+  if (isNaN(custo) || custo < 0) { alert('Informe o custo (R$).'); return; }
+  if (isNaN(precoVenda) || precoVenda < 0) { alert('Informe o preço de venda (R$).'); return; }
+  await setDoc(doc(db, 'anuncios', id), { custo: Math.round(custo * 100) / 100, precoVenda: Math.round(precoVenda * 100) / 100 }, { merge: true });
+});
 
 document.getElementById('buscaAnuncioProduto').addEventListener('input', preencherSelectAnuncios);
 document.getElementById('buscaListaAnuncios').addEventListener('input', renderListaAnuncios);
@@ -2161,8 +2223,8 @@ document.getElementById('selAnuncioProduto').addEventListener('change', () => {
   if (!a) return;
   document.getElementById('inputAnuncioNome').value = a.nomeAnuncio;
   document.getElementById('inputAnuncioVariacao').value = a.variacao;
-  document.getElementById('inputAnuncioCusto').value = a.custo;
-  document.getElementById('inputAnuncioPrecoVenda').value = a.precoVenda;
+  document.getElementById('inputAnuncioCusto').value = a.custo ?? '';
+  document.getElementById('inputAnuncioPrecoVenda').value = a.precoVenda ?? '';
 });
 
 document.getElementById('btnSalvarAnuncio').addEventListener('click', async () => {
