@@ -366,6 +366,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18"/><path d="M8 3v3M16 3v3"/></svg>
         Produção
       </button>
+      <button class="tab-btn" data-tab="precos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Gestão de preços
+      </button>
     </div>
 
   <main>
@@ -560,6 +564,51 @@
       <div id="listaProducaoSemana"></div>
     </div>
   </div>
+
+  <div id="tabPrecos" class="tabpanel">
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Taxas de venda (Shopee)</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Descontadas automaticamente do preço de venda de cada anúncio na hora de calcular a margem líquida.
+      </div>
+      <div class="compra-form">
+        <input type="number" id="inputComissaoPct" step="0.01" min="0" placeholder="Comissão Shopee %">
+        <input type="number" id="inputTransacaoPct" step="0.01" min="0" placeholder="Taxa de transação %">
+        <input type="number" id="inputTaxaFixa" step="0.01" min="0" placeholder="Taxa fixa por item R$">
+        <button class="secondary" id="btnSalvarTaxas">💾 Salvar taxas</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Cadastrar anúncio</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Nome exatamente como aparece na etiqueta/anúncio (kit inteiro, sem desmembrar) e a variação. Pesquise um já cadastrado pra editar o custo/preço, ou digite um nome novo pra cadastrar.
+      </div>
+      <div class="compra-form">
+        <div class="produto-picker">
+          <input type="text" id="buscaAnuncioProduto" placeholder="Pesquisar anúncio já cadastrado…" autocomplete="off">
+          <select id="selAnuncioProduto"></select>
+        </div>
+      </div>
+      <div class="compra-form" style="margin-top:8px;">
+        <input type="text" id="inputAnuncioNome" placeholder="Nome do anúncio (igual sai na etiqueta)" style="flex:2; min-width:220px;">
+        <input type="text" id="inputAnuncioVariacao" placeholder="Variação (ex: 250g)">
+        <input type="number" id="inputAnuncioCusto" step="0.01" min="0" placeholder="Custo R$">
+        <input type="number" id="inputAnuncioPrecoVenda" step="0.01" min="0" placeholder="Preço de venda R$">
+        <button class="secondary" id="btnSalvarAnuncio">💾 Salvar anúncio</button>
+        <button class="secondary" id="btnExcluirAnuncio" style="color:#b91c1c; border-color:#b91c1c;">🗑 Excluir</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Margem e vendas por anúncio</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Unidades vendidas contadas a partir de "Descontar do estoque". Ordenado do pior pro melhor % de margem líquida.
+      </div>
+      <input type="search" id="buscaListaAnuncios" placeholder="Pesquisar anúncio…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
+      <div id="listaAnuncios"></div>
+    </div>
+  </div>
   </main>
     </div>
 
@@ -634,6 +683,7 @@ let orderedIndices = [];    // final page order (0-based, original PDF)
 let groupsForExport = [];   // for txt list
 let separacaoParaExport = [];   // for the "lista de separação" txt export
 let producaoSemanaParaExport = []; // [{ rotulo, porVariacao, reservaKg }] — mesma ordem/conteúdo da tela, usado pelo PDF de produção
+let vendasAnuncioParaExport = []; // [{ nomeAnuncio, variacao, qtd }] — vendas por etiqueta processada, sem desmembrar kit nem normalizar nome (pra Gestão de preços e margens)
 
 function setStatus(msg, spinning) {
   statusEl.classList.add('show');
@@ -687,6 +737,7 @@ async function handleFile(file) {
   render(produtos, kits, combos, unmatched, totalPages);
   separacaoParaExport = calcularListaSeparacao(pages);
   renderSeparacaoLista(document.getElementById('listaSeparacao'), separacaoParaExport);
+  vendasAnuncioParaExport = calcularVendasPorAnuncio(pages);
   setStatus('', false);
   statusEl.classList.remove('show');
   resultadoEl.classList.add('show');
@@ -1246,6 +1297,23 @@ function calcularListaSeparacao(pages) {
   }).sort((a, b) => b.totalQtd - a.totalQtd || a.produto.localeCompare(b.produto, 'pt-BR'));
 }
 
+// Agrega vendas por ANÚNCIO exatamente como aparece na etiqueta — nome
+// bruto (produtoBruto), sem normalizar nem desmembrar kit — pra estatística
+// de margem/lucro em "Gestão de preços e margens". É um cálculo separado de
+// calcularListaSeparacao/calcularConsumoEstoque (que usam nome normalizado
+// e desmembram kit pra saber quanto descontar de cada ingrediente em kg).
+function calcularVendasPorAnuncio(pages) {
+  const mapa = {};
+  pages.forEach(p => {
+    p.items.forEach(it => {
+      const chave = it.produtoBruto.toLowerCase() + '||' + it.variacao.toLowerCase();
+      if (!mapa[chave]) mapa[chave] = { nomeAnuncio: it.produtoBruto, variacao: it.variacao, qtd: 0 };
+      mapa[chave].qtd += it.qtd;
+    });
+  });
+  return Object.values(mapa);
+}
+
 function renderSeparacaoLista(container, list) {
   container.innerHTML = '';
   if (!list.length) {
@@ -1437,6 +1505,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     document.getElementById('tab' + btn.dataset.tab[0].toUpperCase() + btn.dataset.tab.slice(1)).classList.add('ativo');
     if (btn.dataset.tab === 'comprar') renderPainel();
     if (btn.dataset.tab === 'producao') renderProducao();
+    if (btn.dataset.tab === 'precos') renderPrecos();
   });
 });
 
@@ -1451,8 +1520,36 @@ let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajust
 let agendaProducao = {}; // { segunda: ['Produto A', ...], terca: [...], ... }
 let producaoFeitaHoje = {}; // { "<idProducaoFeita>": true|false }
 
+// ──────────────────────────────────────────────
+// GESTÃO DE PREÇOS E MARGENS — relação separada do estoque em kg: um
+// cadastro por anúncio + variação exatamente como aparece na etiqueta
+// (kit inteiro, sem desmembrar), com custo e preço de venda pra calcular
+// a margem líquida (depois de descontar as taxas do Shopee). As vendas
+// contadas aqui também não desmembram kit — é só pra estatística, não
+// mexe no estoque em kg.
+// ──────────────────────────────────────────────
+let anuncios = []; // [{ id, nomeAnuncio, variacao, custo, precoVenda }]
+let vendasAnuncio = []; // [{ id, data, nomeAnuncio, variacao, qtd, usuario }]
+let taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4 };
+let unsubAnuncios = null, unsubVendasAnuncio = null, unsubTaxasVenda = null;
+
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
+}
+
+function acharAnuncio(nomeAnuncio, variacao) {
+  return anuncios.find(a => a.nomeAnuncio.toLowerCase() === nomeAnuncio.toLowerCase() && a.variacao.toLowerCase() === variacao.toLowerCase());
+}
+
+// taxas = % da Shopee (comissão + transação) sobre o preço de venda, mais
+// a taxa fixa por item vendido; margem líquida é o que sobra depois de
+// tirar as taxas E o custo do produto.
+function calcularMargemAnuncio(item) {
+  const taxas = Math.round((item.precoVenda * (taxasVenda.comissaoPct + taxasVenda.transacaoPct) / 100 + taxasVenda.taxaFixa) * 100) / 100;
+  const receitaLiquida = Math.round((item.precoVenda - taxas) * 100) / 100;
+  const margemLiquida = Math.round((receitaLiquida - item.custo) * 100) / 100;
+  const margemPct = item.precoVenda > 0 ? (margemLiquida / item.precoVenda) * 100 : 0;
+  return { taxas, receitaLiquida, margemLiquida, margemPct };
 }
 
 let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null, unsubProducaoFeita = null;
@@ -1486,6 +1583,11 @@ function painelAtivo() {
 
 function producaoAtiva() {
   const el = document.getElementById('tabProducao');
+  return el && el.classList.contains('ativo');
+}
+
+function precosAtivo() {
+  const el = document.getElementById('tabPrecos');
   return el && el.classList.contains('ativo');
 }
 
@@ -1523,15 +1625,35 @@ function iniciarSincronizacao() {
     producaoFeitaHoje = novo;
     if (producaoAtiva()) renderProducao();
   });
+
+  unsubAnuncios = onSnapshot(collection(db, 'anuncios'), snap => {
+    anuncios = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => a.nomeAnuncio.localeCompare(b.nomeAnuncio, 'pt-BR'));
+    if (precosAtivo()) renderPrecos();
+  });
+
+  unsubVendasAnuncio = onSnapshot(collection(db, 'vendasAnuncio'), snap => {
+    vendasAnuncio = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (precosAtivo()) renderPrecos();
+  });
+
+  unsubTaxasVenda = onSnapshot(doc(db, 'configuracoes', 'taxasVenda'), snap => {
+    if (snap.exists()) taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4, ...snap.data() };
+    if (precosAtivo()) renderPrecos();
+  });
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda, unsubProducaoFeita].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = unsubProducaoFeita = null;
+  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda, unsubProducaoFeita, unsubAnuncios, unsubVendasAnuncio, unsubTaxasVenda].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = unsubProducaoFeita = unsubAnuncios = unsubVendasAnuncio = unsubTaxasVenda = null;
   estoque = [];
   movimentos = [];
   agendaProducao = {};
   producaoFeitaHoje = {};
+  anuncios = [];
+  vendasAnuncio = [];
+  taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4 };
   document.getElementById('alertaEstoque').style.display = 'none';
 }
 
@@ -1916,15 +2038,16 @@ async function descontarEstoqueAtual() {
   if (!confirm(msg)) return;
 
   const data = hoje();
-  const batch = writeBatch(db);
+  const usuario = auth.currentUser.email;
   const nomesAplicaveis = new Set([...aplicaveis.map(a => a.item.nome.toLowerCase()), ...novos.map(n => n.nome.toLowerCase())]);
+  const ops = [];
   aplicaveis.forEach(({ item, kg }) => {
     const novoKg = Math.round((item.kg - kg) * 1000) / 1000;
-    batch.update(doc(db, 'estoque', item.id), { kg: novoKg });
+    ops.push(batch => batch.update(doc(db, 'estoque', item.id), { kg: novoKg }));
   });
   novos.forEach(({ nome, kg }) => {
     const novoKg = Math.round(-kg * 1000) / 1000;
-    batch.set(doc(collection(db, 'estoque')), { nome, kg: novoKg });
+    ops.push(batch => batch.set(doc(collection(db, 'estoque')), { nome, kg: novoKg }));
   });
   // Um movimento de venda por produto + variação (não só o total em kg) —
   // é o que alimenta a sugestão de produção por variação mais abaixo.
@@ -1933,18 +2056,150 @@ async function descontarEstoqueAtual() {
     pm.variacoesSorted.forEach(v => {
       const g = parseGramas(v.variacao);
       const kgLinha = isFinite(g) ? (g * v.totalQtd) / 1000 : 0;
-      batch.set(doc(collection(db, 'movimentos')), {
-        data, tipo: 'venda', produto: pm.produto, variacao: v.variacao, qtd: v.totalQtd, kg: kgLinha, usuario: auth.currentUser.email,
-      });
+      ops.push(batch => batch.set(doc(collection(db, 'movimentos')), {
+        data, tipo: 'venda', produto: pm.produto, variacao: v.variacao, qtd: v.totalQtd, kg: kgLinha, usuario,
+      }));
     });
   });
-  await batch.commit();
+  // Contagem de vendas por ANÚNCIO (nome exato da etiqueta, kit sem
+  // desmembrar) — só pra estatística em "Gestão de preços e margens", não
+  // mexe no estoque em kg.
+  vendasAnuncioParaExport.forEach(v => {
+    ops.push(batch => batch.set(doc(collection(db, 'vendasAnuncio')), {
+      data, nomeAnuncio: v.nomeAnuncio, variacao: v.variacao, qtd: v.qtd, usuario,
+    }));
+  });
+  await commitEmLotes(ops);
   alert('Estoque atualizado.');
 }
 
 document.getElementById('btnDescontarEstoque').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta administrativa primeiro (aba Administrativo) pra descontar do estoque.'); return; }
   await descontarEstoqueAtual();
+});
+
+// ──────────────────────────────────────────────
+// GESTÃO DE PREÇOS E MARGENS — UI
+// ──────────────────────────────────────────────
+function renderPrecos() {
+  document.getElementById('inputComissaoPct').value = taxasVenda.comissaoPct;
+  document.getElementById('inputTransacaoPct').value = taxasVenda.transacaoPct;
+  document.getElementById('inputTaxaFixa').value = taxasVenda.taxaFixa;
+  preencherSelectAnuncios();
+  renderListaAnuncios();
+}
+
+function preencherSelectAnuncios() {
+  const sel = document.getElementById('selAnuncioProduto');
+  const termo = norm(document.getElementById('buscaAnuncioProduto').value || '').toLowerCase();
+  const atual = sel.value;
+  const filtrados = anuncios.filter(a => !termo || a.nomeAnuncio.toLowerCase().includes(termo) || a.variacao.toLowerCase().includes(termo));
+  sel.innerHTML = filtrados
+    .map(a => `<option value="${escapeHtml(a.id)}">${escapeHtml(a.nomeAnuncio)} — ${escapeHtml(a.variacao)}</option>`)
+    .join('');
+  if (filtrados.some(a => a.id === atual)) sel.value = atual;
+}
+
+function renderListaAnuncios() {
+  const el = document.getElementById('listaAnuncios');
+  const termo = norm(document.getElementById('buscaListaAnuncios')?.value || '').toLowerCase();
+  el.innerHTML = '';
+  if (anuncios.length === 0) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio cadastrado ainda. Use "Cadastrar anúncio" acima.</div>';
+    return;
+  }
+  const linhas = anuncios
+    .filter(a => !termo || a.nomeAnuncio.toLowerCase().includes(termo) || a.variacao.toLowerCase().includes(termo))
+    .map(a => {
+      const margem = calcularMargemAnuncio(a);
+      const vendidoTotal = vendasAnuncio
+        .filter(v => v.nomeAnuncio.toLowerCase() === a.nomeAnuncio.toLowerCase() && v.variacao.toLowerCase() === a.variacao.toLowerCase())
+        .reduce((s, v) => s + v.qtd, 0);
+      const lucroTotal = Math.round(margem.margemLiquida * vendidoTotal * 100) / 100;
+      return { ...a, margem, vendidoTotal, lucroTotal };
+    })
+    .sort((a, b) => a.margem.margemPct - b.margem.margemPct);
+
+  if (!linhas.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum anúncio encontrado para essa busca.</div>';
+    return;
+  }
+
+  linhas.forEach(a => {
+    const badgeClasse = a.margem.margemPct < 0 ? 'urgente' : a.margem.margemPct < 15 ? 'atencao' : 'ok';
+    const det = document.createElement('details');
+    det.className = 'painel-item';
+    det.innerHTML = `
+      <summary class="painel-row">
+        <div>
+          <div class="painel-nome">${escapeHtml(a.nomeAnuncio)} — ${escapeHtml(a.variacao)}</div>
+          <div class="painel-detalhe">Custo R$ ${a.custo.toFixed(2)} · Venda R$ ${a.precoVenda.toFixed(2)} · Taxas Shopee R$ ${a.margem.taxas.toFixed(2)} · ${a.vendidoTotal} vendido(s) · lucro total R$ ${a.lucroTotal.toFixed(2)}</div>
+        </div>
+        <span class="painel-badge ${badgeClasse}">R$ ${a.margem.margemLiquida.toFixed(2)} (${a.margem.margemPct.toFixed(0)}%)</span>
+      </summary>
+    `;
+    el.appendChild(det);
+  });
+}
+
+document.getElementById('buscaAnuncioProduto').addEventListener('input', preencherSelectAnuncios);
+document.getElementById('buscaListaAnuncios').addEventListener('input', renderListaAnuncios);
+
+document.getElementById('selAnuncioProduto').addEventListener('change', () => {
+  const a = anuncios.find(x => x.id === document.getElementById('selAnuncioProduto').value);
+  if (!a) return;
+  document.getElementById('inputAnuncioNome').value = a.nomeAnuncio;
+  document.getElementById('inputAnuncioVariacao').value = a.variacao;
+  document.getElementById('inputAnuncioCusto').value = a.custo;
+  document.getElementById('inputAnuncioPrecoVenda').value = a.precoVenda;
+});
+
+document.getElementById('btnSalvarAnuncio').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const nomeAnuncio = norm(document.getElementById('inputAnuncioNome').value);
+  const variacao = norm(document.getElementById('inputAnuncioVariacao').value);
+  const custo = parseFloat(document.getElementById('inputAnuncioCusto').value);
+  const precoVenda = parseFloat(document.getElementById('inputAnuncioPrecoVenda').value);
+  if (!nomeAnuncio) { alert('Digite o nome do anúncio (igual sai na etiqueta).'); return; }
+  if (!variacao) { alert('Digite a variação.'); return; }
+  if (isNaN(custo) || custo < 0) { alert('Informe o custo (R$).'); return; }
+  if (isNaN(precoVenda) || precoVenda < 0) { alert('Informe o preço de venda (R$).'); return; }
+
+  const existente = acharAnuncio(nomeAnuncio, variacao);
+  const dados = { nomeAnuncio, variacao, custo: Math.round(custo * 100) / 100, precoVenda: Math.round(precoVenda * 100) / 100 };
+  const ref = existente ? doc(db, 'anuncios', existente.id) : doc(collection(db, 'anuncios'));
+  await setDoc(ref, dados);
+
+  document.getElementById('inputAnuncioNome').value = '';
+  document.getElementById('inputAnuncioVariacao').value = '';
+  document.getElementById('inputAnuncioCusto').value = '';
+  document.getElementById('inputAnuncioPrecoVenda').value = '';
+  document.getElementById('buscaAnuncioProduto').value = '';
+  alert(`Anúncio "${nomeAnuncio} — ${variacao}" salvo.`);
+});
+
+document.getElementById('btnExcluirAnuncio').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const id = document.getElementById('selAnuncioProduto').value;
+  if (!id) { alert('Pesquise e escolha um anúncio cadastrado (no campo de busca acima) pra excluir.'); return; }
+  const a = anuncios.find(x => x.id === id);
+  if (!a) { alert('Anúncio não encontrado.'); return; }
+  if (!confirm(`Excluir "${a.nomeAnuncio} — ${a.variacao}" da Gestão de preços? Isso não apaga o histórico de vendas já contado, só o cadastro de custo/preço.`)) return;
+  await deleteDoc(doc(db, 'anuncios', id));
+  document.getElementById('buscaAnuncioProduto').value = '';
+  alert('Anúncio excluído.');
+});
+
+document.getElementById('btnSalvarTaxas').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const comissaoPct = parseFloat(document.getElementById('inputComissaoPct').value);
+  const transacaoPct = parseFloat(document.getElementById('inputTransacaoPct').value);
+  const taxaFixa = parseFloat(document.getElementById('inputTaxaFixa').value);
+  if (isNaN(comissaoPct) || comissaoPct < 0) { alert('Informe a comissão Shopee (%).'); return; }
+  if (isNaN(transacaoPct) || transacaoPct < 0) { alert('Informe a taxa de transação (%).'); return; }
+  if (isNaN(taxaFixa) || taxaFixa < 0) { alert('Informe a taxa fixa por item (R$).'); return; }
+  await setDoc(doc(db, 'configuracoes', 'taxasVenda'), { comissaoPct, transacaoPct, taxaFixa });
+  alert('Taxas salvas.');
 });
 
 // ──────────────────────────────────────────────
