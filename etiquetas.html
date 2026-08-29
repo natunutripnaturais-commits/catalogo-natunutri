@@ -457,17 +457,18 @@
     </div>
 
     <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Preço de venda</h2>
+      <h2 class="section" style="margin:0 0 8px">Preço de venda e custo por kg</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Define o preço de venda (R$/kg) de um produto já cadastrado — usado só pra calcular a margem em "O que comprar", comparando com o custo médio de compra.
+        Custo por kg alimenta o "Valor em estoque" (aba Estoque atual) pra produtos que ainda não têm histórico de compra com custo registrado — se houver compra com custo, ela tem prioridade. Preço de venda (R$/kg) é usado só pra calcular a margem em "O que comprar". Pode preencher um dos dois ou os dois.
       </div>
       <div class="compra-form">
         <div class="produto-picker">
           <input type="text" id="buscaPrecoProduto" placeholder="Pesquisar produto…" autocomplete="off">
           <select id="selPrecoProduto"></select>
         </div>
+        <input type="number" id="inputCustoManualKg" step="0.01" min="0" placeholder="Custo R$/kg">
         <input type="number" id="inputPrecoVendaKg" step="0.01" min="0" placeholder="Preço de venda R$/kg">
-        <button class="secondary" id="btnSalvarPrecoVenda">💲 Salvar preço</button>
+        <button class="secondary" id="btnSalvarPrecoVenda">💾 Salvar</button>
       </div>
     </div>
 
@@ -1915,19 +1916,29 @@ document.getElementById('buscaPrecoProduto').addEventListener('input', preencher
 document.getElementById('selPrecoProduto').addEventListener('change', () => {
   const item = acharEstoque(document.getElementById('selPrecoProduto').value);
   document.getElementById('inputPrecoVendaKg').value = item?.precoVendaKg ? item.precoVendaKg.toFixed(2) : '';
+  document.getElementById('inputCustoManualKg').value = item?.custoManualKg ? item.custoManualKg.toFixed(2) : '';
 });
 
 document.getElementById('btnSalvarPrecoVenda').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
   const nome = document.getElementById('selPrecoProduto').value;
+  const custo = parseFloat(document.getElementById('inputCustoManualKg').value);
   const preco = parseFloat(document.getElementById('inputPrecoVendaKg').value);
   if (!nome) { alert('Escolha um produto.'); return; }
-  if (isNaN(preco) || preco < 0) { alert('Informe o preço de venda (R$/kg).'); return; }
+  const temCusto = !isNaN(custo) && custo >= 0;
+  const temPreco = !isNaN(preco) && preco >= 0;
+  if (!temCusto && !temPreco) { alert('Informe o custo e/ou o preço de venda (R$/kg).'); return; }
   const item = acharEstoque(nome);
   if (!item) { alert('Produto não encontrado.'); return; }
 
-  await setDoc(doc(db, 'estoque', item.id), { precoVendaKg: Math.round(preco * 100) / 100 }, { merge: true });
-  alert(`Preço de venda de "${item.nome}" salvo: R$ ${preco.toFixed(2)}/kg.`);
+  const dados = {};
+  if (temCusto) dados.custoManualKg = Math.round(custo * 100) / 100;
+  if (temPreco) dados.precoVendaKg = Math.round(preco * 100) / 100;
+  await setDoc(doc(db, 'estoque', item.id), dados, { merge: true });
+  const partes = [];
+  if (temCusto) partes.push(`custo R$ ${custo.toFixed(2)}/kg`);
+  if (temPreco) partes.push(`venda R$ ${preco.toFixed(2)}/kg`);
+  alert(`"${item.nome}" salvo: ${partes.join(' · ')}.`);
 });
 
 document.getElementById('btnExcluirProduto').addEventListener('click', async () => {
@@ -2501,7 +2512,10 @@ function calcularPainel() {
     const comprasProduto = compras.filter(m => m.produto.toLowerCase() === item.nome.toLowerCase());
     const custoTotalAcum = comprasProduto.reduce((s, m) => s + m.custoTotal, 0);
     const kgComCusto = comprasProduto.reduce((s, m) => s + m.kg, 0);
-    const custoMedioKg = kgComCusto > 0 ? custoTotalAcum / kgComCusto : null;
+    // Custo real de compra tem prioridade; custo digitado manualmente (aba
+    // Produtos → "Preço de venda e custo por kg") só entra pra produtos sem
+    // nenhuma compra com custo registrado ainda.
+    const custoMedioKg = kgComCusto > 0 ? custoTotalAcum / kgComCusto : (item.custoManualKg ?? null);
 
     const precoVendaKg = item.precoVendaKg || null;
     const margemKg = (custoMedioKg != null && precoVendaKg != null) ? precoVendaKg - custoMedioKg : null;
