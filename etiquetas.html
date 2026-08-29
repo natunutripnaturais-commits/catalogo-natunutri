@@ -2594,7 +2594,11 @@ function calcularCicloProducaoAutomatico() {
     let idx = Math.max(0, c.diasAte);
     while (true) {
       if (!porDia[idx]) porDia[idx] = { diaIndex: idx, itens: [], totalPacotes: 0 };
-      if (porDia[idx].totalPacotes + c.totalPacotes <= configProducao.capacidadeDiaria) {
+      const cabe = porDia[idx].totalPacotes + c.totalPacotes <= configProducao.capacidadeDiaria;
+      // Se o item sozinho já passa da capacidade diária, não tem como
+      // esperar um dia "livre" — encaixa nesse dia mesmo assim (só se ele
+      // ainda estiver vazio), senão o loop nunca pararia.
+      if (cabe || porDia[idx].totalPacotes === 0) {
         porDia[idx].itens.push(c);
         porDia[idx].totalPacotes += c.totalPacotes;
         break;
