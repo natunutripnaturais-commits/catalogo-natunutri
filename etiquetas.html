@@ -492,6 +492,10 @@
         <h2 class="section" style="margin:0">Produtos em estoque (kg)</h2>
         <button class="secondary" id="btnVerificarDuplicatas" style="padding:6px 10px; font-size:12px;">🔗 Verificar duplicatas</button>
       </div>
+      <div class="stats" style="margin-bottom:10px;">
+        <div class="stat"><div class="num" id="estoqueTotalKg">0,000 kg</div><div class="lbl">Total em estoque</div></div>
+        <div class="stat"><div class="num" id="estoqueTotalValor">R$ 0,00</div><div class="lbl">Valor em estoque (custo)</div></div>
+      </div>
       <input type="search" id="buscaEstoque" placeholder="Pesquisar produto…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
         Ordenado do maior pro menor estoque. Só consulta — pra cadastrar produto novo use a aba Produtos; pra corrigir quantidade, "Ajuste de inventário".
@@ -1642,6 +1646,7 @@ function iniciarSincronizacao() {
 
   unsubMovimentos = onSnapshot(collection(db, 'movimentos'), snap => {
     movimentos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderEstoqueLista();
     if (painelAtivo()) renderPainel();
     if (producaoAtiva()) renderProducao();
     atualizarAlertaEstoque();
@@ -1781,8 +1786,28 @@ if (FIREBASE_CONFIGURADO) {
   document.getElementById('loginGate').innerHTML = '<div class="pasta-status">Configuração da nuvem ainda não concluída neste site.</div>';
 }
 
+function renderTotaisEstoque() {
+  const totalKg = estoque.reduce((s, item) => s + item.kg, 0);
+  document.getElementById('estoqueTotalKg').textContent = totalKg.toFixed(3).replace('.', ',') + ' kg';
+
+  // Valor de custo de cada produto = custo médio de compra (R$/kg, de
+  // calcularPainel) vezes o kg que tem em estoque agora. Produto sem
+  // nenhuma compra com custo registrado não entra na soma (não tem como
+  // saber o custo dele) — só avisa quantos ficaram de fora.
+  const painel = calcularPainel();
+  let valorTotal = 0, semCusto = 0;
+  painel.forEach(p => {
+    if (p.custoMedioKg != null) valorTotal += p.custoMedioKg * p.estoqueKg;
+    else if (p.estoqueKg > 0) semCusto++;
+  });
+  const elValor = document.getElementById('estoqueTotalValor');
+  elValor.textContent = 'R$ ' + valorTotal.toFixed(2).replace('.', ',');
+  elValor.title = semCusto > 0 ? `${semCusto} produto(s) com estoque ficaram de fora por não terem custo de compra registrado ainda.` : '';
+}
+
 function renderEstoqueLista() {
   const el = document.getElementById('listaEstoque');
+  renderTotaisEstoque();
   const termo = norm(document.getElementById('buscaEstoque')?.value || '').toLowerCase();
   const lista = estoque
     .filter(item => !termo || item.nome.toLowerCase().includes(termo))
