@@ -196,6 +196,11 @@
     border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer;
   }
   .dia-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
+  .periodo-btn{
+    background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
+    border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .periodo-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
   .producao-dia-bloco{border-top:1px solid var(--linha); padding-top:10px; margin-top:10px;}
   .producao-dia-bloco:first-child{border-top:none; margin-top:0; padding-top:0;}
   .producao-dia-titulo{font-weight:700; font-size:13.5px; color:var(--verde-900); margin-bottom:4px;}
@@ -618,6 +623,33 @@
       </div>
       <input type="search" id="buscaListaAnuncios" placeholder="Pesquisar anúncio…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div id="listaAnuncios"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Análises</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Margem geral, valor vendido e custo total das vendas no período — só considera anúncios com custo e preço de venda já cadastrados em "Gestão de preços".
+      </div>
+      <div class="dias-semana" style="margin-bottom:8px;">
+        <button class="periodo-btn ativo" data-periodo="7">7 dias</button>
+        <button class="periodo-btn" data-periodo="30">30 dias</button>
+        <button class="periodo-btn" data-periodo="90">90 dias</button>
+        <button class="periodo-btn" data-periodo="personalizado">Personalizado</button>
+      </div>
+      <div class="compra-form" id="analisePeriodoPersonalizado" style="display:none; margin-bottom:8px;">
+        <input type="date" id="inputAnaliseDe">
+        <span style="color:var(--texto-suave); font-size:13px;">até</span>
+        <input type="date" id="inputAnaliseAte">
+      </div>
+      <div class="stats" style="margin-bottom:10px;">
+        <div class="stat"><div class="num" id="analiseValorVendido">R$ 0,00</div><div class="lbl">Valor vendido</div></div>
+        <div class="stat"><div class="num" id="analiseValorCusto">R$ 0,00</div><div class="lbl">Custo dos produtos</div></div>
+        <div class="stat"><div class="num" id="analiseLucro">R$ 0,00</div><div class="lbl">Lucro líquido</div></div>
+        <div class="stat"><div class="num" id="analiseMargemPct">0%</div><div class="lbl">Margem geral</div></div>
+      </div>
+      <div id="analiseAvisoSemPreco" class="pasta-status" style="display:none; margin-bottom:8px;"></div>
+      <h3 style="margin:16px 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--texto-suave);">Por anúncio no período</h3>
+      <div id="analiseLista"></div>
     </div>
   </div>
   </main>
@@ -2106,6 +2138,7 @@ function renderPrecos() {
   document.getElementById('inputTaxaFixa').value = taxasVenda.taxaFixa;
   preencherSelectAnuncios();
   renderListaAnuncios();
+  renderAnalise();
 }
 
 function preencherSelectAnuncios() {
@@ -2274,6 +2307,108 @@ document.getElementById('btnSalvarTaxas').addEventListener('click', async () => 
   await setDoc(doc(db, 'configuracoes', 'taxasVenda'), { comissaoPct, transacaoPct, taxaFixa });
   alert('Taxas salvas.');
 });
+
+// ──────────────────────────────────────────────
+// ANÁLISES — margem geral, valor vendido e custo no período escolhido,
+// somando as vendas contadas por anúncio (vendasAnuncio) com o custo/preço
+// cadastrado em "anuncios". Anúncio ainda pendente (sem custo/preço) não
+// entra na conta — fica de fora, com aviso.
+// ──────────────────────────────────────────────
+let periodoAnaliseSelecionado = '7';
+
+function calcularAnaliseVendas(dataInicio, dataFim) {
+  const vendasPeriodo = vendasAnuncio.filter(v => v.data >= dataInicio && v.data <= dataFim);
+  const porAnuncio = {};
+  vendasPeriodo.forEach(v => {
+    const chave = v.nomeAnuncio.toLowerCase() + '||' + v.variacao.toLowerCase();
+    if (!porAnuncio[chave]) porAnuncio[chave] = { nomeAnuncio: v.nomeAnuncio, variacao: v.variacao, qtd: 0 };
+    porAnuncio[chave].qtd += v.qtd;
+  });
+
+  let valorVendido = 0, valorCusto = 0, valorTaxas = 0, unidadesSemPreco = 0;
+  const linhas = [];
+  Object.values(porAnuncio).forEach(v => {
+    const a = acharAnuncio(v.nomeAnuncio, v.variacao);
+    if (!a || a.custo == null || a.precoVenda == null) { unidadesSemPreco += v.qtd; return; }
+    const margem = calcularMargemAnuncio(a);
+    const vendido = Math.round(a.precoVenda * v.qtd * 100) / 100;
+    const custoTotal = Math.round(a.custo * v.qtd * 100) / 100;
+    const taxas = Math.round(margem.taxas * v.qtd * 100) / 100;
+    const lucro = Math.round(margem.margemLiquida * v.qtd * 100) / 100;
+    valorVendido += vendido; valorCusto += custoTotal; valorTaxas += taxas;
+    linhas.push({ nomeAnuncio: v.nomeAnuncio, variacao: v.variacao, qtd: v.qtd, vendido, custoTotal, taxas, lucro, margemPct: margem.margemPct });
+  });
+  linhas.sort((a, b) => b.lucro - a.lucro);
+
+  const lucroLiquido = Math.round((valorVendido - valorTaxas - valorCusto) * 100) / 100;
+  const margemGeralPct = valorVendido > 0 ? (lucroLiquido / valorVendido) * 100 : 0;
+  return { valorVendido, valorCusto, valorTaxas, lucroLiquido, margemGeralPct, unidadesSemPreco, linhas };
+}
+
+function intervaloAnaliseAtual() {
+  if (periodoAnaliseSelecionado === 'personalizado') {
+    const de = document.getElementById('inputAnaliseDe').value;
+    const ate = document.getElementById('inputAnaliseAte').value;
+    return { de: de || '0000-01-01', ate: ate || hoje() };
+  }
+  const dias = parseInt(periodoAnaliseSelecionado, 10);
+  const de = new Date(Date.now() - (dias - 1) * 86400000).toISOString().slice(0, 10);
+  return { de, ate: hoje() };
+}
+
+function formatBRL(v) { return 'R$ ' + v.toFixed(2).replace('.', ','); }
+
+function renderAnalise() {
+  const { de, ate } = intervaloAnaliseAtual();
+  const r = calcularAnaliseVendas(de, ate);
+
+  document.getElementById('analiseValorVendido').textContent = formatBRL(r.valorVendido);
+  document.getElementById('analiseValorCusto').textContent = formatBRL(r.valorCusto);
+  document.getElementById('analiseLucro').textContent = formatBRL(r.lucroLiquido);
+  document.getElementById('analiseMargemPct').textContent = r.margemGeralPct.toFixed(0) + '%';
+
+  const avisoEl = document.getElementById('analiseAvisoSemPreco');
+  if (r.unidadesSemPreco > 0) {
+    avisoEl.style.display = 'block';
+    avisoEl.textContent = `⚠ ${r.unidadesSemPreco} unidade(s) vendida(s) no período ficaram de fora dessa conta porque o anúncio ainda não tem custo/preço cadastrado (veja os pendentes acima).`;
+  } else {
+    avisoEl.style.display = 'none';
+  }
+
+  const el = document.getElementById('analiseLista');
+  el.innerHTML = '';
+  if (!r.linhas.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhuma venda contabilizada nesse período.</div>';
+    return;
+  }
+  r.linhas.forEach(l => {
+    const badgeClasse = l.margemPct < 0 ? 'urgente' : l.margemPct < 15 ? 'atencao' : 'ok';
+    const row = document.createElement('div');
+    row.className = 'painel-row';
+    row.innerHTML = `
+      <div>
+        <div class="painel-nome">${escapeHtml(l.nomeAnuncio)} — ${escapeHtml(l.variacao)}</div>
+        <div class="painel-detalhe">${l.qtd} vendido(s) · ${formatBRL(l.vendido)} vendido · ${formatBRL(l.custoTotal)} custo · ${formatBRL(l.taxas)} taxas</div>
+      </div>
+      <span class="painel-badge ${badgeClasse}">${formatBRL(l.lucro)} (${l.margemPct.toFixed(0)}%)</span>
+    `;
+    el.appendChild(row);
+  });
+}
+
+document.querySelectorAll('.periodo-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.periodo-btn').forEach(b => b.classList.remove('ativo'));
+    btn.classList.add('ativo');
+    periodoAnaliseSelecionado = btn.dataset.periodo;
+    document.getElementById('analisePeriodoPersonalizado').style.display = periodoAnaliseSelecionado === 'personalizado' ? 'flex' : 'none';
+    if (periodoAnaliseSelecionado !== 'personalizado' || (document.getElementById('inputAnaliseDe').value && document.getElementById('inputAnaliseAte').value)) {
+      renderAnalise();
+    }
+  });
+});
+document.getElementById('inputAnaliseDe').addEventListener('change', renderAnalise);
+document.getElementById('inputAnaliseAte').addEventListener('change', renderAnalise);
 
 // ──────────────────────────────────────────────
 // PAINEL — estoque atual x média de venda dos últimos 30 dias
