@@ -648,7 +648,16 @@
         <div class="stat"><div class="num" id="analiseMargemPct">0%</div><div class="lbl">Margem geral</div></div>
       </div>
       <div id="analiseAvisoSemPreco" class="pasta-status" style="display:none; margin-bottom:8px;"></div>
-      <h3 style="margin:16px 0 8px; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--texto-suave);">Por anúncio no período</h3>
+
+      <div id="analiseGraficoVendido"></div>
+      <div class="painel-detalhe" style="margin:2px 0 10px;">Valor vendido por dia</div>
+      <div id="analiseGraficoLucro"></div>
+      <div class="painel-detalhe" style="margin:2px 0 10px;">Lucro líquido por dia</div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin:16px 0 8px;">
+        <h3 style="margin:0; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--texto-suave);">Por anúncio no período</h3>
+        <button class="secondary" id="btnExportarAnaliseCsv" style="padding:6px 10px; font-size:12px;">⬇ Baixar CSV</button>
+      </div>
       <div id="analiseLista"></div>
     </div>
   </div>
@@ -2345,6 +2354,37 @@ function calcularAnaliseVendas(dataInicio, dataFim) {
   return { valorVendido, valorCusto, valorTaxas, lucroLiquido, margemGeralPct, unidadesSemPreco, linhas };
 }
 
+// Série diária de valor vendido e lucro líquido no intervalo, pros
+// gráficos — limitada a 366 dias (mesmo que o intervalo pedido seja maior,
+// ex: período personalizado com "de" vazio) pra nunca travar o navegador
+// iterando um intervalo enorme.
+function serieDiariaAnalise(dataInicio, dataFim) {
+  const MAX_DIAS = 366;
+  let inicio = new Date(dataInicio + 'T00:00:00');
+  const fim = new Date(dataFim + 'T00:00:00');
+  let dias = Math.max(1, Math.round((fim - inicio) / 86400000) + 1);
+  if (dias > MAX_DIAS) {
+    dias = MAX_DIAS;
+    inicio = new Date(fim.getTime() - (MAX_DIAS - 1) * 86400000);
+  }
+  const vendidoPorDia = [], lucroPorDia = [];
+  for (let i = 0; i < dias; i++) {
+    const dStr = new Date(inicio.getTime() + i * 86400000).toISOString().slice(0, 10);
+    let vendido = 0, lucro = 0;
+    vendasAnuncio.forEach(v => {
+      if (v.data !== dStr) return;
+      const a = acharAnuncio(v.nomeAnuncio, v.variacao);
+      if (!a || a.custo == null || a.precoVenda == null) return;
+      const margem = calcularMargemAnuncio(a);
+      vendido += a.precoVenda * v.qtd;
+      lucro += margem.margemLiquida * v.qtd;
+    });
+    vendidoPorDia.push(Math.round(vendido * 100) / 100);
+    lucroPorDia.push(Math.round(lucro * 100) / 100);
+  }
+  return { vendidoPorDia, lucroPorDia };
+}
+
 function intervaloAnaliseAtual() {
   if (periodoAnaliseSelecionado === 'personalizado') {
     const de = document.getElementById('inputAnaliseDe').value;
@@ -2374,6 +2414,10 @@ function renderAnalise() {
   } else {
     avisoEl.style.display = 'none';
   }
+
+  const { vendidoPorDia, lucroPorDia } = serieDiariaAnalise(de, ate);
+  document.getElementById('analiseGraficoVendido').innerHTML = svgSparkline(vendidoPorDia);
+  document.getElementById('analiseGraficoLucro').innerHTML = svgSparkline(lucroPorDia);
 
   const el = document.getElementById('analiseLista');
   el.innerHTML = '';
@@ -2409,6 +2453,24 @@ document.querySelectorAll('.periodo-btn').forEach(btn => {
 });
 document.getElementById('inputAnaliseDe').addEventListener('change', renderAnalise);
 document.getElementById('inputAnaliseAte').addEventListener('change', renderAnalise);
+
+document.getElementById('btnExportarAnaliseCsv').addEventListener('click', () => {
+  const { de, ate } = intervaloAnaliseAtual();
+  const r = calcularAnaliseVendas(de, ate);
+  const linhas = ['Anúncio;Variação;Qtd vendida;Valor vendido (R$);Custo (R$);Taxas Shopee (R$);Lucro líquido (R$);Margem (%)'];
+  r.linhas.forEach(l => {
+    linhas.push([
+      csvEscape(l.nomeAnuncio), csvEscape(l.variacao), l.qtd,
+      l.vendido.toFixed(2), l.custoTotal.toFixed(2), l.taxas.toFixed(2), l.lucro.toFixed(2), l.margemPct.toFixed(1),
+    ].join(';'));
+  });
+  linhas.push(['TOTAL', '', '', r.valorVendido.toFixed(2), r.valorCusto.toFixed(2), r.valorTaxas.toFixed(2), r.lucroLiquido.toFixed(2), r.margemGeralPct.toFixed(1)].join(';'));
+  if (r.unidadesSemPreco > 0) {
+    linhas.push('');
+    linhas.push(`Obs: ${r.unidadesSemPreco} unidade(s) vendida(s) no período ficaram de fora por falta de custo/preço cadastrado`);
+  }
+  downloadBlob(csvBlob(linhas), `natunutri-analise-${de}-a-${ate}.csv`);
+});
 
 // ──────────────────────────────────────────────
 // PAINEL — estoque atual x média de venda dos últimos 30 dias
