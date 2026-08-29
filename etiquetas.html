@@ -443,6 +443,7 @@
         <input type="text" id="inputAjusteMotivo" placeholder="Motivo (ex: contagem mensal, perda)" style="flex:2; min-width:180px;">
         <button class="secondary" id="btnRegistrarAjuste">⚖ Registrar ajuste</button>
       </div>
+      <div id="ajusteEstoqueAtual" style="font-size:12px; color:var(--texto-suave); margin-top:6px;"></div>
 
       <div style="border-top:1px solid var(--linha); margin:16px 0 12px;"></div>
       <h3 style="margin:0 0 8px; font-size:13.5px;">Ou ajuste tudo de uma vez por planilha</h3>
@@ -1881,7 +1882,7 @@ document.getElementById('btnVerificarDuplicatas').addEventListener('click', asyn
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
 // todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selPrecoProduto', 'buscaPrecoProduto']].forEach(([selId, buscaId]) => {
+  [['selCompraProduto', 'buscaCompraProduto'], ['selPrecoProduto', 'buscaPrecoProduto']].forEach(([selId, buscaId]) => {
     const sel = document.getElementById(selId);
     const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
     const atual = sel.value;
@@ -1891,6 +1892,21 @@ function preencherSelects() {
       .join('');
     if (filtrados.some(i => i.nome === atual)) sel.value = atual;
   });
+
+  // Ajuste mostra o estoque atual junto do nome, pra dar uma referência na
+  // hora de digitar o valor real contado (o valor digitado sempre vira o
+  // novo estoque, não soma nem subtrai do que já tinha).
+  {
+    const sel = document.getElementById('selAjusteProduto');
+    const termo = norm(document.getElementById('buscaAjusteProduto').value || '').toLowerCase();
+    const atual = sel.value;
+    const filtrados = estoque.filter(item => !termo || item.nome.toLowerCase().includes(termo));
+    sel.innerHTML = filtrados
+      .map(item => `<option value="${escapeHtml(item.nome)}">${escapeHtml(item.nome)} — ${item.kg.toFixed(3)} kg</option>`)
+      .join('');
+    if (filtrados.some(i => i.nome === atual)) sel.value = atual;
+    atualizarAjusteEstoqueAtual();
+  }
 
   // Excluir usa o id (não o nome) como valor: um cadastro com nome vazio ou
   // repetido tem que continuar selecionável e apagável individualmente —
@@ -1912,6 +1928,14 @@ document.getElementById('buscaCompraProduto').addEventListener('input', preenche
 document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaExcluirProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaPrecoProduto').addEventListener('input', preencherSelects);
+
+function atualizarAjusteEstoqueAtual() {
+  const item = acharEstoque(document.getElementById('selAjusteProduto').value);
+  document.getElementById('ajusteEstoqueAtual').textContent = item
+    ? `Estoque atual de "${item.nome}": ${item.kg.toFixed(3)} kg`
+    : '';
+}
+document.getElementById('selAjusteProduto').addEventListener('change', atualizarAjusteEstoqueAtual);
 
 document.getElementById('selPrecoProduto').addEventListener('change', () => {
   const item = acharEstoque(document.getElementById('selPrecoProduto').value);
