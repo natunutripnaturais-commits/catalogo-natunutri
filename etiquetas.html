@@ -191,11 +191,6 @@
   }
 
   .dias-semana{display:flex; gap:6px; flex-wrap:wrap;}
-  .dia-btn{
-    background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
-    border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer;
-  }
-  .dia-btn.ativo{background:var(--verde-900); color:#fff; border-color:var(--verde-900);}
   .periodo-btn{
     background:transparent; border:1px solid var(--linha); color:var(--texto-suave);
     border-radius:8px; padding:8px 12px; font-size:13px; font-weight:600; cursor:pointer;
@@ -538,44 +533,32 @@
 
   <div id="tabProducao" class="tabpanel">
     <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Agenda semanal de produção</h2>
-      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:10px;">
-        Escolha quais produtos você produz em cada dia da semana. Toque no dia pra editar a lista dele.
+      <h2 class="section" style="margin:0 0 8px">Rodízio automático</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        O sistema decide sozinho o que produzir a cada dia — sem precisar escolher manualmente. Cada produto é agendado pra render <strong>capacidade diária</strong> de embalagem, um produto de cada vez, e volta a entrar na fila quando o estoque projetado começar a faltar (mais cedo, se vender mais rápido do que o normal).
       </div>
-      <div class="dias-semana">
-        <button class="dia-btn" data-dia="domingo">Dom</button>
-        <button class="dia-btn" data-dia="segunda">Seg</button>
-        <button class="dia-btn" data-dia="terca">Ter</button>
-        <button class="dia-btn" data-dia="quarta">Qua</button>
-        <button class="dia-btn" data-dia="quinta">Qui</button>
-        <button class="dia-btn" data-dia="sexta">Sex</button>
-        <button class="dia-btn" data-dia="sabado">Sáb</button>
+      <div class="compra-form">
+        <input type="number" id="inputCapacidadeDiaria" step="1" min="1" placeholder="Capacidade diária (pacotes)">
+        <input type="number" id="inputMetaDiasProducao" step="1" min="1" placeholder="Meta de cobertura (dias)">
+        <button class="secondary" id="btnSalvarConfigProducao">💾 Salvar</button>
       </div>
-      <div class="produto-picker" style="margin:12px 0 8px;">
-        <input type="text" id="buscaProducaoProduto" placeholder="Pesquisar produto para adicionar…" autocomplete="off">
-        <select id="selProducaoProduto"></select>
-      </div>
-      <div class="actions" style="margin-bottom:8px">
-        <button class="secondary" id="btnAdicionarProducaoProduto">+ Adicionar a esse dia</button>
-      </div>
-      <div id="listaProducaoDia"></div>
     </div>
 
     <div class="card">
       <h2 class="section" style="margin:0 0 4px">Produção de hoje</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Quantidade sugerida por variação, com base na média de vendas de cada uma — marque conforme for produzindo. Só aparece a partir de vendas registradas depois que essa função foi ligada.
+        Escolhido automaticamente com base na venda média de cada variação e na sua capacidade diária. Marque como feito ao embalar — o produto some da lista e só volta a aparecer quando o estoque projetado precisar de reposição de novo.
       </div>
       <div id="listaProducaoHoje"></div>
     </div>
 
     <div class="card">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:4px;">
-        <h2 class="section" style="margin:0">Produção da semana</h2>
+        <h2 class="section" style="margin:0">Próximos dias</h2>
         <button class="secondary" id="btnBaixarProducaoPdf" style="padding:6px 10px; font-size:12px;">⬇ Baixar PDF</button>
       </div>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Quantidade sugerida por variação (tamanho de pacote) pra cobrir as vendas até a próxima vez que o produto entrar na agenda, com base na média de venda diária de cada variação — descontando o estoque atual só na próxima produção de cada um. Produto ainda sem histórico de venda por variação aparece só em kg total.
+        Prévia do que o rodízio vai pedir nos próximos dias, se a venda continuar no ritmo atual — muda sozinha conforme a demanda real muda.
       </div>
       <div id="listaProducaoSemana"></div>
     </div>
@@ -693,7 +676,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
-  setDoc, deleteDoc, query, where,
+  setDoc, deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // ──────────────────────────────────────────────
@@ -1569,8 +1552,8 @@ const BUFFER_DIAS_MINIMO = 7;    // abaixo disso, o painel marca "comprar urgent
 const ALVO_DIAS_REPOSICAO = 15;  // quantidade sugerida de compra mira esse tanto de estoque
 let estoque = []; // [{ id, nome, kg }] — id é o ID do documento no Firestore
 let movimentos = []; // [{ id, data: 'AAAA-MM-DD', tipo: 'venda'|'compra'|'ajuste', produto, kg }]
-let agendaProducao = {}; // { segunda: ['Produto A', ...], terca: [...], ... }
-let producaoFeitaHoje = {}; // { "<idProducaoFeita>": true|false }
+let producaoCiclos = []; // [{ id, data, produto, concluido }] — última vez que cada produto foi marcado como produzido
+let configProducao = { capacidadeDiaria: 350, metaDias: 15 };
 
 // ──────────────────────────────────────────────
 // GESTÃO DE PREÇOS E MARGENS — relação separada do estoque em kg: um
@@ -1604,7 +1587,7 @@ function calcularMargemAnuncio(item) {
   return { taxas, receitaLiquida, margemLiquida, margemPct };
 }
 
-let unsubEstoque = null, unsubMovimentos = null, unsubProducaoAgenda = null, unsubProducaoFeita = null;
+let unsubEstoque = null, unsubMovimentos = null, unsubProducaoCiclos = null, unsubConfigProducao = null;
 
 // Banner no topo da área administrativa avisando de estoque negativo ou
 // abaixo do mínimo — só client-side (não é notificação por e-mail/push,
@@ -1664,17 +1647,13 @@ function iniciarSincronizacao() {
     atualizarAlertaEstoque();
   });
 
-  unsubProducaoAgenda = onSnapshot(collection(db, 'producaoAgenda'), snap => {
-    const nova = {};
-    snap.docs.forEach(d => { nova[d.id] = d.data().produtos || []; });
-    agendaProducao = nova;
+  unsubProducaoCiclos = onSnapshot(collection(db, 'producaoCiclos'), snap => {
+    producaoCiclos = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (producaoAtiva()) renderProducao();
   });
 
-  unsubProducaoFeita = onSnapshot(query(collection(db, 'producaoFeita'), where('data', '==', hoje())), snap => {
-    const novo = {};
-    snap.docs.forEach(d => { novo[d.id] = !!d.data().concluido; });
-    producaoFeitaHoje = novo;
+  unsubConfigProducao = onSnapshot(doc(db, 'configuracoes', 'producao'), snap => {
+    if (snap.exists()) configProducao = { capacidadeDiaria: 350, metaDias: 15, ...snap.data() };
     if (producaoAtiva()) renderProducao();
   });
 
@@ -1697,12 +1676,12 @@ function iniciarSincronizacao() {
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos, unsubProducaoAgenda, unsubProducaoFeita, unsubAnuncios, unsubVendasAnuncio, unsubTaxasVenda].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = unsubProducaoAgenda = unsubProducaoFeita = unsubAnuncios = unsubVendasAnuncio = unsubTaxasVenda = null;
+  [unsubEstoque, unsubMovimentos, unsubProducaoCiclos, unsubConfigProducao, unsubAnuncios, unsubVendasAnuncio, unsubTaxasVenda].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubProducaoCiclos = unsubConfigProducao = unsubAnuncios = unsubVendasAnuncio = unsubTaxasVenda = null;
   estoque = [];
   movimentos = [];
-  agendaProducao = {};
-  producaoFeitaHoje = {};
+  producaoCiclos = [];
+  configProducao = { capacidadeDiaria: 350, metaDias: 15 };
   anuncios = [];
   vendasAnuncio = [];
   taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4 };
@@ -1739,7 +1718,7 @@ if (FIREBASE_CONFIGURADO) {
   document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
 
   document.getElementById('btnBackup').addEventListener('click', () => {
-    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, agendaProducao };
+    const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, configProducao };
     downloadBlob(new Blob([JSON.stringify(dump, null, 2)], { type: 'application/json' }), `natunutri-backup-${hoje()}.json`);
   });
 
@@ -1778,10 +1757,8 @@ if (FIREBASE_CONFIGURADO) {
       ...dump.estoque.map(item => batch => { const { id, ...resto } = item; batch.set(doc(db, 'estoque', id), resto); }),
       ...dump.movimentos.map(m => batch => { const { id, ...resto } = m; batch.set(doc(db, 'movimentos', id), resto); }),
     ];
-    if (dump.agendaProducao) {
-      Object.entries(dump.agendaProducao).forEach(([dia, produtos]) => {
-        opsCriar.push(batch => batch.set(doc(db, 'producaoAgenda', dia), { produtos }));
-      });
+    if (dump.configProducao) {
+      opsCriar.push(batch => batch.set(doc(db, 'configuracoes', 'producao'), dump.configProducao));
     }
     await commitEmLotes(opsCriar);
 
@@ -1878,7 +1855,7 @@ document.getElementById('btnVerificarDuplicatas').addEventListener('click', asyn
 // embaixo: a busca filtra as opções do select, e com a busca vazia aparecem
 // todos os produtos — clicar no select já mostra a lista inteira.
 function preencherSelects() {
-  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selProducaoProduto', 'buscaProducaoProduto'], ['selPrecoProduto', 'buscaPrecoProduto']].forEach(([selId, buscaId]) => {
+  [['selCompraProduto', 'buscaCompraProduto'], ['selAjusteProduto', 'buscaAjusteProduto'], ['selPrecoProduto', 'buscaPrecoProduto']].forEach(([selId, buscaId]) => {
     const sel = document.getElementById(selId);
     const termo = norm(document.getElementById(buscaId).value || '').toLowerCase();
     const atual = sel.value;
@@ -1907,7 +1884,6 @@ function preencherSelects() {
 
 document.getElementById('buscaCompraProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaAjusteProduto').addEventListener('input', preencherSelects);
-document.getElementById('buscaProducaoProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaExcluirProduto').addEventListener('input', preencherSelects);
 document.getElementById('buscaPrecoProduto').addEventListener('input', preencherSelects);
 
@@ -2511,68 +2487,97 @@ function calcularPainel() {
 }
 
 // ──────────────────────────────────────────────
-// PRODUÇÃO — agenda semanal (quais produtos são produzidos em cada dia) mais
-// a quantidade sugerida de cada um, salvos no Firestore (coleção
-// producaoAgenda, um documento por dia da semana).
+// PRODUÇÃO — rodízio automático: o sistema decide sozinho o que produzir a
+// cada dia, sem agenda manual. Cada produto entra na fila quando o estoque
+// projetado (calculado pela venda média de cada variação) tá pra vencer, e
+// pede pacotes suficientes pra cobrir a meta de dias configurada — os
+// produtos são então distribuídos dia a dia respeitando a capacidade diária
+// de embalagem, o mais urgente primeiro.
 // ──────────────────────────────────────────────
 const DIAS_SEMANA = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];
 const DIAS_LABEL = { domingo: 'Domingo', segunda: 'Segunda', terca: 'Terça', quarta: 'Quarta', quinta: 'Quinta', sexta: 'Sexta', sabado: 'Sábado' };
-let diaProducaoSelecionado = DIAS_SEMANA[new Date().getDay()];
 
-// Pra cada dia em que um produto aparece na agenda, calcula o intervalo (em
-// dias) até a próxima vez que ele aparece de novo — ciclando a semana — e a
-// distância desse dia até hoje. Usado tanto pela sugestão semanal em kg
-// quanto pela sugestão de hoje por variação, pra manter a mesma conta.
-function intervalosDeProducao(nome) {
-  const hojeIdx = new Date().getDay();
-  const idxs = [];
-  DIAS_SEMANA.forEach((dia, i) => {
-    if ((agendaProducao[dia] || []).some(p => p.toLowerCase() === nome.toLowerCase())) idxs.push(i);
+// Última vez (AAAA-MM-DD) que cada produto foi marcado como produzido —
+// usado pra saber quando o ciclo de "meta de dias" dele vence de novo.
+function ultimaProducaoPorProduto() {
+  const mapa = {};
+  producaoCiclos.forEach(c => {
+    if (!c.concluido) return;
+    const chave = c.produto.toLowerCase();
+    if (!mapa[chave] || c.data > mapa[chave]) mapa[chave] = c.data;
   });
-  return idxs.map((diaIdx, k) => {
-    const proxIdx = idxs[(k + 1) % idxs.length];
-    let intervalo = proxIdx - diaIdx;
-    if (intervalo <= 0) intervalo += 7;
-    let distanciaDeHoje = diaIdx - hojeIdx;
-    if (distanciaDeHoje < 0) distanciaDeHoje += 7;
-    return { diaIdx, intervalo, distanciaDeHoje };
-  });
+  return mapa;
 }
 
-// Pra cada produto agendado, calcula quanto produzir em cada dia em que ele
-// aparece: média de venda/dia × dias até a próxima vez que ele entra na
-// agenda de novo. Só desconta o estoque atual na ocorrência mais próxima a
-// partir de hoje — as demais no resto da semana são uma projeção, não dá
-// pra saber o estoque exato de dias futuros sem simular venda a venda.
-function calcularProducaoSemana() {
+// Pra cada produto com histórico de venda por variação, calcula os pacotes
+// necessários pra cobrir a meta de dias, e quantos dias faltam até ele
+// precisar ser produzido de novo: se já foi produzido antes, é a data
+// daquela produção + meta de dias; se nunca foi (ainda não passou por essa
+// função), usa o estoque atual como estimativa de urgência, pra não tratar
+// todo mundo como "atrasadíssimo" logo no primeiro dia.
+function calcularFilaProducao() {
   const painel = calcularPainel();
   const porNome = {};
   painel.forEach(p => { porNome[p.nome.toLowerCase()] = p; });
+  const ultimaProducao = ultimaProducaoPorProduto();
 
-  const resultado = {};
-  DIAS_SEMANA.forEach(dia => { resultado[dia] = []; });
-
-  const todosProdutos = new Set();
-  DIAS_SEMANA.forEach(dia => (agendaProducao[dia] || []).forEach(p => todosProdutos.add(p)));
-
-  todosProdutos.forEach(nome => {
-    const ocorrencias = intervalosDeProducao(nome);
-    if (!ocorrencias.length) return;
-    const p = porNome[nome.toLowerCase()];
-    const mediaDia = p ? p.mediaDia : 0;
-    const estoqueAtual = p ? p.estoqueKg : 0;
-    const menorDistancia = Math.min(...ocorrencias.map(o => o.distanciaDeHoje));
-
-    ocorrencias.forEach(({ diaIdx, intervalo, distanciaDeHoje }) => {
-      let kg = mediaDia * intervalo;
-      if (distanciaDeHoje === menorDistancia) kg = Math.max(0, kg - estoqueAtual);
-      kg = Math.round(kg * 10) / 10;
-      if (kg > 0) resultado[DIAS_SEMANA[diaIdx]].push({ produto: nome, kg });
-    });
+  const vendaVar = calcularVendaMediaPorVariacao();
+  const variacoesPorProduto = {};
+  Object.values(vendaVar).forEach(v => {
+    const chave = v.produto.toLowerCase();
+    if (!variacoesPorProduto[chave]) variacoesPorProduto[chave] = [];
+    variacoesPorProduto[chave].push(v);
   });
 
-  Object.keys(resultado).forEach(dia => resultado[dia].sort((a, b) => b.kg - a.kg));
-  return resultado;
+  const hoje0Ms = new Date(hoje() + 'T00:00:00').getTime();
+  const candidatos = [];
+  Object.entries(variacoesPorProduto).forEach(([chave, variacoes]) => {
+    const itens = variacoes
+      .map(v => ({ variacao: v.variacao, qtd: Math.round(v.mediaDia * configProducao.metaDias) }))
+      .filter(it => it.qtd > 0)
+      .sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
+    if (!itens.length) return;
+    const totalPacotes = itens.reduce((s, it) => s + it.qtd, 0);
+
+    let diasAte;
+    const ultima = ultimaProducao[chave];
+    if (ultima) {
+      const proximaMs = new Date(ultima + 'T00:00:00').getTime() + configProducao.metaDias * 86400000;
+      diasAte = Math.round((proximaMs - hoje0Ms) / 86400000);
+    } else {
+      const p = porNome[chave];
+      diasAte = (p && isFinite(p.diasRestantes)) ? Math.round(p.diasRestantes) : 0;
+    }
+
+    candidatos.push({ produto: variacoes[0].produto, itens, totalPacotes, diasAte });
+  });
+
+  candidatos.sort((a, b) => a.diasAte - b.diasAte);
+  return candidatos;
+}
+
+// Encaixa cada produto no dia em que ele realmente vence (hoje, se já
+// estiver atrasado) — nunca antes disso, mesmo sobrando capacidade, senão
+// deixaria de ser rodízio e viraria "produz tudo se couber". Só empurra pra
+// um dia seguinte quando o dia dele já está cheio (capacidade estourada).
+// Um produto nunca é dividido entre dois dias, ele inteiro (todas as
+// variações) vai pro primeiro dia disponível a partir do vencimento dele.
+function calcularCicloProducaoAutomatico() {
+  const candidatos = calcularFilaProducao();
+  const porDia = {};
+  candidatos.forEach(c => {
+    let idx = Math.max(0, c.diasAte);
+    while (true) {
+      if (!porDia[idx]) porDia[idx] = { diaIndex: idx, itens: [], totalPacotes: 0 };
+      if (porDia[idx].totalPacotes + c.totalPacotes <= configProducao.capacidadeDiaria) {
+        porDia[idx].itens.push(c);
+        porDia[idx].totalPacotes += c.totalPacotes;
+        break;
+      }
+      idx++;
+    }
+  });
+  return Object.values(porDia).sort((a, b) => a.diaIndex - b.diaIndex);
 }
 
 // Média de unidades vendidas por dia nos últimos 30 dias, por produto +
@@ -2602,104 +2607,36 @@ function calcularVendaMediaPorVariacao() {
   return resultado;
 }
 
-// Sugestão desmembrada por variação (não só o kg agregado) pra um dia
-// qualquer da semana: usa o mesmo intervalo até a próxima produção de cada
-// produto, aplicado à média de venda de CADA variação separadamente — é o
-// que mantém o estoque de cada tamanho de pacote renovado sem precisar
-// produzir tudo todo dia. Só cobre produto com histórico de venda por
-// variação (calcularVendaMediaPorVariacao); o que ainda não tem cai no
-// resumo em kg de calcularProducaoSemana como reserva.
-function calcularProducaoVariacoesPorDia(diaIdx) {
-  const produtosDoDia = agendaProducao[DIAS_SEMANA[diaIdx]] || [];
-  const vendaVar = calcularVendaMediaPorVariacao();
-
-  const variacoesPorProduto = {};
-  Object.values(vendaVar).forEach(v => {
-    const chaveProd = v.produto.toLowerCase();
-    if (!variacoesPorProduto[chaveProd]) variacoesPorProduto[chaveProd] = [];
-    variacoesPorProduto[chaveProd].push(v);
-  });
-
-  const resultado = [];
-  produtosDoDia.forEach(nome => {
-    const ocorrencias = intervalosDeProducao(nome);
-    const ocorrenciaDia = ocorrencias.find(o => o.diaIdx === diaIdx);
-    if (!ocorrenciaDia) return;
-    const variacoes = variacoesPorProduto[nome.toLowerCase()] || [];
-    const itens = variacoes
-      .map(v => ({ variacao: v.variacao, qtd: Math.round(v.mediaDia * ocorrenciaDia.intervalo) }))
-      .filter(it => it.qtd > 0)
-      .sort((a, b) => parseGramas(a.variacao) - parseGramas(b.variacao));
-    if (itens.length) resultado.push({ produto: nome, itens });
-  });
-  return resultado;
-}
-
-function calcularProducaoHojeVariacoes() {
-  return calcularProducaoVariacoesPorDia(new Date().getDay());
-}
-
-// Junta a sugestão por variação (quando o produto já tem histórico de venda
-// por tamanho de pacote) com o resumo em kg de calcularProducaoSemana como
-// reserva pros produtos que ainda não têm essa granularidade — assim nenhum
-// produto agendado desaparece da visão da semana.
-function calcularProducaoSemanaCompleta() {
-  const semanaKg = calcularProducaoSemana();
-  const resultado = {};
-  DIAS_SEMANA.forEach((dia, diaIdx) => {
-    const porVariacao = calcularProducaoVariacoesPorDia(diaIdx);
-    const cobertos = new Set(porVariacao.map(p => p.produto.toLowerCase()));
-    const reservaKg = (semanaKg[dia] || []).filter(it => !cobertos.has(it.produto.toLowerCase()));
-    resultado[dia] = { porVariacao, reservaKg };
-  });
-  return resultado;
-}
-
-function idProducaoFeita(produto, variacao) {
+function idProducaoCiclo(produto) {
   const limpa = s => norm(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-  return `${hoje()}__${limpa(produto)}__${limpa(variacao)}`;
+  return `${hoje()}__${limpa(produto)}`;
 }
 
-function renderProducaoDiaEdicao() {
-  document.querySelectorAll('.dia-btn').forEach(b => b.classList.toggle('ativo', b.dataset.dia === diaProducaoSelecionado));
-  const lista = agendaProducao[diaProducaoSelecionado] || [];
-  const el = document.getElementById('listaProducaoDia');
-  el.innerHTML = '';
-  if (!lista.length) {
-    el.innerHTML = '<div class="estoque-vazio">Nenhum produto nesse dia ainda.</div>';
-    return;
-  }
-  lista.forEach(nome => {
-    const row = document.createElement('div');
-    row.className = 'estoque-row';
-    row.innerHTML = `<span style="flex:1">${escapeHtml(nome)}</span><button class="secondary" data-remover="${escapeHtml(nome)}" style="padding:4px 10px; font-size:12px;">Remover</button>`;
-    el.appendChild(row);
-  });
+function rotuloDia(i) {
+  const diaSemana = DIAS_LABEL[DIAS_SEMANA[(new Date().getDay() + i) % 7]];
+  return i === 0 ? `${diaSemana} (hoje)` : `${diaSemana} (+${i}d)`;
 }
 
 function renderProducaoHoje() {
   const el = document.getElementById('listaProducaoHoje');
-  const itens = calcularProducaoHojeVariacoes();
+  const dias = calcularCicloProducaoAutomatico();
+  const hojeItens = dias.find(d => d.diaIndex === 0)?.itens || [];
   el.innerHTML = '';
-  if (!itens.length) {
-    el.innerHTML = '<div class="estoque-vazio">Nada agendado pra hoje, ou ainda sem histórico de vendas por variação.</div>';
+  if (!hojeItens.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nada pra produzir hoje — ou ainda sem histórico de vendas por variação (precisa de "Descontar do estoque" registrado depois que essa função foi ligada).</div>';
     return;
   }
-  itens.forEach(pm => {
+  hojeItens.forEach(c => {
     const bloco = document.createElement('div');
     bloco.className = 'producao-dia-bloco';
     bloco.innerHTML = `
-      <div class="producao-dia-titulo">${escapeHtml(pm.produto)}</div>
-      ${pm.itens.map(it => {
-        const idFeito = idProducaoFeita(pm.produto, it.variacao);
-        const marcado = !!producaoFeitaHoje[idFeito];
-        return `
-          <label class="painel-row" style="cursor:pointer;">
-            <span class="painel-nome">${escapeHtml(it.variacao)} — ${it.qtd} un</span>
-            <input type="checkbox" data-id-feito="${idFeito}" data-produto="${escapeHtml(pm.produto)}" data-variacao="${escapeHtml(it.variacao)}" ${marcado ? 'checked' : ''} style="width:20px; height:20px;">
-          </label>
-        `;
-      }).join('')}
+      <label class="painel-row" style="cursor:pointer; align-items:flex-start;">
+        <span>
+          <span class="painel-nome">${escapeHtml(c.produto)}</span>
+          <div class="painel-detalhe">${c.itens.map(it => `${escapeHtml(it.variacao)} — ${it.qtd} un`).join(' · ')} · ${c.totalPacotes} pacote(s) no total</div>
+        </span>
+        <input type="checkbox" data-produto="${escapeHtml(c.produto)}" style="width:20px; height:20px; flex-shrink:0;">
+      </label>
     `;
     el.appendChild(bloco);
   });
@@ -2708,72 +2645,55 @@ function renderProducaoHoje() {
 document.getElementById('listaProducaoHoje').addEventListener('change', async e => {
   if (!e.target.matches('input[type="checkbox"]')) return;
   if (!auth?.currentUser) return;
-  await setDoc(doc(db, 'producaoFeita', e.target.dataset.idFeito), {
-    data: hoje(), produto: e.target.dataset.produto, variacao: e.target.dataset.variacao, concluido: e.target.checked,
+  const produto = e.target.dataset.produto;
+  await setDoc(doc(db, 'producaoCiclos', idProducaoCiclo(produto)), {
+    data: hoje(), produto, concluido: e.target.checked,
   });
 });
 
+const MAX_DIAS_PREVIA_PRODUCAO = 14;
+
 function renderProducao() {
-  renderProducaoDiaEdicao();
+  document.getElementById('inputCapacidadeDiaria').value = configProducao.capacidadeDiaria;
+  document.getElementById('inputMetaDiasProducao').value = configProducao.metaDias;
   renderProducaoHoje();
-  const resultado = calcularProducaoSemanaCompleta();
+  const dias = calcularCicloProducaoAutomatico();
   const el = document.getElementById('listaProducaoSemana');
   el.innerHTML = '';
   producaoSemanaParaExport = [];
-  const hojeIdx = new Date().getDay();
-  const diasRotacionados = DIAS_SEMANA.map((_, i) => DIAS_SEMANA[(hojeIdx + i) % 7]);
-  let algumaCoisa = false;
-  diasRotacionados.forEach((dia, i) => {
-    const { porVariacao, reservaKg } = resultado[dia];
-    if (!porVariacao.length && !reservaKg.length) return;
-    algumaCoisa = true;
-    const rotulo = i === 0 ? `${DIAS_LABEL[dia]} (hoje)` : DIAS_LABEL[dia];
-    producaoSemanaParaExport.push({ rotulo, porVariacao, reservaKg });
+  if (!dias.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum produto na fila ainda. Precisa de histórico de vendas por variação — vá vendendo e descontando do estoque que o rodízio se monta sozinho.</div>';
+    return;
+  }
+  dias.filter(dia => dia.diaIndex <= MAX_DIAS_PREVIA_PRODUCAO).forEach(dia => {
+    const rotulo = rotuloDia(dia.diaIndex);
+    const porVariacao = dia.itens.map(c => ({ produto: c.produto, itens: c.itens }));
+    producaoSemanaParaExport.push({ rotulo, porVariacao, reservaKg: [] });
     const bloco = document.createElement('div');
     bloco.className = 'producao-dia-bloco';
     bloco.innerHTML = `
-      <div class="producao-dia-titulo">${escapeHtml(rotulo)}</div>
-      ${porVariacao.map(pm => `
+      <div class="producao-dia-titulo">${escapeHtml(rotulo)} — ${dia.totalPacotes} pacote(s)</div>
+      ${dia.itens.map(c => `
         <div class="painel-row" style="align-items:flex-start;">
-          <span class="painel-nome">${escapeHtml(pm.produto)}</span>
+          <span class="painel-nome">${escapeHtml(c.produto)}</span>
           <span style="text-align:right;">
-            ${pm.itens.map(it => `<div class="painel-badge ok" style="margin:0 0 4px; display:inline-block;">${escapeHtml(it.variacao)} — ${it.qtd} un</div>`).join('<br>')}
+            ${c.itens.map(it => `<div class="painel-badge ok" style="margin:0 0 4px; display:inline-block;">${escapeHtml(it.variacao)} — ${it.qtd} un</div>`).join('<br>')}
           </span>
-        </div>
-      `).join('')}
-      ${reservaKg.map(it => `
-        <div class="painel-row">
-          <span class="painel-nome">${escapeHtml(it.produto)}</span>
-          <span class="painel-badge ok">${it.kg.toFixed(1)} kg</span>
         </div>
       `).join('')}
     `;
     el.appendChild(bloco);
   });
-  if (!algumaCoisa) el.innerHTML = '<div class="estoque-vazio">Nenhum produto agendado ainda. Escolha os produtos de cada dia acima.</div>';
 }
 
-document.querySelectorAll('.dia-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    diaProducaoSelecionado = btn.dataset.dia;
-    renderProducaoDiaEdicao();
-  });
-});
-
-document.getElementById('btnAdicionarProducaoProduto').addEventListener('click', async () => {
+document.getElementById('btnSalvarConfigProducao').addEventListener('click', async () => {
   if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
-  const nome = document.getElementById('selProducaoProduto').value;
-  if (!nome) { alert('Escolha um produto.'); return; }
-  const atual = agendaProducao[diaProducaoSelecionado] || [];
-  if (atual.some(p => p.toLowerCase() === nome.toLowerCase())) { alert('Esse produto já está nesse dia.'); return; }
-  await setDoc(doc(db, 'producaoAgenda', diaProducaoSelecionado), { produtos: [...atual, nome] });
-});
-
-document.getElementById('listaProducaoDia').addEventListener('click', async e => {
-  const nome = e.target.dataset.remover;
-  if (!nome || !auth?.currentUser) return;
-  const atual = agendaProducao[diaProducaoSelecionado] || [];
-  await setDoc(doc(db, 'producaoAgenda', diaProducaoSelecionado), { produtos: atual.filter(p => p !== nome) });
+  const capacidadeDiaria = parseInt(document.getElementById('inputCapacidadeDiaria').value, 10);
+  const metaDias = parseInt(document.getElementById('inputMetaDiasProducao').value, 10);
+  if (isNaN(capacidadeDiaria) || capacidadeDiaria <= 0) { alert('Informe a capacidade diária (pacotes).'); return; }
+  if (isNaN(metaDias) || metaDias <= 0) { alert('Informe a meta de cobertura (dias).'); return; }
+  await setDoc(doc(db, 'configuracoes', 'producao'), { capacidadeDiaria, metaDias });
+  alert('Configuração salva.');
 });
 
 function serieDiaria(nomeProduto, dias) {
