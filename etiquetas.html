@@ -381,6 +381,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         Gestão de preços
       </button>
+      <button class="tab-btn" data-tab="analises">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
+        Análises
+      </button>
     </div>
 
   <main>
@@ -613,7 +617,9 @@
       <input type="search" id="buscaListaAnuncios" placeholder="Pesquisar anúncio…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
       <div id="listaAnuncios"></div>
     </div>
+  </div>
 
+  <div id="tabAnalises" class="tabpanel">
     <div class="card">
       <h2 class="section" style="margin:0 0 8px">Análises</h2>
       <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
@@ -1547,6 +1553,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'comprar') renderPainel();
     if (btn.dataset.tab === 'producao') renderProducao();
     if (btn.dataset.tab === 'precos') renderPrecos();
+    if (btn.dataset.tab === 'analises') renderAnalise();
   });
 });
 
@@ -1632,6 +1639,11 @@ function precosAtivo() {
   return el && el.classList.contains('ativo');
 }
 
+function analiseAtiva() {
+  const el = document.getElementById('tabAnalises');
+  return el && el.classList.contains('ativo');
+}
+
 // Liga os "ouvintes" em tempo real: qualquer alteração feita neste ou em
 // outro aparelho logado na mesma conta aparece aqui em poucos instantes,
 // sem precisar recarregar a página.
@@ -1669,16 +1681,19 @@ function iniciarSincronizacao() {
       .map(d => ({ id: d.id, ...d.data() }))
       .sort((a, b) => a.nomeAnuncio.localeCompare(b.nomeAnuncio, 'pt-BR'));
     if (precosAtivo()) renderPrecos();
+    if (analiseAtiva()) renderAnalise();
   });
 
   unsubVendasAnuncio = onSnapshot(collection(db, 'vendasAnuncio'), snap => {
     vendasAnuncio = snap.docs.map(d => ({ id: d.id, ...d.data() }));
     if (precosAtivo()) renderPrecos();
+    if (analiseAtiva()) renderAnalise();
   });
 
   unsubTaxasVenda = onSnapshot(doc(db, 'configuracoes', 'taxasVenda'), snap => {
     if (snap.exists()) taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4, ...snap.data() };
     if (precosAtivo()) renderPrecos();
+    if (analiseAtiva()) renderAnalise();
   });
 }
 
@@ -2183,7 +2198,6 @@ function renderPrecos() {
   document.getElementById('inputTaxaFixa').value = taxasVenda.taxaFixa;
   preencherSelectAnuncios();
   renderListaAnuncios();
-  renderAnalise();
 }
 
 function preencherSelectAnuncios() {
