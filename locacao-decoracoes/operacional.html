@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Operacional — Locação de Decorações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rosa:      #CF6A8E;
+    --rosa-esc:  #A94D70;
+    --rosa-l:    #FBEAF0;
+    --roxo:      #8874C9;
+    --roxo-esc:  #3E2F63;
+    --roxo-m:    #8874C9;
+    --roxo-l:    #F1ECFA;
+    --dourado:   #D6A24B;
+    --creme:     #FCF5EE;
+    --branco:    #FFFFFF;
+    --tinta1:    #362A3E;
+    --tinta2:    #6B5D72;
+    --tinta3:    #97899E;
+    --tinta4:    #E6DEE9;
+    --tinta5:    #F5F1F7;
+    --ok:        #1E9E5A;
+    --ok-bg:     #E8F8EE;
+    --alerta:    #D64545;
+    --alerta-bg: #FBEAEA;
+    --aviso:     #95690A;
+    --aviso-bg:  #FFF3D6;
+    --sombra:    0 2px 10px rgba(62,47,99,0.10);
+    --sombra2:   0 12px 32px rgba(62,47,99,0.20);
+    --logo-url:  url("data:image/png;base64,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");
+    --r: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Poppins', sans-serif;
+    background: var(--creme);
+    color: var(--tinta1);
+    min-height:100vh;
+  }
+  h1,h2,h3,.brand-nome { font-family:'Fraunces', serif; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  img { max-width:100%; display:block; }
+  button { font-family:inherit; }
+  input, select, textarea { font-family:inherit; }
+  ::-webkit-scrollbar { width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb { background: var(--tinta4); border-radius:10px; }
+
+  /* ─── TELA DE LOGIN ─── */
+  #telaLogin {
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+    background: linear-gradient(160deg, var(--roxo-esc), var(--roxo));
+  }
+  .login-card {
+    background:#fff; border-radius:18px; padding:34px 30px; width:100%; max-width:360px;
+    box-shadow: var(--sombra2);
+  }
+  .logo-img { background-image: var(--logo-url); background-size:cover; background-position:center; border-radius:50%; flex-shrink:0; box-shadow: 0 0 0 3px rgba(255,255,255,0.5); }
+  .login-card .logo-img { width:76px; height:76px; margin:0 auto 12px; box-shadow: var(--sombra2); }
+  .login-card h1 { font-size:19px; color:var(--tinta1); margin-bottom:2px; text-align:center; }
+  .login-card p.sub { font-size:12.5px; color:var(--tinta3); margin-bottom:22px; text-align:center; }
+  .campo { margin-bottom:14px; }
+  .campo label { display:block; font-size:12.5px; font-weight:600; color:var(--tinta2); margin-bottom:5px; }
+  .campo input, .campo select, .campo textarea {
+    width:100%; padding:10px 12px; border:1.5px solid var(--tinta4); border-radius:9px;
+    font-size:13.5px; outline:none; transition:border .15s; background:#fff; color:var(--tinta1);
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus { border-color:var(--roxo-m); }
+  .campo-dupla { display:flex; gap:10px; }
+  .campo-dupla .campo { flex:1; }
+  .btn {
+    border:none; border-radius:9px; padding:10px 16px; font-size:13.5px; font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    transition: filter .15s, transform .1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primario { background:var(--roxo); color:#fff; }
+  .btn-primario:hover { filter:brightness(1.08); }
+  .btn-primario:disabled { opacity:.45; cursor:not-allowed; filter:none; }
+  .btn-fantasma { background:var(--roxo-l); color:var(--roxo); }
+  .btn-fantasma:hover { filter:brightness(0.97); }
+  .btn-perigo { background:var(--alerta-bg); color:var(--alerta); }
+  .btn-neutro { background:var(--tinta5); color:var(--tinta2); }
+  .btn-bloco { width:100%; }
+  .erro-msg { color:var(--alerta); font-size:12.5px; margin-bottom:10px; }
+  .nota { font-size:11.5px; color:var(--tinta3); line-height:1.5; margin-top:14px; }
+
+  /* ─── APP SHELL ─── */
+  #app { display:none; min-height:100vh; }
+  #app.ativo { display:flex; }
+  .sidebar {
+    width:216px; flex-shrink:0; background:var(--roxo-esc); color:#fff;
+    padding:20px 14px; display:flex; flex-direction:column; gap:4px;
+  }
+  .sidebar-brand { display:flex; align-items:center; gap:10px; padding:0 8px; margin-bottom:22px; }
+  .sidebar-brand .logo-img { width:36px; height:36px; }
+  .sidebar .brand-nome { font-size:15.5px; line-height:1.15; }
+  .sidebar .brand-sub { font-size:10.5px; color:rgba(255,255,255,0.6); letter-spacing:.03em; text-transform:uppercase; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px;
+    color:rgba(255,255,255,0.75); font-size:13.5px; font-weight:500; cursor:pointer; border:none;
+    background:transparent; text-align:left; width:100%;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color:#fff; }
+  .nav-item.ativo { background:#fff; color:var(--roxo-esc); font-weight:600; }
+  .nav-icone { font-size:16px; width:20px; text-align:center; }
+  .sidebar-rodape { margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,0.12); }
+  .sidebar-rodape .usuario { font-size:11.5px; color:rgba(255,255,255,0.6); padding:0 8px 8px; word-break:break-all; }
+
+  .main-area { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar {
+    background:#fff; border-bottom:1px solid var(--tinta4); padding:16px 26px;
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  }
+  .topbar h2 { font-size:18px; }
+  .topbar .topbar-acoes { display:flex; gap:8px; flex-wrap:wrap; }
+  .faixa-demo {
+    background: var(--aviso-bg); color:var(--aviso); font-size:12px; font-weight:600;
+    padding:8px 26px; text-align:center;
+  }
+  .conteudo { padding:22px 26px 60px; overflow-y:auto; }
+
+  /* filtros */
+  .barra-filtros { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .barra-filtros input, .barra-filtros select { padding:9px 12px; border:1.5px solid var(--tinta4); border-radius:9px; font-size:13px; min-width:150px; background:#fff; }
+
+  /* cards de peça */
+  .grade-pecas { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+  .peca-card { background:#fff; border-radius:var(--r); box-shadow:var(--sombra); overflow:hidden; display:flex; flex-direction:column; }
+  .peca-foto { aspect-ratio:4/3; background:linear-gradient(135deg,var(--roxo-l),#fff); display:flex; align-items:center; justify-content:center; font-size:34px; overflow:hidden; }
+  .peca-foto img { width:100%; height:100%; object-fit:cover; }
+  .peca-corpo { padding:12px 14px 14px; display:flex; flex-direction:column; gap:5px; flex:1; }
+  .peca-nome { font-size:14px; font-weight:600; }
+  .peca-tags { display:flex; gap:5px; flex-wrap:wrap; margin:2px 0 4px; }
+  .peca-tag { font-size:10.5px; font-weight:600; background:var(--roxo-l); color:var(--roxo); padding:2px 8px; border-radius:20px; }
+  .peca-estoque { font-size:11.5px; color:var(--tinta3); }
+  .peca-rodape { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+  .peca-preco { font-weight:700; color:var(--rosa-esc); font-size:14.5px; }
+  .peca-acoes { display:flex; gap:6px; }
+  .peca-acoes button { border:none; border-radius:7px; padding:5px 9px; font-size:11.5px; font-weight:600; cursor:pointer; }
+
+  /* tabelas */
+  .tabela-wrap { overflow-x:auto; background:#fff; border-radius:var(--r); box-shadow:var(--sombra); }
+  table.tabela { width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
+  table.tabela th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--tinta3); padding:12px 14px; border-bottom:1.5px solid var(--tinta4); white-space:nowrap; }
+  table.tabela td { padding:12px 14px; border-bottom:1px solid var(--tinta5); vertical-align:middle; }
+  table.tabela tr:last-child td { border-bottom:none; }
+  table.tabela tbody tr:hover { background:var(--tinta5); }
+  .cel-acoes { display:flex; gap:6px; }
+  .cel-acoes button { border:none; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer; }
+  .vazio-lista { text-align:center; padding:50px 20px; color:var(--tinta3); font-size:13.5px; }
+
+  .status-pill { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; }
+  .status-pendente { background:var(--aviso-bg); color:var(--aviso); }
+  .status-confirmada { background:var(--ok-bg); color:var(--ok); }
+  .status-cancelada { background:var(--alerta-bg); color:var(--alerta); }
+  .status-concluida { background:var(--tinta5); color:var(--tinta2); }
+
+  /* calendário */
+  .calendario-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .calendario-header h3 { font-size:15.5px; text-transform:capitalize; min-width:150px; text-align:center; }
+  .calendario-semana { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+  .calendario-semana span { text-align:center; font-size:10.5px; font-weight:700; color:var(--tinta3); text-transform:uppercase; letter-spacing:.02em; }
+  .calendario-grade { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .dia-cel {
+    aspect-ratio:1; border-radius:10px; border:1.5px solid var(--tinta5); background:#fff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    cursor:pointer; font-size:13px; color:var(--tinta1); transition:border-color .15s, background .15s;
+  }
+  .dia-cel:hover { border-color:var(--roxo); }
+  .dia-cel.vazio { visibility:hidden; cursor:default; }
+  .dia-cel.hoje { border-color:var(--dourado); border-width:2px; font-weight:700; }
+  .dia-cel.selecionado { background:var(--roxo); color:#fff; border-color:var(--roxo); }
+  .dia-cel.selecionado .dia-badge { background:#fff; color:var(--roxo); }
+  .dia-badge { font-size:10px; font-weight:700; background:var(--rosa); color:#fff; border-radius:20px; padding:1px 7px; line-height:1.4; }
+  .reserva-dia-card { border:1.5px solid var(--tinta4); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+  .reserva-dia-card ul { list-style:none; font-size:13px; }
+  .reserva-dia-card ul li { padding:3px 0; }
+  .disponibilidade-dia-item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--tinta5); font-size:13px; }
+  .disponibilidade-dia-item:last-child { border-bottom:none; }
+
+  /* painel/forms genéricos */
+  .painel { background:#fff; border-radius:var(--r); box-shadow:var(--sombra); padding:20px 22px; margin-bottom:18px; }
+  .painel h3 { font-size:15px; margin-bottom:14px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  @media (max-width:640px) { .grid-2, .grid-3 { grid-template-columns:1fr; } }
+
+  /* reserva: seletor de peças */
+  .lista-selecionaveis { max-height:340px; overflow-y:auto; border:1.5px solid var(--tinta4); border-radius:10px; }
+  .item-selecionavel {
+    display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--tinta5);
+  }
+  .item-selecionavel:last-child { border-bottom:none; }
+  .item-selecionavel .thumb { width:42px; height:42px; border-radius:8px; background:var(--roxo-l); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; overflow:hidden; }
+  .item-selecionavel .thumb img { width:100%; height:100%; object-fit:cover; }
+  .item-selecionavel .info { flex:1; min-width:0; }
+  .item-selecionavel .info b { font-size:13px; display:block; }
+  .item-selecionavel .info span { font-size:11.5px; color:var(--tinta3); }
+  .disp-tag { font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .disp-ok { background:var(--ok-bg); color:var(--ok); }
+  .disp-baixa { background:var(--aviso-bg); color:var(--aviso); }
+  .disp-zero { background:var(--alerta-bg); color:var(--alerta); }
+  .qtd-input { width:52px; padding:6px 4px; text-align:center; border:1.5px solid var(--tinta4); border-radius:7px; font-size:13px; }
+
+  .carrinho-reserva { border:1.5px dashed var(--tinta4); border-radius:10px; padding:12px 14px; }
+  .carrinho-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--tinta5); font-size:13px; }
+  .carrinho-item:last-child { border-bottom:none; }
+  .carrinho-total { display:flex; justify-content:space-between; padding-top:10px; margin-top:6px; border-top:1.5px solid var(--tinta4); font-weight:700; font-size:15px; color:var(--roxo); }
+
+  .autocompletar { position:relative; }
+  .autocompletar-lista {
+    position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--tinta4);
+    border-radius:9px; margin-top:4px; max-height:220px; overflow-y:auto; box-shadow:var(--sombra2); z-index:20; display:none;
+  }
+  .autocompletar-lista.aberta { display:block; }
+  .autocompletar-item { padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--tinta5); }
+  .autocompletar-item:hover { background:var(--roxo-l); }
+  .autocompletar-item:last-child { border-bottom:none; }
+  .autocompletar-item small { display:block; color:var(--tinta3); font-size:11px; }
+
+  .cliente-selecionado {
+    display:flex; justify-content:space-between; align-items:center; background:var(--roxo-l);
+    border-radius:9px; padding:10px 14px; font-size:13px;
+  }
+  .cliente-selecionado b { color:var(--roxo); }
+
+  .aviso-caixa { font-size:12.5px; font-weight:600; padding:9px 12px; border-radius:9px; margin:10px 0; }
+  .aviso-caixa.ok { background:var(--ok-bg); color:var(--ok); }
+  .aviso-caixa.erro { background:var(--alerta-bg); color:var(--alerta); }
+
+  /* MODAL genérico */
+  .overlay { position:fixed; inset:0; background:rgba(36,31,48,0.5); z-index:300; display:none; align-items:center; justify-content:center; padding:16px; }
+  .overlay.aberto { display:flex; }
+  .modal { background:#fff; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; border-radius:16px; padding:22px 22px 24px; position:relative; }
+  .modal.largo { max-width:640px; }
+  .modal-fechar { position:absolute; top:14px; right:14px; background:var(--tinta5); border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:16px; color:var(--tinta2); }
+  .modal h2 { font-size:17.5px; margin-bottom:16px; padding-right:30px; }
+
+  /* CONTRATO / GUIA (impressão) */
+  #folhaContrato { display:none; }
+  .contrato-doc { max-width:760px; margin:0 auto; background:#fff; padding:34px 38px; font-size:13px; line-height:1.55; color:#1a1a1a; }
+  .contrato-cabecalho { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1a1a1a; padding-bottom:14px; margin-bottom:18px; gap:20px; }
+  .contrato-cabecalho .empresa b { font-size:16px; display:block; }
+  .contrato-cabecalho .empresa div { font-size:11.5px; color:#444; margin-top:2px; }
+  .contrato-cabecalho .guia-numero { text-align:right; font-size:12px; }
+  .contrato-titulo { font-size:14.5px; font-weight:700; text-align:center; margin-bottom:18px; text-transform:uppercase; letter-spacing:.03em; }
+  .contrato-secao { margin-bottom:16px; }
+  .contrato-secao h4 { font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:#555; margin-bottom:6px; }
+  .contrato-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; font-size:12.5px; }
+  table.contrato-tabela { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+  table.contrato-tabela th, table.contrato-tabela td { border:1px solid #ccc; padding:6px 8px; text-align:left; }
+  table.contrato-tabela th { background:#f2f2f2; }
+  .contrato-total { text-align:right; font-weight:700; font-size:13.5px; margin-top:6px; }
+  .contrato-termo { font-size:11.5px; color:#333; text-align:justify; white-space:pre-line; }
+  .contrato-assinaturas { display:flex; gap:40px; margin-top:44px; }
+  .assinatura-bloco { flex:1; text-align:center; }
+  .linha-assinatura { border-top:1px solid #1a1a1a; margin-top:46px; padding-top:6px; font-size:11.5px; }
+  .contrato-rodape-acoes { text-align:center; margin:18px 0 30px; display:flex; gap:10px; justify-content:center; }
+
+  @media print {
+    body * { visibility:hidden; }
+    #folhaContrato, #folhaContrato * { visibility:visible; }
+    #folhaContrato { display:block; position:absolute; top:0; left:0; width:100%; }
+    .contrato-rodape-acoes { display:none; }
+  }
+
+  /* ─── TELA PEQUENA (celular/tablet) ───
+     A barra lateral vira uma faixa horizontal rolável no topo, liberando
+     a largura toda pro conteúdo — em vez de dividir a tela ao meio. */
+  @media (max-width: 760px) {
+    #app.ativo { flex-direction: column; }
+    .sidebar {
+      width:100%; flex-direction:row; align-items:stretch; gap:4px;
+      padding:8px 10px; overflow-x:auto; -webkit-overflow-scrolling:touch;
+      position:sticky; top:0; z-index:60;
+    }
+    .sidebar-brand, .sidebar .brand-sub { display:none; }
+    .nav-item {
+      flex-direction:column; gap:3px; font-size:10.5px; padding:8px 12px;
+      white-space:nowrap; flex-shrink:0; width:auto;
+    }
+    .nav-icone { font-size:18px; width:auto; }
+    .sidebar-rodape {
+      margin-top:0; padding-top:0; border-top:none; border-left:1px solid rgba(255,255,255,0.15);
+      display:flex; align-items:center; flex-shrink:0; margin-left:2px; padding-left:6px;
+    }
+    .sidebar-rodape .usuario { display:none; }
+
+    .topbar { padding:12px 16px; }
+    .topbar h2 { font-size:16px; }
+    .faixa-demo { padding:8px 16px; font-size:11.5px; }
+    .conteudo { padding:16px 14px 50px; }
+
+    .painel { padding:16px; }
+    .barra-filtros input, .barra-filtros select { min-width:0; flex:1 1 130px; }
+    .grade-pecas { grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; }
+
+    .item-selecionavel { flex-wrap:wrap; row-gap:8px; }
+    .item-selecionavel .info { min-width:160px; }
+
+    .contrato-doc { padding:22px 16px; }
+    .contrato-cabecalho { flex-wrap:wrap; gap:10px; }
+    .contrato-cabecalho .guia-numero { text-align:left; }
+    .contrato-assinaturas { flex-direction:column; gap:36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─── -->
+<div id="telaLogin">
+  <div class="login-card">
+    <div class="logo-img"></div>
+    <h1>S&amp;M Locações</h1>
+    <p class="sub">Pegue e Monte — sistema interno, acesso restrito à equipe</p>
+    <div id="loginErro" class="erro-msg" style="display:none;"></div>
+    <div class="campo"><label>E-mail</label><input type="email" id="loginEmail"></div>
+    <div class="campo"><label>Senha</label><input type="password" id="loginSenha"></div>
+    <button class="btn btn-primario btn-bloco" onclick="fazerLogin()">Entrar</button>
+    <p class="nota" id="notaFirebase"></p>
+  </div>
+</div>
+
+<!-- ─── APP ─── -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo-img"></div>
+      <div>
+        <div class="brand-nome">S&amp;M Locações</div>
+        <div class="brand-sub">Pegue e Monte</div>
+      </div>
+    </div>
+    <button class="nav-item ativo" data-tab="reservas" onclick="irPara('reservas')"><span class="nav-icone">📅</span> Reservas</button>
+    <button class="nav-item" data-tab="pecas" onclick="irPara('pecas')"><span class="nav-icone">📦</span> Peças</button>
+    <button class="nav-item" data-tab="clientes" onclick="irPara('clientes')"><span class="nav-icone">👤</span> Clientes</button>
+    <button class="nav-item" data-tab="calendario" onclick="irPara('calendario')"><span class="nav-icone">🗓️</span> Calendário</button>
+    <button class="nav-item" data-tab="config" onclick="irPara('config')"><span class="nav-icone">🧾</span> Contrato / Config</button>
+    <div class="sidebar-rodape">
+      <div class="usuario" id="usuarioLogadoTxt"></div>
+      <button class="nav-item" onclick="fazerLogout()"><span class="nav-icone">↩</span> Sair</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <div class="faixa-demo" id="faixaDemo" style="display:none;">Modo demonstração local — conecte o Firebase para salvar de verdade e permitir login da equipe (veja README.md).</div>
+    <div class="topbar">
+      <h2 id="tituloTab">Reservas</h2>
+      <div class="topbar-acoes" id="acoesTab"></div>
+    </div>
+    <div class="conteudo" id="conteudoTab"></div>
+  </div>
+</div>
+
+<!-- ─── MODAL: peça ─── -->
+<div class="overlay" id="overlayPeca">
+  <div class="modal">
+    <button class="modal-fechar" onclick="fecharOverlay('overlayPeca')">✕</button>
+    <h2 id="tituloFormPeca">Nova peça</h2>
+    <div id="corpoFormPeca"></div>
+  </div>
+</div>
+
+<!-- ─── MODAL: cliente ─── -->
+<div class="overlay" id="overlayCliente">
+  <div class="modal">
+    <button class="modal-fechar" onclick="fecharOverlay('overlayCliente')">✕</button>
+    <h2 id="tituloFormCliente">Novo cliente</h2>
+    <div id="corpoFormCliente"></div>
+  </div>
+</div>
+
+<!-- ─── FOLHA DE CONTRATO (só aparece na impressão) ─── -->
+<div id="folhaContrato"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DADOS DE DEMONSTRAÇÃO
+// ══════════════════════════════════════════════════════════════
+const pecasDemo = [
+  { id:'p1', nome:'Painel redondo dourado 1,5m', formato:'Redondo', cor:'Dourado', tamanho:'1,5m', modelo:'Liso', codigo:'PN-001', foto:'', estoqueTotal:2, precoLocacao:120, observacoes:'', ativo:true },
+  { id:'p2', nome:'Arco de balões rosa/lilás', formato:'Arco', cor:'Rosa/Lilás', tamanho:'2m', modelo:'Orgânico', codigo:'AR-004', foto:'', estoqueTotal:3, precoLocacao:90, observacoes:'', ativo:true },
+  { id:'p3', nome:'Letra "A" volumétrica branca', formato:'Letra', cor:'Branco', tamanho:'60cm', modelo:'Volumétrica', codigo:'LT-012', foto:'', estoqueTotal:4, precoLocacao:35, observacoes:'', ativo:true },
+  { id:'p4', nome:'Coluna de balões safári', formato:'Coluna', cor:'Verde/Marrom', tamanho:'1,8m', modelo:'Temático Safári', codigo:'CL-007', foto:'', estoqueTotal:2, precoLocacao:110, observacoes:'', ativo:true },
+  { id:'p5', nome:'Painel retangular nuvens', formato:'Retangular', cor:'Azul/Branco', tamanho:'2x1,5m', modelo:'Chá de bebê', codigo:'PN-009', foto:'', estoqueTotal:1, precoLocacao:150, observacoes:'', ativo:true },
+];
+
+const clientesDemo = [
+  { id:'c1', nome:'Ana Beatriz Souza', documento:'123.456.789-00', telefone:'(11) 98888-1111', email:'ana@email.com', endereco:'Rua das Flores, 123 - São Paulo/SP', observacoes:'' },
+  { id:'c2', nome:'Carlos Eduardo Lima', documento:'987.654.321-00', telefone:'(11) 97777-2222', email:'', endereco:'Av. Central, 456 - São Paulo/SP', observacoes:'Cliente recorrente' },
+];
+
+const reservasDemo = [];
+
+let pecas = [...pecasDemo];
+let clientes = [...clientesDemo];
+let reservas = [...reservasDemo];
+let usuarioLogado = null;
+let tabAtiva = 'reservas';
+
+let configSistema = {
+  nomeEmpresa: 'S&M Locações',
+  cnpj: '00.000.000/0000-00',
+  endereco: 'Endereço da loja, número - Bairro - Cidade/UF',
+  telefone: '(00) 00000-0000',
+  textoTermo:
+`1. O CONTRATANTE declara ter recebido as peças de decoração descritas neste contrato em perfeito estado de conservação e limpeza, comprometendo-se a devolvê-las nas mesmas condições, na data de devolução acordada.
+
+2. Em caso de avaria, quebra, mancha ou perda de qualquer peça, o CONTRATANTE arcará com o custo de reposição ou reparo, conforme avaliação da LOCADORA.
+
+3. O atraso na devolução das peças além da data combinada sujeitará o CONTRATANTE ao pagamento de multa diária, conforme tabela vigente da LOCADORA.
+
+4. A montagem e desmontagem das peças é de responsabilidade do CONTRATANTE, que declara ter recebido as orientações necessárias.
+
+5. Este documento formaliza o acordo de locação entre as partes, que o assinam de livre e espontânea vontade.`,
+};
+
+document.getElementById('loginEmail') && (document.getElementById('loginEmail').value = '');
+
+// ══════════════════════════════════════════════════════════════
+// AUXILIARES
+// ══════════════════════════════════════════════════════════════
+function normalizarTexto(txt) {
+  return (txt || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+function intervalosSobrepoem(iA, fA, iB, fB) { return iA <= fB && iB <= fA; }
+function formatarMoeda(v) { return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ','); }
+function formatarData(iso) { if (!iso) return ''; const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; }
+
+function fecharOverlay(id) { document.getElementById(id).classList.remove('aberto'); }
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('aberto'); });
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
+function fazerLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  const erro = document.getElementById('loginErro');
+  erro.style.display = 'none';
+
+  if (!window.__FIREBASE_CONFIGURADO) {
+    erro.textContent = 'Nuvem ainda não configurada — veja README.md para conectar o Firebase e criar seu login.';
+    erro.style.display = 'block';
+    return;
+  }
+  window.__fbLogin(email, senha).catch(() => {
+    erro.textContent = 'E-mail ou senha inválidos.';
+    erro.style.display = 'block';
+  });
+}
+function fazerLogout() { if (window.__fbLogout) window.__fbLogout(); entrarModoDeslogado(); }
+
+function entrarModoLogado(user) {
+  usuarioLogado = user;
+  document.getElementById('telaLogin').style.display = 'none';
+  document.getElementById('app').classList.add('ativo');
+  document.getElementById('usuarioLogadoTxt').textContent = user && user.email ? user.email : 'Modo demonstração';
+  document.getElementById('faixaDemo').style.display = user && user.email ? 'none' : 'block';
+  irPara(tabAtiva);
+}
+function entrarModoDeslogado() {
+  usuarioLogado = null;
+  document.getElementById('app').classList.remove('ativo');
+  document.getElementById('telaLogin').style.display = 'flex';
+}
+
+window.__onAdminAuthChanged = (user) => {
+  if (user) entrarModoLogado(user);
+  else if (!window.__FIREBASE_CONFIGURADO) { /* aguarda decisão do init abaixo */ }
+  else entrarModoDeslogado();
+};
+
+// ══════════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════════
+const titulos = { reservas:'Reservas', pecas:'Peças', clientes:'Clientes', calendario:'Calendário', config:'Contrato / Configurações' };
+
+function irPara(tab) {
+  tabAtiva = tab;
+  document.querySelectorAll('.nav-item[data-tab]').forEach(b => b.classList.toggle('ativo', b.dataset.tab === tab));
+  document.getElementById('tituloTab').textContent = titulos[tab];
+  const acoes = document.getElementById('acoesTab');
+  const conteudo = document.getElementById('conteudoTab');
+
+  if (tab === 'pecas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormPeca()">+ Nova peça</button>`; conteudo.innerHTML = viewPecas(); aplicarFiltroPecas(); }
+  if (tab === 'clientes') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormCliente()">+ Novo cliente</button>`; conteudo.innerHTML = viewClientes(); aplicarFiltroClientes(); }
+  if (tab === 'reservas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirNovaReserva()">+ Nova reserva</button>`; conteudo.innerHTML = viewListaReservas(); }
+  if (tab === 'calendario') { acoes.innerHTML = ''; conteudo.innerHTML = viewCalendario(); renderCalendario(); }
+  if (tab === 'config') { acoes.innerHTML = ''; conteudo.innerHTML = viewConfig(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PEÇAS
+// ══════════════════════════════════════════════════════════════
+function valoresUnicos(campo) {
+  return Array.from(new Set(pecas.map(p => p[campo]).filter(Boolean))).sort();
+}
+
+function viewPecas() {
+  return `
+    <div class="barra-filtros">
+      <input type="text" id="fBuscaPeca" placeholder="Buscar por nome ou código..." oninput="aplicarFiltroPecas()" style="flex:1; min-width:200px;">
+      <select id="fFormato" onchange="aplicarFiltroPecas()"><option value="">Formato (todos)</option>${valoresUnicos('formato').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fCor" onchange="aplicarFiltroPecas()"><option value="">Cor (todas)</option>${valoresUnicos('cor').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fTamanho" onchange="aplicarFiltroPecas()"><option value="">Tamanho (todos)</option>${valoresUnicos('tamanho').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fModelo" onchange="aplicarFiltroPecas()"><option value="">Modelo (todos)</option>${valoresUnicos('modelo').map(v=>`<option>${v}</option>`).join('')}</select>
+    </div>
+    <div class="grade-pecas" id="gradePecas"></div>
+  `;
+}
+
+function aplicarFiltroPecas() {
+  const busca = normalizarTexto(document.getElementById('fBuscaPeca') ? document.getElementById('fBuscaPeca').value : '');
+  const formato = document.getElementById('fFormato') ? document.getElementById('fFormato').value : '';
+  const cor = document.getElementById('fCor') ? document.getElementById('fCor').value : '';
+  const tamanho = document.getElementById('fTamanho') ? document.getElementById('fTamanho').value : '';
+  const modelo = document.getElementById('fModelo') ? document.getElementById('fModelo').value : '';
+
+  const lista = pecas.filter(p => {
+    if (formato && p.formato !== formato) return false;
+    if (cor && p.cor !== cor) return false;
+    if (tamanho && p.tamanho !== tamanho) return false;
+    if (modelo && p.modelo !== modelo) return false;
+    if (busca && !normalizarTexto(`${p.nome} ${p.codigo||''}`).includes(busca)) return false;
+    return true;
+  });
+
+  const grade = document.getElementById('gradePecas');
+  if (!lista.length) { grade.innerHTML = `<div class="vazio-lista">Nenhuma peça encontrada.</div>`; return; }
+
+  grade.innerHTML = lista.map(p => `
+    <div class="peca-card">
+      <div class="peca-foto">${p.foto ? `<img src="${p.foto}" alt="${p.nome}">` : '📦'}</div>
+      <div class="peca-corpo">
+        <div class="peca-nome">${p.nome}</div>
+        <div class="peca-tags">
+          ${p.formato ? `<span class="peca-tag">${p.formato}</span>` : ''}
+          ${p.cor ? `<span class="peca-tag">${p.cor}</span>` : ''}
+          ${p.tamanho ? `<span class="peca-tag">${p.tamanho}</span>` : ''}
+          ${p.modelo ? `<span class="peca-tag">${p.modelo}</span>` : ''}
+        </div>
+        <div class="peca-estoque mono">Cód. ${p.codigo || '—'} • Estoque: ${p.estoqueTotal}</div>
+        <div class="peca-rodape">
+          <div class="peca-preco">${formatarMoeda(p.precoLocacao)}</div>
+          <div class="peca-acoes">
+            <button class="btn-fantasma" onclick="abrirFormPeca('${p.id}')">Editar</button>
+            <button class="btn-perigo" onclick="excluirPeca('${p.id}')">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirFormPeca(id) {
+  const p = id ? pecas.find(x => x.id === id) : null;
+  document.getElementById('tituloFormPeca').textContent = p ? 'Editar peça' : 'Nova peça';
+  document.getElementById('corpoFormPeca').innerHTML = `
+    <div class="campo"><label>Nome da peça</label><input id="pNome" value="${p ? p.nome : ''}" placeholder="Ex: Painel redondo dourado 1,5m"></div>
+    <div class="grid-2">
+      <div class="campo"><label>Formato</label><input id="pFormato" value="${p ? p.formato : ''}" placeholder="Ex: Redondo, Arco, Coluna..."></div>
+      <div class="campo"><label>Cor</label><input id="pCor" value="${p ? p.cor : ''}"></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Tamanho</label><input id="pTamanho" value="${p ? p.tamanho : ''}" placeholder="Ex: 1,5m"></div>
+      <div class="campo"><label>Modelo</label><input id="pModelo" value="${p ? p.modelo : ''}" placeholder="Ex: Liso, Temático Safári..."></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Código interno</label><input id="pCodigo" value="${p ? p.codigo||'' : ''}"></div>
+      <div class="campo"><label>Foto (URL)</label><input id="pFoto" value="${p ? p.foto||'' : ''}"></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Quantidade em estoque</label><input type="number" min="0" id="pEstoque" value="${p ? p.estoqueTotal : 1}"></div>
+      <div class="campo"><label>Valor da locação (R$)</label><input type="number" min="0" step="0.01" id="pPreco" value="${p ? p.precoLocacao : ''}"></div>
+    </div>
+    <div class="campo"><label>Observações</label><textarea id="pObs" rows="2">${p ? p.observacoes||'' : ''}</textarea></div>
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:14px;">
+      <input type="checkbox" id="pAtivo" ${!p || p.ativo !== false ? 'checked' : ''}> Peça ativa (disponível para reserva)
+    </label>
+    <button class="btn btn-primario btn-bloco" onclick="salvarPeca(${p ? `'${p.id}'` : 'null'})">Salvar peça</button>
+  `;
+  document.getElementById('overlayPeca').classList.add('aberto');
+}
+
+function salvarPeca(id) {
+  const dados = {
+    nome: document.getElementById('pNome').value.trim(),
+    formato: document.getElementById('pFormato').value.trim(),
+    cor: document.getElementById('pCor').value.trim(),
+    tamanho: document.getElementById('pTamanho').value.trim(),
+    modelo: document.getElementById('pModelo').value.trim(),
+    codigo: document.getElementById('pCodigo').value.trim(),
+    foto: document.getElementById('pFoto').value.trim(),
+    estoqueTotal: Number(document.getElementById('pEstoque').value) || 0,
+    precoLocacao: Number(document.getElementById('pPreco').value) || 0,
+    observacoes: document.getElementById('pObs').value.trim(),
+    ativo: document.getElementById('pAtivo').checked,
+  };
+  if (!dados.nome) { alert('Dê um nome à peça.'); return; }
+
+  if (window.__fbSalvarPeca) {
+    window.__fbSalvarPeca(dados, id).catch(err => alert('Erro ao salvar na nuvem: ' + err.message));
+  } else {
+    if (id) { const i = pecas.findIndex(x => x.id === id); pecas[i] = { ...pecas[i], ...dados }; }
+    else pecas.push({ id: 'local-' + Date.now(), ...dados });
+    irPara('pecas');
+  }
+  fecharOverlay('overlayPeca');
+}
+
+function excluirPeca(id) {
+  if (!confirm('Excluir esta peça do catálogo interno?')) return;
+  if (window.__fbExcluirPeca) window.__fbExcluirPeca(id).catch(err => alert('Erro: ' + err.message));
+  else { pecas = pecas.filter(p => p.id !== id); irPara('pecas'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CLIENTES
+// ══════════════════════════════════════════════════════════════
+function viewClientes() {
+  return `
+    <div class="barra-filtros"><input type="text" id="fBuscaCliente" placeholder="Buscar por nome, telefone ou documento..." oninput="aplicarFiltroClientes()" style="flex:1;"></div>
+    <div class="tabela-wrap">
+      <table class="tabela">
+        <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead>
+        <tbody id="corpoTabelaClientes"></tbody>
+      </table>
+    </div>
+  `;
+}
+
+function aplicarFiltroClientes() {
+  const busca = normalizarTexto(document.getElementById('fBuscaCliente') ? document.getElementById('fBuscaCliente').value : '');
+  const lista = clientes.filter(c => !busca || normalizarTexto(`${c.nome} ${c.telefone} ${c.documento||''}`).includes(busca));
+  const corpo = document.getElementById('corpoTabelaClientes');
+  if (!corpo) return;
+  corpo.innerHTML = lista.map(c => `
+    <tr>
+      <td><b>${c.nome}</b></td>
+      <td class="mono">${c.documento || '—'}</td>
+      <td class="mono">${c.telefone}</td>
+      <td>${c.email || '—'}</td>
+      <td class="cel-acoes">
+        <button class="btn-fantasma" onclick="abrirFormCliente('${c.id}')">Editar</button>
+        <button class="btn-perigo" onclick="excluirCliente('${c.id}')">Excluir</button>
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="5" class="vazio-lista">Nenhum cliente encontrado.</td></tr>`;
+}
+
+function abrirFormCliente(id, callback) {
+  const c = id ? clientes.find(x => x.id === id) : null;
+  document.getElementById('tituloFormCliente').textContent = c ? 'Editar cliente' : 'Novo cliente';
+  document.getElementById('corpoFormCliente').innerHTML = `
+    <div class="campo"><label>Nome completo</label><input id="clNome" value="${c ? c.nome : ''}"></div>
+    <div class="grid-2">
+      <div class="campo"><label>CPF/CNPJ</label><input id="clDocumento" value="${c ? c.documento||'' : ''}"></div>
+      <div class="campo"><label>Telefone</label><input id="clTelefone" value="${c ? c.telefone : ''}" placeholder="(00) 00000-0000"></div>
+    </div>
+    <div class="campo"><label>E-mail</label><input id="clEmail" value="${c ? c.email||'' : ''}"></div>
+    <div class="campo"><label>Endereço</label><input id="clEndereco" value="${c ? c.endereco||'' : ''}"></div>
+    <div class="campo"><label>Observações</label><textarea id="clObs" rows="2">${c ? c.observacoes||'' : ''}</textarea></div>
+    <button class="btn btn-primario btn-bloco" onclick="salvarCliente(${c ? `'${c.id}'` : 'null'})">Salvar cliente</button>
+  `;
+  window.__callbackClienteSalvo = callback || null;
+  document.getElementById('overlayCliente').classList.add('aberto');
+}
+
+function salvarCliente(id) {
+  const dados = {
+    nome: document.getElementById('clNome').value.trim(),
+    documento: document.getElementById('clDocumento').value.trim(),
+    telefone: document.getElementById('clTelefone').value.trim(),
+    email: document.getElementById('clEmail').value.trim(),
+    endereco: document.getElementById('clEndereco').value.trim(),
+    observacoes: document.getElementById('clObs').value.trim(),
+  };
+  if (!dados.nome || !dados.telefone) { alert('Preencha ao menos nome e telefone.'); return; }
+
+  const aoConcluir = (idFinal) => {
+    fecharOverlay('overlayCliente');
+    if (window.__callbackClienteSalvo) { window.__callbackClienteSalvo(idFinal); window.__callbackClienteSalvo = null; }
+  };
+
+  if (window.__fbSalvarCliente) {
+    window.__fbSalvarCliente(dados, id).then(ref => aoConcluir(id || (ref && ref.id))).catch(err => alert('Erro ao salvar na nuvem: ' + err.message));
+  } else {
+    let idFinal = id;
+    if (id) { const i = clientes.findIndex(x => x.id === id); clientes[i] = { ...clientes[i], ...dados }; }
+    else { idFinal = 'local-' + Date.now(); clientes.push({ id: idFinal, ...dados }); }
+    if (tabAtiva === 'clientes') irPara('clientes');
+    aoConcluir(idFinal);
+  }
+}
+
+function excluirCliente(id) {
+  if (!confirm('Excluir este cliente?')) return;
+  if (window.__fbExcluirCliente) window.__fbExcluirCliente(id).catch(err => alert('Erro: ' + err.message));
+  else { clientes = clientes.filter(c => c.id !== id); irPara('clientes'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESERVAS — lista
+// ══════════════════════════════════════════════════════════════
+function viewListaReservas() {
+  const ordenadas = [...reservas].sort((a,b) => (b.criadoEm||'').localeCompare(a.criadoEm||''));
+  return `
+    <div class="tabela-wrap">
+      <table class="tabela">
+        <thead><tr><th>Guia</th><th>Cliente</th><th>Retirada</th><th>Devolução</th><th>Peças</th><th>Total</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${ordenadas.map(r => `
+            <tr>
+              <td class="mono">#${r.numeroGuia}</td>
+              <td><b>${r.clienteNome}</b></td>
+              <td>${formatarData(r.dataRetirada)}</td>
+              <td>${formatarData(r.dataDevolucao)}</td>
+              <td>${r.itens.reduce((s,i)=>s+i.quantidade,0)} peça(s)</td>
+              <td>${formatarMoeda(r.valorTotal)}</td>
+              <td><span class="status-pill status-${r.status}">${r.status}</span></td>
+              <td class="cel-acoes">
+                <button class="btn-fantasma" onclick="abrirContrato('${r.id}')">Ver guia</button>
+                ${r.status === 'pendente' ? `<button class="btn-primario" style="padding:6px 10px; font-size:12px;" onclick="mudarStatusReserva('${r.id}','confirmada')">Confirmar</button>` : ''}
+                ${r.status !== 'cancelada' && r.status !== 'concluida' ? `<button class="btn-perigo" onclick="mudarStatusReserva('${r.id}','cancelada')">Cancelar</button>` : ''}
+              </td>
+            </tr>
+          `).join('') || `<tr><td colspan="8" class="vazio-lista">Nenhuma reserva cadastrada ainda.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function mudarStatusReserva(id, status) {
+  if (window.__fbMudarStatusReserva) window.__fbMudarStatusReserva(id, status).catch(err => alert('Erro: ' + err.message));
+  else { const r = reservas.find(x => x.id === id); if (r) r.status = status; irPara('reservas'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESERVAS — nova (formulário)
+// ══════════════════════════════════════════════════════════════
+let novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[] };
+
+function abrirNovaReserva() {
+  novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[] };
+  document.getElementById('acoesTab').innerHTML = `<button class="btn btn-neutro" onclick="irPara('reservas')">← Voltar</button>`;
+  document.getElementById('conteudoTab').innerHTML = `
+    <div class="painel">
+      <h3>1. Cliente</h3>
+      <div id="blocoCliente"></div>
+    </div>
+    <div class="painel">
+      <h3>2. Período da locação</h3>
+      <div class="grid-2">
+        <div class="campo"><label>Data de retirada</label><input type="date" id="rRetirada" onchange="atualizarDisponibilidadePecas()"></div>
+        <div class="campo"><label>Data de devolução</label><input type="date" id="rDevolucao" onchange="atualizarDisponibilidadePecas()"></div>
+      </div>
+    </div>
+    <div class="painel">
+      <h3>3. Peças</h3>
+      <input type="text" id="buscaPecaReserva" placeholder="Buscar peça por nome, formato, cor..." oninput="atualizarDisponibilidadePecas()" style="width:100%; padding:9px 12px; border:1.5px solid var(--tinta4); border-radius:9px; font-size:13px; margin-bottom:10px;">
+      <div class="lista-selecionaveis" id="listaPecasDisponiveis"></div>
+    </div>
+    <div class="painel">
+      <h3>4. Resumo da reserva</h3>
+      <div class="carrinho-reserva" id="carrinhoReserva"></div>
+      <div id="avisoReserva"></div>
+      <button class="btn btn-primario btn-bloco" style="margin-top:14px;" id="btnSalvarReserva" onclick="salvarReserva()">Salvar reserva e gerar guia</button>
+    </div>
+  `;
+  renderBlocoCliente();
+  atualizarDisponibilidadePecas();
+  renderCarrinhoReserva();
+}
+
+function renderBlocoCliente() {
+  const bloco = document.getElementById('blocoCliente');
+  if (novaReserva.clienteId) {
+    bloco.innerHTML = `
+      <div class="cliente-selecionado">
+        <span>Cliente: <b>${novaReserva.clienteNome}</b></span>
+        <button class="btn-fantasma" style="padding:5px 10px; font-size:12px;" onclick="limparClienteReserva()">Trocar</button>
+      </div>
+    `;
+    return;
+  }
+  bloco.innerHTML = `
+    <div class="autocompletar">
+      <input type="text" id="buscaCliente" placeholder="Digite o nome ou telefone do cliente..." oninput="filtrarClientesReserva()" autocomplete="off">
+      <div class="autocompletar-lista" id="listaClientesReserva"></div>
+    </div>
+    <button class="btn btn-fantasma" style="margin-top:10px;" onclick="abrirFormCliente(null, selecionarClienteReserva)">+ Cadastrar novo cliente</button>
+  `;
+}
+
+function filtrarClientesReserva() {
+  const termo = normalizarTexto(document.getElementById('buscaCliente').value.trim());
+  const lista = document.getElementById('listaClientesReserva');
+  if (!termo) { lista.classList.remove('aberta'); lista.innerHTML=''; return; }
+  const encontrados = clientes.filter(c => normalizarTexto(`${c.nome} ${c.telefone}`).includes(termo));
+  lista.innerHTML = encontrados.map(c => `<div class="autocompletar-item" onclick="selecionarClienteReserva('${c.id}')">${c.nome}<small>${c.telefone}</small></div>`).join('')
+    || `<div class="autocompletar-item" style="color:var(--tinta3);">Nenhum cliente encontrado.</div>`;
+  lista.classList.add('aberta');
+}
+
+function selecionarClienteReserva(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!c) return;
+  novaReserva.clienteId = c.id;
+  novaReserva.clienteNome = c.nome;
+  renderBlocoCliente();
+}
+function limparClienteReserva() { novaReserva.clienteId = null; novaReserva.clienteNome=''; renderBlocoCliente(); }
+
+function quantidadeReservadaNoPeriodo(pecaId, ret, dev, ignorarReservaId) {
+  return reservas
+    .filter(r => r.id !== ignorarReservaId && r.status !== 'cancelada' && intervalosSobrepoem(ret, dev, r.dataRetirada, r.dataDevolucao))
+    .reduce((soma, r) => soma + (r.itens.find(i => i.pecaId === pecaId)?.quantidade || 0), 0);
+}
+
+function atualizarDisponibilidadePecas() {
+  const ret = document.getElementById('rRetirada').value;
+  const dev = document.getElementById('rDevolucao').value;
+  const termo = normalizarTexto(document.getElementById('buscaPecaReserva').value.trim());
+  const cont = document.getElementById('listaPecasDisponiveis');
+
+  const datasOk = ret && dev && dev >= ret;
+  let lista = pecas.filter(p => p.ativo !== false);
+  if (termo) lista = lista.filter(p => normalizarTexto(`${p.nome} ${p.formato} ${p.cor} ${p.tamanho} ${p.modelo}`).includes(termo));
+
+  if (!lista.length) { cont.innerHTML = `<div class="vazio-lista">Nenhuma peça encontrada.</div>`; return; }
+
+  cont.innerHTML = lista.map(p => {
+    const jaReservadoAqui = novaReserva.itens.find(i => i.pecaId === p.id);
+    let dispHtml = '<span class="disp-tag" style="background:var(--tinta5); color:var(--tinta3);">defina as datas</span>';
+    let disponivel = 0;
+    if (datasOk) {
+      const usadoPorOutras = quantidadeReservadaNoPeriodo(p.id, ret, dev);
+      disponivel = p.estoqueTotal - usadoPorOutras;
+      const classe = disponivel <= 0 ? 'disp-zero' : (disponivel <= 1 ? 'disp-baixa' : 'disp-ok');
+      dispHtml = `<span class="disp-tag ${classe}">${disponivel <= 0 ? 'sem estoque' : disponivel + ' disponível(is)'}</span>`;
+    }
+    return `
+      <div class="item-selecionavel">
+        <div class="thumb">${p.foto ? `<img src="${p.foto}">` : '📦'}</div>
+        <div class="info">
+          <b>${p.nome}</b>
+          <span>${[p.formato,p.cor,p.tamanho,p.modelo].filter(Boolean).join(' • ')} — ${formatarMoeda(p.precoLocacao)}</span>
+        </div>
+        ${dispHtml}
+        ${datasOk ? `
+          <input type="number" min="1" max="${jaReservadoAqui ? jaReservadoAqui.quantidade + disponivel : disponivel}" value="${jaReservadoAqui ? jaReservadoAqui.quantidade : 1}" class="qtd-input" id="qtd-${p.id}" ${disponivel<=0 && !jaReservadoAqui ? 'disabled' : ''}>
+          <button class="btn ${jaReservadoAqui ? 'btn-neutro' : 'btn-fantasma'}" style="padding:6px 12px; font-size:12px;" ${disponivel<=0 && !jaReservadoAqui ? 'disabled' : ''} onclick="adicionarPecaReserva('${p.id}')">${jaReservadoAqui ? 'Atualizar' : 'Adicionar'}</button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function adicionarPecaReserva(pecaId) {
+  const p = pecas.find(x => x.id === pecaId);
+  const qtdInput = document.getElementById('qtd-' + pecaId);
+  const qtd = Number(qtdInput.value) || 0;
+  if (qtd <= 0) return;
+
+  const existente = novaReserva.itens.find(i => i.pecaId === pecaId);
+  if (existente) existente.quantidade = qtd;
+  else novaReserva.itens.push({ pecaId, pecaNome: p.nome, quantidade: qtd, precoUnitario: p.precoLocacao });
+
+  renderCarrinhoReserva();
+  atualizarDisponibilidadePecas();
+}
+
+function removerPecaReserva(pecaId) {
+  novaReserva.itens = novaReserva.itens.filter(i => i.pecaId !== pecaId);
+  renderCarrinhoReserva();
+  atualizarDisponibilidadePecas();
+}
+
+function renderCarrinhoReserva() {
+  const cont = document.getElementById('carrinhoReserva');
+  if (!novaReserva.itens.length) { cont.innerHTML = `<p style="color:var(--tinta3); font-size:13px;">Nenhuma peça adicionada ainda.</p>`; return; }
+  const total = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  cont.innerHTML = novaReserva.itens.map(i => `
+    <div class="carrinho-item">
+      <span>${i.quantidade}x ${i.pecaNome}</span>
+      <span style="display:flex; align-items:center; gap:10px;">
+        ${formatarMoeda(i.quantidade * i.precoUnitario)}
+        <button class="btn-perigo" style="padding:3px 8px; font-size:11px;" onclick="removerPecaReserva('${i.pecaId}')">remover</button>
+      </span>
+    </div>
+  `).join('') + `<div class="carrinho-total"><span>Total</span><span>${formatarMoeda(total)}</span></div>`;
+}
+
+function salvarReserva() {
+  const ret = document.getElementById('rRetirada').value;
+  const dev = document.getElementById('rDevolucao').value;
+  const aviso = document.getElementById('avisoReserva');
+  aviso.innerHTML = '';
+
+  if (!novaReserva.clienteId) { aviso.innerHTML = `<div class="aviso-caixa erro">Selecione (ou cadastre) o cliente.</div>`; return; }
+  if (!ret || !dev || dev < ret) { aviso.innerHTML = `<div class="aviso-caixa erro">Selecione datas válidas de retirada e devolução.</div>`; return; }
+  if (!novaReserva.itens.length) { aviso.innerHTML = `<div class="aviso-caixa erro">Adicione ao menos uma peça.</div>`; return; }
+
+  for (const item of novaReserva.itens) {
+    const peca = pecas.find(p => p.id === item.pecaId);
+    const usadoPorOutras = quantidadeReservadaNoPeriodo(item.pecaId, ret, dev);
+    if (item.quantidade > peca.estoqueTotal - usadoPorOutras) {
+      aviso.innerHTML = `<div class="aviso-caixa erro">"${peca.nome}" não tem estoque suficiente para essas datas.</div>`;
+      return;
+    }
+  }
+
+  const valorTotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  const reserva = {
+    clienteId: novaReserva.clienteId,
+    clienteNome: novaReserva.clienteNome,
+    dataRetirada: ret,
+    dataDevolucao: dev,
+    itens: novaReserva.itens,
+    valorTotal,
+    status: 'pendente',
+    numeroGuia: reservas.length + 1,
+    criadoEm: new Date().toISOString(),
+  };
+
+  if (window.__fbSalvarReserva) {
+    window.__fbSalvarReserva(reserva)
+      .then(ref => { irPara('reservas'); abrirContrato(ref.id); })
+      .catch(err => { aviso.innerHTML = `<div class="aviso-caixa erro">Erro ao salvar na nuvem: ${err.message}</div>`; });
+  } else {
+    const id = 'local-' + Date.now();
+    reservas.push({ id, ...reserva });
+    irPara('reservas');
+    abrirContrato(id);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CALENDÁRIO — escolhe uma data e mostra o que está reservado nela.
+// Uma peça só fica indisponível dentro do período (retirada→devolução)
+// de uma reserva ativa; fora disso ela volta a aparecer livre.
+// ══════════════════════════════════════════════════════════════
+const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const nomesDiasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+let calAno = null, calMes = null, calDiaSelecionado = null;
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function isoData(ano, mes, dia) { return `${ano}-${pad2(mes + 1)}-${pad2(dia)}`; }
+
+function reservasAtivasNaData(iso) {
+  return reservas.filter(r => r.status !== 'cancelada' && r.dataRetirada <= iso && iso <= r.dataDevolucao);
+}
+
+function viewCalendario() {
+  if (calAno === null) {
+    const hoje = new Date();
+    calAno = hoje.getFullYear();
+    calMes = hoje.getMonth();
+    calDiaSelecionado = isoData(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  }
+  return `
+    <div class="painel">
+      <div class="calendario-header">
+        <button class="btn btn-fantasma" onclick="mudarMesCalendario(-1)">← Mês anterior</button>
+        <h3 id="tituloMesCalendario"></h3>
+        <button class="btn btn-fantasma" onclick="mudarMesCalendario(1)">Próximo mês →</button>
+      </div>
+      <div class="calendario-semana">${nomesDiasSemana.map(d => `<span>${d}</span>`).join('')}</div>
+      <div class="calendario-grade" id="gradeCalendario"></div>
+    </div>
+    <div class="painel" id="detalheDiaCalendario"></div>
+  `;
+}
+
+function mudarMesCalendario(delta) {
+  calMes += delta;
+  if (calMes < 0) { calMes = 11; calAno--; }
+  if (calMes > 11) { calMes = 0; calAno++; }
+  renderCalendario();
+}
+
+function renderCalendario() {
+  document.getElementById('tituloMesCalendario').textContent = `${nomesMeses[calMes]} de ${calAno}`;
+  const grade = document.getElementById('gradeCalendario');
+  const primeiroDia = new Date(calAno, calMes, 1).getDay();
+  const totalDias = new Date(calAno, calMes + 1, 0).getDate();
+  const hoje = new Date();
+  const hojeIso = isoData(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+
+  let html = '';
+  for (let i = 0; i < primeiroDia; i++) html += `<div class="dia-cel vazio"></div>`;
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const iso = isoData(calAno, calMes, dia);
+    const ativas = reservasAtivasNaData(iso);
+    const classes = ['dia-cel'];
+    if (iso === hojeIso) classes.push('hoje');
+    if (iso === calDiaSelecionado) classes.push('selecionado');
+    html += `
+      <div class="${classes.join(' ')}" onclick="selecionarDiaCalendario('${iso}')">
+        <span>${dia}</span>
+        ${ativas.length ? `<span class="dia-badge">${ativas.length}</span>` : ''}
+      </div>
+    `;
+  }
+  grade.innerHTML = html;
+  renderDetalheDiaCalendario();
+}
+
+function selecionarDiaCalendario(iso) {
+  calDiaSelecionado = iso;
+  renderCalendario();
+}
+
+function renderDetalheDiaCalendario() {
+  const cont = document.getElementById('detalheDiaCalendario');
+  if (!cont) return;
+  const iso = calDiaSelecionado;
+  const ativas = reservasAtivasNaData(iso);
+  const pecasAtivas = pecas.filter(p => p.ativo !== false);
+
+  const ocupacaoPorPeca = {};
+  ativas.forEach(r => r.itens.forEach(item => {
+    ocupacaoPorPeca[item.pecaId] = (ocupacaoPorPeca[item.pecaId] || 0) + item.quantidade;
+  }));
+
+  cont.innerHTML = `
+    <h3>Peças reservadas em ${formatarData(iso)}</h3>
+    ${!ativas.length
+      ? `<p style="color:var(--tinta3); font-size:13.5px;">Nenhuma reserva ativa nesta data — todo o estoque está livre.</p>`
+      : ativas.map(r => `
+        <div class="reserva-dia-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px;">
+            <b>${r.clienteNome}</b>
+            <span class="status-pill status-${r.status}">${r.status}</span>
+          </div>
+          <div style="font-size:12px; color:var(--tinta3); margin-bottom:8px;" class="mono">Guia #${String(r.numeroGuia).padStart(4,'0')} • ${formatarData(r.dataRetirada)} → ${formatarData(r.dataDevolucao)}</div>
+          <ul>${r.itens.map(i => `<li>${i.quantidade}x ${i.pecaNome}</li>`).join('')}</ul>
+          <button class="btn-fantasma" style="margin-top:4px; padding:6px 12px; font-size:12px;" onclick="abrirContrato('${r.id}')">Ver guia</button>
+        </div>
+      `).join('')
+    }
+
+    ${pecasAtivas.length ? `
+      <h3 style="margin-top:22px;">Disponibilidade das peças nesse dia</h3>
+      ${pecasAtivas.map(p => {
+        const ocupado = ocupacaoPorPeca[p.id] || 0;
+        const disponivel = p.estoqueTotal - ocupado;
+        const classe = disponivel <= 0 ? 'disp-zero' : (disponivel <= 1 ? 'disp-baixa' : 'disp-ok');
+        return `
+          <div class="disponibilidade-dia-item">
+            <span>${p.nome}</span>
+            <span class="disp-tag ${classe}">${ocupado > 0 ? `${ocupado} reservada(s) • ` : ''}${disponivel} livre(s) de ${p.estoqueTotal}</span>
+          </div>
+        `;
+      }).join('')}
+    ` : ''}
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONTRATO / GUIA (impressão)
+// ══════════════════════════════════════════════════════════════
+function abrirContrato(reservaId) {
+  const r = reservas.find(x => x.id === reservaId);
+  if (!r) return;
+  const cliente = clientes.find(c => c.id === r.clienteId) || {};
+
+  document.getElementById('folhaContrato').innerHTML = `
+    <div class="contrato-doc">
+      <div class="contrato-cabecalho">
+        <div class="empresa">
+          <b>${configSistema.nomeEmpresa}</b>
+          <div>CNPJ: ${configSistema.cnpj}</div>
+          <div>${configSistema.endereco}</div>
+          <div>Tel/WhatsApp: ${configSistema.telefone}</div>
+        </div>
+        <div class="guia-numero">
+          Guia Nº <b class="mono">${String(r.numeroGuia).padStart(4,'0')}</b><br>
+          Emitido em ${new Date().toLocaleDateString('pt-BR')}
+        </div>
+      </div>
+      <div class="contrato-titulo">Contrato de Locação de Peças para Decoração</div>
+
+      <div class="contrato-secao">
+        <h4>Locatário (Cliente)</h4>
+        <div class="contrato-grid">
+          <div><b>Nome:</b> ${r.clienteNome}</div>
+          <div><b>Documento:</b> ${cliente.documento || '—'}</div>
+          <div><b>Telefone:</b> ${cliente.telefone || '—'}</div>
+          <div><b>Endereço:</b> ${cliente.endereco || '—'}</div>
+        </div>
+      </div>
+
+      <div class="contrato-secao">
+        <h4>Período da locação</h4>
+        <div class="contrato-grid">
+          <div><b>Retirada:</b> ${formatarData(r.dataRetirada)}</div>
+          <div><b>Devolução:</b> ${formatarData(r.dataDevolucao)}</div>
+        </div>
+      </div>
+
+      <div class="contrato-secao">
+        <h4>Peças locadas</h4>
+        <table class="contrato-tabela">
+          <thead><tr><th>Peça</th><th>Qtde</th><th>Valor unit.</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            ${r.itens.map(i => `<tr><td>${i.pecaNome}</td><td>${i.quantidade}</td><td>${formatarMoeda(i.precoUnitario)}</td><td>${formatarMoeda(i.quantidade*i.precoUnitario)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="contrato-total">Valor total: ${formatarMoeda(r.valorTotal)}</div>
+      </div>
+
+      <div class="contrato-secao">
+        <h4>Termo de responsabilidade</h4>
+        <div class="contrato-termo">${configSistema.textoTermo}</div>
+      </div>
+
+      <div class="contrato-assinaturas">
+        <div class="assinatura-bloco"><div class="linha-assinatura">Assinatura do Cliente</div></div>
+        <div class="assinatura-bloco"><div class="linha-assinatura">Assinatura do Responsável — ${configSistema.nomeEmpresa}</div></div>
+      </div>
+    </div>
+    <div class="contrato-rodape-acoes">
+      <button class="btn btn-primario" onclick="window.print()">🖨️ Imprimir / salvar como PDF</button>
+      <button class="btn btn-neutro" onclick="document.getElementById('folhaContrato').style.display='none'; document.body.style.overflow='';">Fechar guia</button>
+    </div>
+  `;
+  document.getElementById('folhaContrato').style.display = 'block';
+  document.getElementById('folhaContrato').scrollIntoView();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIGURAÇÕES
+// ══════════════════════════════════════════════════════════════
+function viewConfig() {
+  return `
+    <div class="painel">
+      <h3>Dados da empresa (aparecem no contrato)</h3>
+      <div class="grid-2">
+        <div class="campo"><label>Nome da loja</label><input id="cfgNome" value="${configSistema.nomeEmpresa}"></div>
+        <div class="campo"><label>CNPJ</label><input id="cfgCnpj" value="${configSistema.cnpj}"></div>
+      </div>
+      <div class="grid-2">
+        <div class="campo"><label>Endereço</label><input id="cfgEndereco" value="${configSistema.endereco}"></div>
+        <div class="campo"><label>Telefone</label><input id="cfgTelefone" value="${configSistema.telefone}"></div>
+      </div>
+    </div>
+    <div class="painel">
+      <h3>Termo de responsabilidade (contrato)</h3>
+      <div class="campo"><textarea id="cfgTermo" rows="12">${configSistema.textoTermo}</textarea></div>
+      <p class="nota">Esse texto aparece em toda guia gerada, acima da área de assinatura. Ajuste com seu contador/advogado antes de usar oficialmente.</p>
+    </div>
+    <button class="btn btn-primario" onclick="salvarConfigSistema()">Salvar configurações</button>
+  `;
+}
+
+function salvarConfigSistema() {
+  const dados = {
+    nomeEmpresa: document.getElementById('cfgNome').value.trim() || 'S&M Locações',
+    cnpj: document.getElementById('cfgCnpj').value.trim(),
+    endereco: document.getElementById('cfgEndereco').value.trim(),
+    telefone: document.getElementById('cfgTelefone').value.trim(),
+    textoTermo: document.getElementById('cfgTermo').value,
+  };
+  configSistema = { ...configSistema, ...dados };
+  if (window.__fbSalvarConfig) window.__fbSalvarConfig(dados);
+  alert('Configurações salvas!');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SINCRONIZAÇÃO COM A NUVEM
+// ══════════════════════════════════════════════════════════════
+window.__onPecasNuvem = (lista) => { pecas = lista; if (tabAtiva === 'pecas') irPara('pecas'); if (tabAtiva === 'calendario') renderDetalheDiaCalendario(); };
+window.__onClientesNuvem = (lista) => { clientes = lista; if (tabAtiva === 'clientes') irPara('clientes'); };
+window.__onReservasNuvem = (lista) => { reservas = lista; if (tabAtiva === 'reservas') irPara('reservas'); if (tabAtiva === 'calendario') renderCalendario(); };
+window.__onConfigNuvem = (cfg) => { if (cfg) configSistema = { ...configSistema, ...cfg }; };
+
+// ══════════════════════════════════════════════════════════════
+// INICIALIZAÇÃO — se a nuvem não estiver configurada, entra direto
+// em modo demonstração local (sem exigir login) para dar pra testar.
+// ══════════════════════════════════════════════════════════════
+setTimeout(() => {
+  if (!window.__FIREBASE_CONFIGURADO) {
+    document.getElementById('notaFirebase').textContent = 'Nuvem não configurada — entrando em modo demonstração local...';
+    setTimeout(() => entrarModoLogado(null), 600);
+  }
+}, 50);
+</script>
+
+<!-- ──────────────────────────────────────────────────────────
+     FIREBASE — cole as credenciais do SEU projeto para ativar
+     login da equipe e sincronizar peças, clientes e reservas
+     entre computadores/tablets. Veja README.md.
+     ────────────────────────────────────────────────────────── -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI",
+};
+const FIREBASE_CONFIGURADO = !!(firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('COLE_AQUI'));
+window.__FIREBASE_CONFIGURADO = FIREBASE_CONFIGURADO;
+
+if (FIREBASE_CONFIGURADO) {
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, user => { window.__onAdminAuthChanged && window.__onAdminAuthChanged(user); });
+
+  // Toda a leitura (peças, clientes, reservas, config) só é assinada depois
+  // do login — o sistema é 100% interno, sem visão pública.
+  let pararTudo = [];
+  onAuthStateChanged(auth, user => {
+    pararTudo.forEach(fn => fn());
+    pararTudo = [];
+    if (!user) return;
+    pararTudo.push(onSnapshot(collection(db, 'pecas'), snap => window.__onPecasNuvem(snap.docs.map(d => ({ id:d.id, ...d.data() })))));
+    pararTudo.push(onSnapshot(collection(db, 'clientes'), snap => window.__onClientesNuvem(snap.docs.map(d => ({ id:d.id, ...d.data() })))));
+    pararTudo.push(onSnapshot(collection(db, 'locacoes'), snap => window.__onReservasNuvem(snap.docs.map(d => ({ id:d.id, ...d.data() })))));
+    pararTudo.push(onSnapshot(doc(db, 'configOperacional', 'geral'), snap => window.__onConfigNuvem(snap.exists() ? snap.data() : null)));
+  });
+
+  window.__fbLogin = (email, senha) => signInWithEmailAndPassword(auth, email, senha);
+  window.__fbLogout = () => signOut(auth);
+
+  window.__fbSalvarPeca = (dados, idExistente) =>
+    idExistente ? updateDoc(doc(db, 'pecas', idExistente), dados) : addDoc(collection(db, 'pecas'), dados);
+  window.__fbExcluirPeca = (id) => deleteDoc(doc(db, 'pecas', id));
+
+  window.__fbSalvarCliente = (dados, idExistente) =>
+    idExistente ? updateDoc(doc(db, 'clientes', idExistente), dados) : addDoc(collection(db, 'clientes'), dados);
+  window.__fbExcluirCliente = (id) => deleteDoc(doc(db, 'clientes', id));
+
+  window.__fbSalvarReserva = (dados) => addDoc(collection(db, 'locacoes'), dados);
+  window.__fbMudarStatusReserva = (id, status) => updateDoc(doc(db, 'locacoes', id), { status });
+
+  window.__fbSalvarConfig = (dados) => setDoc(doc(db, 'configOperacional', 'geral'), dados, { merge: true });
+}
+</script>
+</body>
+</html>
