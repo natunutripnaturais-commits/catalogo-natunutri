@@ -160,6 +160,29 @@
   .status-cancelada { background:var(--alerta-bg); color:var(--alerta); }
   .status-concluida { background:var(--tinta5); color:var(--tinta2); }
 
+  /* calendário */
+  .calendario-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+  .calendario-header h3 { font-size:15.5px; text-transform:capitalize; min-width:150px; text-align:center; }
+  .calendario-semana { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:6px; }
+  .calendario-semana span { text-align:center; font-size:10.5px; font-weight:700; color:var(--tinta3); text-transform:uppercase; letter-spacing:.02em; }
+  .calendario-grade { display:grid; grid-template-columns:repeat(7,1fr); gap:6px; }
+  .dia-cel {
+    aspect-ratio:1; border-radius:10px; border:1.5px solid var(--tinta5); background:#fff;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    cursor:pointer; font-size:13px; color:var(--tinta1); transition:border-color .15s, background .15s;
+  }
+  .dia-cel:hover { border-color:var(--roxo); }
+  .dia-cel.vazio { visibility:hidden; cursor:default; }
+  .dia-cel.hoje { border-color:var(--dourado); border-width:2px; font-weight:700; }
+  .dia-cel.selecionado { background:var(--roxo); color:#fff; border-color:var(--roxo); }
+  .dia-cel.selecionado .dia-badge { background:#fff; color:var(--roxo); }
+  .dia-badge { font-size:10px; font-weight:700; background:var(--rosa); color:#fff; border-radius:20px; padding:1px 7px; line-height:1.4; }
+  .reserva-dia-card { border:1.5px solid var(--tinta4); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+  .reserva-dia-card ul { list-style:none; font-size:13px; }
+  .reserva-dia-card ul li { padding:3px 0; }
+  .disponibilidade-dia-item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--tinta5); font-size:13px; }
+  .disponibilidade-dia-item:last-child { border-bottom:none; }
+
   /* painel/forms genéricos */
   .painel { background:#fff; border-radius:var(--r); box-shadow:var(--sombra); padding:20px 22px; margin-bottom:18px; }
   .painel h3 { font-size:15px; margin-bottom:14px; }
@@ -316,6 +339,7 @@
     <button class="nav-item ativo" data-tab="reservas" onclick="irPara('reservas')"><span class="nav-icone">📅</span> Reservas</button>
     <button class="nav-item" data-tab="pecas" onclick="irPara('pecas')"><span class="nav-icone">📦</span> Peças</button>
     <button class="nav-item" data-tab="clientes" onclick="irPara('clientes')"><span class="nav-icone">👤</span> Clientes</button>
+    <button class="nav-item" data-tab="calendario" onclick="irPara('calendario')"><span class="nav-icone">🗓️</span> Calendário</button>
     <button class="nav-item" data-tab="config" onclick="irPara('config')"><span class="nav-icone">🧾</span> Contrato / Config</button>
     <div class="sidebar-rodape">
       <div class="usuario" id="usuarioLogadoTxt"></div>
@@ -459,7 +483,7 @@ window.__onAdminAuthChanged = (user) => {
 // ══════════════════════════════════════════════════════════════
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════════════════════
-const titulos = { reservas:'Reservas', pecas:'Peças', clientes:'Clientes', config:'Contrato / Configurações' };
+const titulos = { reservas:'Reservas', pecas:'Peças', clientes:'Clientes', calendario:'Calendário', config:'Contrato / Configurações' };
 
 function irPara(tab) {
   tabAtiva = tab;
@@ -471,6 +495,7 @@ function irPara(tab) {
   if (tab === 'pecas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormPeca()">+ Nova peça</button>`; conteudo.innerHTML = viewPecas(); aplicarFiltroPecas(); }
   if (tab === 'clientes') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormCliente()">+ Novo cliente</button>`; conteudo.innerHTML = viewClientes(); aplicarFiltroClientes(); }
   if (tab === 'reservas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirNovaReserva()">+ Nova reserva</button>`; conteudo.innerHTML = viewListaReservas(); }
+  if (tab === 'calendario') { acoes.innerHTML = ''; conteudo.innerHTML = viewCalendario(); renderCalendario(); }
   if (tab === 'config') { acoes.innerHTML = ''; conteudo.innerHTML = viewConfig(); }
 }
 
@@ -922,6 +947,128 @@ function salvarReserva() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// CALENDÁRIO — escolhe uma data e mostra o que está reservado nela.
+// Uma peça só fica indisponível dentro do período (retirada→devolução)
+// de uma reserva ativa; fora disso ela volta a aparecer livre.
+// ══════════════════════════════════════════════════════════════
+const nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const nomesDiasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+let calAno = null, calMes = null, calDiaSelecionado = null;
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function isoData(ano, mes, dia) { return `${ano}-${pad2(mes + 1)}-${pad2(dia)}`; }
+
+function reservasAtivasNaData(iso) {
+  return reservas.filter(r => r.status !== 'cancelada' && r.dataRetirada <= iso && iso <= r.dataDevolucao);
+}
+
+function viewCalendario() {
+  if (calAno === null) {
+    const hoje = new Date();
+    calAno = hoje.getFullYear();
+    calMes = hoje.getMonth();
+    calDiaSelecionado = isoData(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+  }
+  return `
+    <div class="painel">
+      <div class="calendario-header">
+        <button class="btn btn-fantasma" onclick="mudarMesCalendario(-1)">← Mês anterior</button>
+        <h3 id="tituloMesCalendario"></h3>
+        <button class="btn btn-fantasma" onclick="mudarMesCalendario(1)">Próximo mês →</button>
+      </div>
+      <div class="calendario-semana">${nomesDiasSemana.map(d => `<span>${d}</span>`).join('')}</div>
+      <div class="calendario-grade" id="gradeCalendario"></div>
+    </div>
+    <div class="painel" id="detalheDiaCalendario"></div>
+  `;
+}
+
+function mudarMesCalendario(delta) {
+  calMes += delta;
+  if (calMes < 0) { calMes = 11; calAno--; }
+  if (calMes > 11) { calMes = 0; calAno++; }
+  renderCalendario();
+}
+
+function renderCalendario() {
+  document.getElementById('tituloMesCalendario').textContent = `${nomesMeses[calMes]} de ${calAno}`;
+  const grade = document.getElementById('gradeCalendario');
+  const primeiroDia = new Date(calAno, calMes, 1).getDay();
+  const totalDias = new Date(calAno, calMes + 1, 0).getDate();
+  const hoje = new Date();
+  const hojeIso = isoData(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+
+  let html = '';
+  for (let i = 0; i < primeiroDia; i++) html += `<div class="dia-cel vazio"></div>`;
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const iso = isoData(calAno, calMes, dia);
+    const ativas = reservasAtivasNaData(iso);
+    const classes = ['dia-cel'];
+    if (iso === hojeIso) classes.push('hoje');
+    if (iso === calDiaSelecionado) classes.push('selecionado');
+    html += `
+      <div class="${classes.join(' ')}" onclick="selecionarDiaCalendario('${iso}')">
+        <span>${dia}</span>
+        ${ativas.length ? `<span class="dia-badge">${ativas.length}</span>` : ''}
+      </div>
+    `;
+  }
+  grade.innerHTML = html;
+  renderDetalheDiaCalendario();
+}
+
+function selecionarDiaCalendario(iso) {
+  calDiaSelecionado = iso;
+  renderCalendario();
+}
+
+function renderDetalheDiaCalendario() {
+  const cont = document.getElementById('detalheDiaCalendario');
+  if (!cont) return;
+  const iso = calDiaSelecionado;
+  const ativas = reservasAtivasNaData(iso);
+  const pecasAtivas = pecas.filter(p => p.ativo !== false);
+
+  const ocupacaoPorPeca = {};
+  ativas.forEach(r => r.itens.forEach(item => {
+    ocupacaoPorPeca[item.pecaId] = (ocupacaoPorPeca[item.pecaId] || 0) + item.quantidade;
+  }));
+
+  cont.innerHTML = `
+    <h3>Peças reservadas em ${formatarData(iso)}</h3>
+    ${!ativas.length
+      ? `<p style="color:var(--tinta3); font-size:13.5px;">Nenhuma reserva ativa nesta data — todo o estoque está livre.</p>`
+      : ativas.map(r => `
+        <div class="reserva-dia-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px;">
+            <b>${r.clienteNome}</b>
+            <span class="status-pill status-${r.status}">${r.status}</span>
+          </div>
+          <div style="font-size:12px; color:var(--tinta3); margin-bottom:8px;" class="mono">Guia #${String(r.numeroGuia).padStart(4,'0')} • ${formatarData(r.dataRetirada)} → ${formatarData(r.dataDevolucao)}</div>
+          <ul>${r.itens.map(i => `<li>${i.quantidade}x ${i.pecaNome}</li>`).join('')}</ul>
+          <button class="btn-fantasma" style="margin-top:4px; padding:6px 12px; font-size:12px;" onclick="abrirContrato('${r.id}')">Ver guia</button>
+        </div>
+      `).join('')
+    }
+
+    ${pecasAtivas.length ? `
+      <h3 style="margin-top:22px;">Disponibilidade das peças nesse dia</h3>
+      ${pecasAtivas.map(p => {
+        const ocupado = ocupacaoPorPeca[p.id] || 0;
+        const disponivel = p.estoqueTotal - ocupado;
+        const classe = disponivel <= 0 ? 'disp-zero' : (disponivel <= 1 ? 'disp-baixa' : 'disp-ok');
+        return `
+          <div class="disponibilidade-dia-item">
+            <span>${p.nome}</span>
+            <span class="disp-tag ${classe}">${ocupado > 0 ? `${ocupado} reservada(s) • ` : ''}${disponivel} livre(s) de ${p.estoqueTotal}</span>
+          </div>
+        `;
+      }).join('')}
+    ` : ''}
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════
 // CONTRATO / GUIA (impressão)
 // ══════════════════════════════════════════════════════════════
 function abrirContrato(reservaId) {
@@ -1034,9 +1181,9 @@ function salvarConfigSistema() {
 // ══════════════════════════════════════════════════════════════
 // SINCRONIZAÇÃO COM A NUVEM
 // ══════════════════════════════════════════════════════════════
-window.__onPecasNuvem = (lista) => { pecas = lista; if (tabAtiva === 'pecas') irPara('pecas'); };
+window.__onPecasNuvem = (lista) => { pecas = lista; if (tabAtiva === 'pecas') irPara('pecas'); if (tabAtiva === 'calendario') renderDetalheDiaCalendario(); };
 window.__onClientesNuvem = (lista) => { clientes = lista; if (tabAtiva === 'clientes') irPara('clientes'); };
-window.__onReservasNuvem = (lista) => { reservas = lista; if (tabAtiva === 'reservas') irPara('reservas'); };
+window.__onReservasNuvem = (lista) => { reservas = lista; if (tabAtiva === 'reservas') irPara('reservas'); if (tabAtiva === 'calendario') renderCalendario(); };
 window.__onConfigNuvem = (cfg) => { if (cfg) configSistema = { ...configSistema, ...cfg }; };
 
 // ══════════════════════════════════════════════════════════════
