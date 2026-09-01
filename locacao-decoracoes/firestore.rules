@@ -2,6 +2,29 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ────────────────────────────────────────────────────────
+    // SISTEMA INTERNO (operacional.html) — ferramenta de uso
+    // exclusivo da equipe. Nenhuma coleção abaixo tem leitura
+    // pública: tudo exige login (Authentication e-mail/senha).
+    // ────────────────────────────────────────────────────────
+    match /pecas/{pecaId} {
+      allow read, write: if request.auth != null;
+    }
+    match /clientes/{clienteId} {
+      allow read, write: if request.auth != null;
+    }
+    match /locacoes/{locacaoId} {
+      allow read, write: if request.auth != null;
+    }
+    match /configOperacional/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ────────────────────────────────────────────────────────
+    // CATÁLOGO PÚBLICO (index.html) — pausado por enquanto, mas
+    // as regras ficam prontas para quando ele for retomado.
+    // ────────────────────────────────────────────────────────
+
     // Catálogo de kits: leitura pública (site precisa mostrar sem login);
     // criação/edição/exclusão só para o admin autenticado.
     match /kits/{kitId} {
@@ -9,25 +32,27 @@ service cloud.firestore {
       allow create, update, delete: if request.auth != null;
     }
 
-    // Reservas: guarda os dados completos (nome/telefone do cliente).
-    // Qualquer visitante pode CRIAR (fluxo público de "reservar via
-    // WhatsApp"), mas só o admin autenticado pode LER a lista completa,
-    // editar (confirmar/cancelar) ou excluir — protege dados pessoais.
+    // Reservas do catálogo público: guarda os dados completos (nome/
+    // telefone do cliente). Qualquer visitante pode CRIAR (fluxo público
+    // de "reservar via WhatsApp"), mas só o admin autenticado pode LER a
+    // lista completa, editar (confirmar/cancelar) ou excluir — protege
+    // dados pessoais.
     match /reservas/{reservaId} {
       allow create: if true;
       allow read, update, delete: if request.auth != null;
     }
 
-    // Disponibilidade: espelho público e mínimo de cada reserva (só
-    // kit + datas + status, sem dados do cliente). É nela que o site
-    // consulta se um kit está livre num período, sem exigir login.
+    // Disponibilidade: espelho público e mínimo de cada reserva do
+    // catálogo (só kit + datas + status, sem dados do cliente). É nela
+    // que o site consulta se um kit está livre num período sem exigir
+    // login.
     match /disponibilidade/{docId} {
       allow read, create: if true;
       allow update, delete: if request.auth != null;
     }
 
-    // Configurações da loja (nome, WhatsApp): leitura pública, escrita só
-    // pelo admin autenticado.
+    // Configurações do catálogo público (nome da loja, WhatsApp):
+    // leitura pública, escrita só pelo admin autenticado.
     match /config/{docId} {
       allow read: if true;
       allow write: if request.auth != null;

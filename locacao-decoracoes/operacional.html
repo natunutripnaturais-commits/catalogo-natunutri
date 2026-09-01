@@ -1,0 +1,1064 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema Operacional — Locação de Decorações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Poppins:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --roxo:      #6D28D9;
+    --roxo-esc:  #3B1F6B;
+    --roxo-m:    #7C3AED;
+    --roxo-l:    #F3EBFF;
+    --creme:     #FBF9F6;
+    --branco:    #FFFFFF;
+    --tinta1:    #241F30;
+    --tinta2:    #5C5468;
+    --tinta3:    #8E8698;
+    --tinta4:    #E7E1EF;
+    --tinta5:    #F5F2F9;
+    --ok:        #1E9E5A;
+    --ok-bg:     #E8F8EE;
+    --alerta:    #D64545;
+    --alerta-bg: #FBEAEA;
+    --aviso:     #95690A;
+    --aviso-bg:  #FFF3D6;
+    --sombra:    0 2px 10px rgba(59,31,107,0.08);
+    --sombra2:   0 12px 32px rgba(59,31,107,0.18);
+    --r: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Poppins', sans-serif;
+    background: var(--creme);
+    color: var(--tinta1);
+    min-height:100vh;
+  }
+  h1,h2,h3,.brand-nome { font-family:'Fraunces', serif; }
+  .mono { font-family:'JetBrains Mono', monospace; }
+  img { max-width:100%; display:block; }
+  button { font-family:inherit; }
+  input, select, textarea { font-family:inherit; }
+  ::-webkit-scrollbar { width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb { background: var(--tinta4); border-radius:10px; }
+
+  /* ─── TELA DE LOGIN ─── */
+  #telaLogin {
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
+    background: linear-gradient(160deg, var(--roxo-esc), var(--roxo));
+  }
+  .login-card {
+    background:#fff; border-radius:18px; padding:34px 30px; width:100%; max-width:360px;
+    box-shadow: var(--sombra2);
+  }
+  .login-card .icone { font-size:34px; margin-bottom:6px; }
+  .login-card h1 { font-size:19px; color:var(--tinta1); margin-bottom:2px; }
+  .login-card p.sub { font-size:12.5px; color:var(--tinta3); margin-bottom:22px; }
+  .campo { margin-bottom:14px; }
+  .campo label { display:block; font-size:12.5px; font-weight:600; color:var(--tinta2); margin-bottom:5px; }
+  .campo input, .campo select, .campo textarea {
+    width:100%; padding:10px 12px; border:1.5px solid var(--tinta4); border-radius:9px;
+    font-size:13.5px; outline:none; transition:border .15s; background:#fff; color:var(--tinta1);
+  }
+  .campo input:focus, .campo select:focus, .campo textarea:focus { border-color:var(--roxo-m); }
+  .campo-dupla { display:flex; gap:10px; }
+  .campo-dupla .campo { flex:1; }
+  .btn {
+    border:none; border-radius:9px; padding:10px 16px; font-size:13.5px; font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+    transition: filter .15s, transform .1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primario { background:var(--roxo); color:#fff; }
+  .btn-primario:hover { filter:brightness(1.08); }
+  .btn-primario:disabled { opacity:.45; cursor:not-allowed; filter:none; }
+  .btn-fantasma { background:var(--roxo-l); color:var(--roxo); }
+  .btn-fantasma:hover { filter:brightness(0.97); }
+  .btn-perigo { background:var(--alerta-bg); color:var(--alerta); }
+  .btn-neutro { background:var(--tinta5); color:var(--tinta2); }
+  .btn-bloco { width:100%; }
+  .erro-msg { color:var(--alerta); font-size:12.5px; margin-bottom:10px; }
+  .nota { font-size:11.5px; color:var(--tinta3); line-height:1.5; margin-top:14px; }
+
+  /* ─── APP SHELL ─── */
+  #app { display:none; min-height:100vh; }
+  #app.ativo { display:flex; }
+  .sidebar {
+    width:216px; flex-shrink:0; background:var(--roxo-esc); color:#fff;
+    padding:20px 14px; display:flex; flex-direction:column; gap:4px;
+  }
+  .sidebar .brand-nome { font-size:16.5px; margin-bottom:4px; padding:0 8px; }
+  .sidebar .brand-sub { font-size:11px; color:rgba(255,255,255,0.55); padding:0 8px; margin-bottom:22px; }
+  .nav-item {
+    display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:9px;
+    color:rgba(255,255,255,0.75); font-size:13.5px; font-weight:500; cursor:pointer; border:none;
+    background:transparent; text-align:left; width:100%;
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.06); color:#fff; }
+  .nav-item.ativo { background:#fff; color:var(--roxo-esc); font-weight:600; }
+  .nav-icone { font-size:16px; width:20px; text-align:center; }
+  .sidebar-rodape { margin-top:auto; padding-top:14px; border-top:1px solid rgba(255,255,255,0.12); }
+  .sidebar-rodape .usuario { font-size:11.5px; color:rgba(255,255,255,0.6); padding:0 8px 8px; word-break:break-all; }
+
+  .main-area { flex:1; display:flex; flex-direction:column; min-width:0; }
+  .topbar {
+    background:#fff; border-bottom:1px solid var(--tinta4); padding:16px 26px;
+    display:flex; align-items:center; justify-content:space-between; gap:14px; flex-wrap:wrap;
+  }
+  .topbar h2 { font-size:18px; }
+  .topbar .topbar-acoes { display:flex; gap:8px; flex-wrap:wrap; }
+  .faixa-demo {
+    background: var(--aviso-bg); color:var(--aviso); font-size:12px; font-weight:600;
+    padding:8px 26px; text-align:center;
+  }
+  .conteudo { padding:22px 26px 60px; overflow-y:auto; }
+
+  /* filtros */
+  .barra-filtros { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+  .barra-filtros input, .barra-filtros select { padding:9px 12px; border:1.5px solid var(--tinta4); border-radius:9px; font-size:13px; min-width:150px; background:#fff; }
+
+  /* cards de peça */
+  .grade-pecas { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:16px; }
+  .peca-card { background:#fff; border-radius:var(--r); box-shadow:var(--sombra); overflow:hidden; display:flex; flex-direction:column; }
+  .peca-foto { aspect-ratio:4/3; background:linear-gradient(135deg,var(--roxo-l),#fff); display:flex; align-items:center; justify-content:center; font-size:34px; overflow:hidden; }
+  .peca-foto img { width:100%; height:100%; object-fit:cover; }
+  .peca-corpo { padding:12px 14px 14px; display:flex; flex-direction:column; gap:5px; flex:1; }
+  .peca-nome { font-size:14px; font-weight:600; }
+  .peca-tags { display:flex; gap:5px; flex-wrap:wrap; margin:2px 0 4px; }
+  .peca-tag { font-size:10.5px; font-weight:600; background:var(--roxo-l); color:var(--roxo); padding:2px 8px; border-radius:20px; }
+  .peca-estoque { font-size:11.5px; color:var(--tinta3); }
+  .peca-rodape { display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+  .peca-preco { font-weight:700; color:var(--roxo); font-size:14.5px; }
+  .peca-acoes { display:flex; gap:6px; }
+  .peca-acoes button { border:none; border-radius:7px; padding:5px 9px; font-size:11.5px; font-weight:600; cursor:pointer; }
+
+  /* tabelas */
+  .tabela-wrap { overflow-x:auto; background:#fff; border-radius:var(--r); box-shadow:var(--sombra); }
+  table.tabela { width:100%; border-collapse:collapse; font-size:13px; min-width:560px; }
+  table.tabela th { text-align:left; font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; color:var(--tinta3); padding:12px 14px; border-bottom:1.5px solid var(--tinta4); white-space:nowrap; }
+  table.tabela td { padding:12px 14px; border-bottom:1px solid var(--tinta5); vertical-align:middle; }
+  table.tabela tr:last-child td { border-bottom:none; }
+  table.tabela tbody tr:hover { background:var(--tinta5); }
+  .cel-acoes { display:flex; gap:6px; }
+  .cel-acoes button { border:none; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer; }
+  .vazio-lista { text-align:center; padding:50px 20px; color:var(--tinta3); font-size:13.5px; }
+
+  .status-pill { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; }
+  .status-pendente { background:var(--aviso-bg); color:var(--aviso); }
+  .status-confirmada { background:var(--ok-bg); color:var(--ok); }
+  .status-cancelada { background:var(--alerta-bg); color:var(--alerta); }
+  .status-concluida { background:var(--tinta5); color:var(--tinta2); }
+
+  /* painel/forms genéricos */
+  .painel { background:#fff; border-radius:var(--r); box-shadow:var(--sombra); padding:20px 22px; margin-bottom:18px; }
+  .painel h3 { font-size:15px; margin-bottom:14px; }
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  @media (max-width:640px) { .grid-2, .grid-3 { grid-template-columns:1fr; } }
+
+  /* reserva: seletor de peças */
+  .lista-selecionaveis { max-height:340px; overflow-y:auto; border:1.5px solid var(--tinta4); border-radius:10px; }
+  .item-selecionavel {
+    display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--tinta5);
+  }
+  .item-selecionavel:last-child { border-bottom:none; }
+  .item-selecionavel .thumb { width:42px; height:42px; border-radius:8px; background:var(--roxo-l); flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:18px; overflow:hidden; }
+  .item-selecionavel .thumb img { width:100%; height:100%; object-fit:cover; }
+  .item-selecionavel .info { flex:1; min-width:0; }
+  .item-selecionavel .info b { font-size:13px; display:block; }
+  .item-selecionavel .info span { font-size:11.5px; color:var(--tinta3); }
+  .disp-tag { font-size:11px; font-weight:700; padding:2px 8px; border-radius:20px; white-space:nowrap; }
+  .disp-ok { background:var(--ok-bg); color:var(--ok); }
+  .disp-baixa { background:var(--aviso-bg); color:var(--aviso); }
+  .disp-zero { background:var(--alerta-bg); color:var(--alerta); }
+  .qtd-input { width:52px; padding:6px 4px; text-align:center; border:1.5px solid var(--tinta4); border-radius:7px; font-size:13px; }
+
+  .carrinho-reserva { border:1.5px dashed var(--tinta4); border-radius:10px; padding:12px 14px; }
+  .carrinho-item { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid var(--tinta5); font-size:13px; }
+  .carrinho-item:last-child { border-bottom:none; }
+  .carrinho-total { display:flex; justify-content:space-between; padding-top:10px; margin-top:6px; border-top:1.5px solid var(--tinta4); font-weight:700; font-size:15px; color:var(--roxo); }
+
+  .autocompletar { position:relative; }
+  .autocompletar-lista {
+    position:absolute; top:100%; left:0; right:0; background:#fff; border:1.5px solid var(--tinta4);
+    border-radius:9px; margin-top:4px; max-height:220px; overflow-y:auto; box-shadow:var(--sombra2); z-index:20; display:none;
+  }
+  .autocompletar-lista.aberta { display:block; }
+  .autocompletar-item { padding:9px 12px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--tinta5); }
+  .autocompletar-item:hover { background:var(--roxo-l); }
+  .autocompletar-item:last-child { border-bottom:none; }
+  .autocompletar-item small { display:block; color:var(--tinta3); font-size:11px; }
+
+  .cliente-selecionado {
+    display:flex; justify-content:space-between; align-items:center; background:var(--roxo-l);
+    border-radius:9px; padding:10px 14px; font-size:13px;
+  }
+  .cliente-selecionado b { color:var(--roxo); }
+
+  .aviso-caixa { font-size:12.5px; font-weight:600; padding:9px 12px; border-radius:9px; margin:10px 0; }
+  .aviso-caixa.ok { background:var(--ok-bg); color:var(--ok); }
+  .aviso-caixa.erro { background:var(--alerta-bg); color:var(--alerta); }
+
+  /* MODAL genérico */
+  .overlay { position:fixed; inset:0; background:rgba(36,31,48,0.5); z-index:300; display:none; align-items:center; justify-content:center; padding:16px; }
+  .overlay.aberto { display:flex; }
+  .modal { background:#fff; width:100%; max-width:520px; max-height:90vh; overflow-y:auto; border-radius:16px; padding:22px 22px 24px; position:relative; }
+  .modal.largo { max-width:640px; }
+  .modal-fechar { position:absolute; top:14px; right:14px; background:var(--tinta5); border:none; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:16px; color:var(--tinta2); }
+  .modal h2 { font-size:17.5px; margin-bottom:16px; padding-right:30px; }
+
+  /* CONTRATO / GUIA (impressão) */
+  #folhaContrato { display:none; }
+  .contrato-doc { max-width:760px; margin:0 auto; background:#fff; padding:34px 38px; font-size:13px; line-height:1.55; color:#1a1a1a; }
+  .contrato-cabecalho { display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid #1a1a1a; padding-bottom:14px; margin-bottom:18px; gap:20px; }
+  .contrato-cabecalho .empresa b { font-size:16px; display:block; }
+  .contrato-cabecalho .empresa div { font-size:11.5px; color:#444; margin-top:2px; }
+  .contrato-cabecalho .guia-numero { text-align:right; font-size:12px; }
+  .contrato-titulo { font-size:14.5px; font-weight:700; text-align:center; margin-bottom:18px; text-transform:uppercase; letter-spacing:.03em; }
+  .contrato-secao { margin-bottom:16px; }
+  .contrato-secao h4 { font-size:11.5px; text-transform:uppercase; letter-spacing:.04em; color:#555; margin-bottom:6px; }
+  .contrato-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px 20px; font-size:12.5px; }
+  table.contrato-tabela { width:100%; border-collapse:collapse; font-size:12px; margin-top:4px; }
+  table.contrato-tabela th, table.contrato-tabela td { border:1px solid #ccc; padding:6px 8px; text-align:left; }
+  table.contrato-tabela th { background:#f2f2f2; }
+  .contrato-total { text-align:right; font-weight:700; font-size:13.5px; margin-top:6px; }
+  .contrato-termo { font-size:11.5px; color:#333; text-align:justify; white-space:pre-line; }
+  .contrato-assinaturas { display:flex; gap:40px; margin-top:44px; }
+  .assinatura-bloco { flex:1; text-align:center; }
+  .linha-assinatura { border-top:1px solid #1a1a1a; margin-top:46px; padding-top:6px; font-size:11.5px; }
+  .contrato-rodape-acoes { text-align:center; margin:18px 0 30px; display:flex; gap:10px; justify-content:center; }
+
+  @media print {
+    body * { visibility:hidden; }
+    #folhaContrato, #folhaContrato * { visibility:visible; }
+    #folhaContrato { display:block; position:absolute; top:0; left:0; width:100%; }
+    .contrato-rodape-acoes { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─── LOGIN ─── -->
+<div id="telaLogin">
+  <div class="login-card">
+    <div class="icone">🔐</div>
+    <h1>Sistema Operacional</h1>
+    <p class="sub">[Nome da Loja] — acesso restrito à equipe</p>
+    <div id="loginErro" class="erro-msg" style="display:none;"></div>
+    <div class="campo"><label>E-mail</label><input type="email" id="loginEmail"></div>
+    <div class="campo"><label>Senha</label><input type="password" id="loginSenha"></div>
+    <button class="btn btn-primario btn-bloco" onclick="fazerLogin()">Entrar</button>
+    <p class="nota" id="notaFirebase"></p>
+  </div>
+</div>
+
+<!-- ─── APP ─── -->
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand-nome">🎈 [Nome da Loja]</div>
+    <div class="brand-sub">Sistema operacional</div>
+    <button class="nav-item ativo" data-tab="reservas" onclick="irPara('reservas')"><span class="nav-icone">📅</span> Reservas</button>
+    <button class="nav-item" data-tab="pecas" onclick="irPara('pecas')"><span class="nav-icone">📦</span> Peças</button>
+    <button class="nav-item" data-tab="clientes" onclick="irPara('clientes')"><span class="nav-icone">👤</span> Clientes</button>
+    <button class="nav-item" data-tab="config" onclick="irPara('config')"><span class="nav-icone">🧾</span> Contrato / Config</button>
+    <div class="sidebar-rodape">
+      <div class="usuario" id="usuarioLogadoTxt"></div>
+      <button class="nav-item" onclick="fazerLogout()"><span class="nav-icone">↩</span> Sair</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <div class="faixa-demo" id="faixaDemo" style="display:none;">Modo demonstração local — conecte o Firebase para salvar de verdade e permitir login da equipe (veja README.md).</div>
+    <div class="topbar">
+      <h2 id="tituloTab">Reservas</h2>
+      <div class="topbar-acoes" id="acoesTab"></div>
+    </div>
+    <div class="conteudo" id="conteudoTab"></div>
+  </div>
+</div>
+
+<!-- ─── MODAL: peça ─── -->
+<div class="overlay" id="overlayPeca">
+  <div class="modal">
+    <button class="modal-fechar" onclick="fecharOverlay('overlayPeca')">✕</button>
+    <h2 id="tituloFormPeca">Nova peça</h2>
+    <div id="corpoFormPeca"></div>
+  </div>
+</div>
+
+<!-- ─── MODAL: cliente ─── -->
+<div class="overlay" id="overlayCliente">
+  <div class="modal">
+    <button class="modal-fechar" onclick="fecharOverlay('overlayCliente')">✕</button>
+    <h2 id="tituloFormCliente">Novo cliente</h2>
+    <div id="corpoFormCliente"></div>
+  </div>
+</div>
+
+<!-- ─── FOLHA DE CONTRATO (só aparece na impressão) ─── -->
+<div id="folhaContrato"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// DADOS DE DEMONSTRAÇÃO
+// ══════════════════════════════════════════════════════════════
+const pecasDemo = [
+  { id:'p1', nome:'Painel redondo dourado 1,5m', formato:'Redondo', cor:'Dourado', tamanho:'1,5m', modelo:'Liso', codigo:'PN-001', foto:'', estoqueTotal:2, precoLocacao:120, observacoes:'', ativo:true },
+  { id:'p2', nome:'Arco de balões rosa/lilás', formato:'Arco', cor:'Rosa/Lilás', tamanho:'2m', modelo:'Orgânico', codigo:'AR-004', foto:'', estoqueTotal:3, precoLocacao:90, observacoes:'', ativo:true },
+  { id:'p3', nome:'Letra "A" volumétrica branca', formato:'Letra', cor:'Branco', tamanho:'60cm', modelo:'Volumétrica', codigo:'LT-012', foto:'', estoqueTotal:4, precoLocacao:35, observacoes:'', ativo:true },
+  { id:'p4', nome:'Coluna de balões safári', formato:'Coluna', cor:'Verde/Marrom', tamanho:'1,8m', modelo:'Temático Safári', codigo:'CL-007', foto:'', estoqueTotal:2, precoLocacao:110, observacoes:'', ativo:true },
+  { id:'p5', nome:'Painel retangular nuvens', formato:'Retangular', cor:'Azul/Branco', tamanho:'2x1,5m', modelo:'Chá de bebê', codigo:'PN-009', foto:'', estoqueTotal:1, precoLocacao:150, observacoes:'', ativo:true },
+];
+
+const clientesDemo = [
+  { id:'c1', nome:'Ana Beatriz Souza', documento:'123.456.789-00', telefone:'(11) 98888-1111', email:'ana@email.com', endereco:'Rua das Flores, 123 - São Paulo/SP', observacoes:'' },
+  { id:'c2', nome:'Carlos Eduardo Lima', documento:'987.654.321-00', telefone:'(11) 97777-2222', email:'', endereco:'Av. Central, 456 - São Paulo/SP', observacoes:'Cliente recorrente' },
+];
+
+const reservasDemo = [];
+
+let pecas = [...pecasDemo];
+let clientes = [...clientesDemo];
+let reservas = [...reservasDemo];
+let usuarioLogado = null;
+let tabAtiva = 'reservas';
+
+let configSistema = {
+  nomeEmpresa: '[Nome da Loja]',
+  cnpj: '00.000.000/0000-00',
+  endereco: 'Endereço da loja, número - Bairro - Cidade/UF',
+  telefone: '(00) 00000-0000',
+  textoTermo:
+`1. O CONTRATANTE declara ter recebido as peças de decoração descritas neste contrato em perfeito estado de conservação e limpeza, comprometendo-se a devolvê-las nas mesmas condições, na data de devolução acordada.
+
+2. Em caso de avaria, quebra, mancha ou perda de qualquer peça, o CONTRATANTE arcará com o custo de reposição ou reparo, conforme avaliação da LOCADORA.
+
+3. O atraso na devolução das peças além da data combinada sujeitará o CONTRATANTE ao pagamento de multa diária, conforme tabela vigente da LOCADORA.
+
+4. A montagem e desmontagem das peças é de responsabilidade do CONTRATANTE, que declara ter recebido as orientações necessárias.
+
+5. Este documento formaliza o acordo de locação entre as partes, que o assinam de livre e espontânea vontade.`,
+};
+
+document.getElementById('loginEmail') && (document.getElementById('loginEmail').value = '');
+
+// ══════════════════════════════════════════════════════════════
+// AUXILIARES
+// ══════════════════════════════════════════════════════════════
+function normalizarTexto(txt) {
+  return (txt || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+function intervalosSobrepoem(iA, fA, iB, fB) { return iA <= fB && iB <= fA; }
+function formatarMoeda(v) { return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ','); }
+function formatarData(iso) { if (!iso) return ''; const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; }
+
+function fecharOverlay(id) { document.getElementById(id).classList.remove('aberto'); }
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('aberto'); });
+  });
+});
+
+// ══════════════════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════════════════
+function fazerLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  const erro = document.getElementById('loginErro');
+  erro.style.display = 'none';
+
+  if (!window.__FIREBASE_CONFIGURADO) {
+    erro.textContent = 'Nuvem ainda não configurada — veja README.md para conectar o Firebase e criar seu login.';
+    erro.style.display = 'block';
+    return;
+  }
+  window.__fbLogin(email, senha).catch(() => {
+    erro.textContent = 'E-mail ou senha inválidos.';
+    erro.style.display = 'block';
+  });
+}
+function fazerLogout() { if (window.__fbLogout) window.__fbLogout(); entrarModoDeslogado(); }
+
+function entrarModoLogado(user) {
+  usuarioLogado = user;
+  document.getElementById('telaLogin').style.display = 'none';
+  document.getElementById('app').classList.add('ativo');
+  document.getElementById('usuarioLogadoTxt').textContent = user && user.email ? user.email : 'Modo demonstração';
+  document.getElementById('faixaDemo').style.display = user && user.email ? 'none' : 'block';
+  irPara(tabAtiva);
+}
+function entrarModoDeslogado() {
+  usuarioLogado = null;
+  document.getElementById('app').classList.remove('ativo');
+  document.getElementById('telaLogin').style.display = 'flex';
+}
+
+window.__onAdminAuthChanged = (user) => {
+  if (user) entrarModoLogado(user);
+  else if (!window.__FIREBASE_CONFIGURADO) { /* aguarda decisão do init abaixo */ }
+  else entrarModoDeslogado();
+};
+
+// ══════════════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════════════════════
+const titulos = { reservas:'Reservas', pecas:'Peças', clientes:'Clientes', config:'Contrato / Configurações' };
+
+function irPara(tab) {
+  tabAtiva = tab;
+  document.querySelectorAll('.nav-item[data-tab]').forEach(b => b.classList.toggle('ativo', b.dataset.tab === tab));
+  document.getElementById('tituloTab').textContent = titulos[tab];
+  const acoes = document.getElementById('acoesTab');
+  const conteudo = document.getElementById('conteudoTab');
+
+  if (tab === 'pecas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormPeca()">+ Nova peça</button>`; conteudo.innerHTML = viewPecas(); aplicarFiltroPecas(); }
+  if (tab === 'clientes') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormCliente()">+ Novo cliente</button>`; conteudo.innerHTML = viewClientes(); aplicarFiltroClientes(); }
+  if (tab === 'reservas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirNovaReserva()">+ Nova reserva</button>`; conteudo.innerHTML = viewListaReservas(); }
+  if (tab === 'config') { acoes.innerHTML = ''; conteudo.innerHTML = viewConfig(); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// PEÇAS
+// ══════════════════════════════════════════════════════════════
+function valoresUnicos(campo) {
+  return Array.from(new Set(pecas.map(p => p[campo]).filter(Boolean))).sort();
+}
+
+function viewPecas() {
+  return `
+    <div class="barra-filtros">
+      <input type="text" id="fBuscaPeca" placeholder="Buscar por nome ou código..." oninput="aplicarFiltroPecas()" style="flex:1; min-width:200px;">
+      <select id="fFormato" onchange="aplicarFiltroPecas()"><option value="">Formato (todos)</option>${valoresUnicos('formato').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fCor" onchange="aplicarFiltroPecas()"><option value="">Cor (todas)</option>${valoresUnicos('cor').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fTamanho" onchange="aplicarFiltroPecas()"><option value="">Tamanho (todos)</option>${valoresUnicos('tamanho').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fModelo" onchange="aplicarFiltroPecas()"><option value="">Modelo (todos)</option>${valoresUnicos('modelo').map(v=>`<option>${v}</option>`).join('')}</select>
+    </div>
+    <div class="grade-pecas" id="gradePecas"></div>
+  `;
+}
+
+function aplicarFiltroPecas() {
+  const busca = normalizarTexto(document.getElementById('fBuscaPeca') ? document.getElementById('fBuscaPeca').value : '');
+  const formato = document.getElementById('fFormato') ? document.getElementById('fFormato').value : '';
+  const cor = document.getElementById('fCor') ? document.getElementById('fCor').value : '';
+  const tamanho = document.getElementById('fTamanho') ? document.getElementById('fTamanho').value : '';
+  const modelo = document.getElementById('fModelo') ? document.getElementById('fModelo').value : '';
+
+  const lista = pecas.filter(p => {
+    if (formato && p.formato !== formato) return false;
+    if (cor && p.cor !== cor) return false;
+    if (tamanho && p.tamanho !== tamanho) return false;
+    if (modelo && p.modelo !== modelo) return false;
+    if (busca && !normalizarTexto(`${p.nome} ${p.codigo||''}`).includes(busca)) return false;
+    return true;
+  });
+
+  const grade = document.getElementById('gradePecas');
+  if (!lista.length) { grade.innerHTML = `<div class="vazio-lista">Nenhuma peça encontrada.</div>`; return; }
+
+  grade.innerHTML = lista.map(p => `
+    <div class="peca-card">
+      <div class="peca-foto">${p.foto ? `<img src="${p.foto}" alt="${p.nome}">` : '📦'}</div>
+      <div class="peca-corpo">
+        <div class="peca-nome">${p.nome}</div>
+        <div class="peca-tags">
+          ${p.formato ? `<span class="peca-tag">${p.formato}</span>` : ''}
+          ${p.cor ? `<span class="peca-tag">${p.cor}</span>` : ''}
+          ${p.tamanho ? `<span class="peca-tag">${p.tamanho}</span>` : ''}
+          ${p.modelo ? `<span class="peca-tag">${p.modelo}</span>` : ''}
+        </div>
+        <div class="peca-estoque mono">Cód. ${p.codigo || '—'} • Estoque: ${p.estoqueTotal}</div>
+        <div class="peca-rodape">
+          <div class="peca-preco">${formatarMoeda(p.precoLocacao)}</div>
+          <div class="peca-acoes">
+            <button class="btn-fantasma" onclick="abrirFormPeca('${p.id}')">Editar</button>
+            <button class="btn-perigo" onclick="excluirPeca('${p.id}')">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirFormPeca(id) {
+  const p = id ? pecas.find(x => x.id === id) : null;
+  document.getElementById('tituloFormPeca').textContent = p ? 'Editar peça' : 'Nova peça';
+  document.getElementById('corpoFormPeca').innerHTML = `
+    <div class="campo"><label>Nome da peça</label><input id="pNome" value="${p ? p.nome : ''}" placeholder="Ex: Painel redondo dourado 1,5m"></div>
+    <div class="grid-2">
+      <div class="campo"><label>Formato</label><input id="pFormato" value="${p ? p.formato : ''}" placeholder="Ex: Redondo, Arco, Coluna..."></div>
+      <div class="campo"><label>Cor</label><input id="pCor" value="${p ? p.cor : ''}"></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Tamanho</label><input id="pTamanho" value="${p ? p.tamanho : ''}" placeholder="Ex: 1,5m"></div>
+      <div class="campo"><label>Modelo</label><input id="pModelo" value="${p ? p.modelo : ''}" placeholder="Ex: Liso, Temático Safári..."></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Código interno</label><input id="pCodigo" value="${p ? p.codigo||'' : ''}"></div>
+      <div class="campo"><label>Foto (URL)</label><input id="pFoto" value="${p ? p.foto||'' : ''}"></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Quantidade em estoque</label><input type="number" min="0" id="pEstoque" value="${p ? p.estoqueTotal : 1}"></div>
+      <div class="campo"><label>Valor da locação (R$)</label><input type="number" min="0" step="0.01" id="pPreco" value="${p ? p.precoLocacao : ''}"></div>
+    </div>
+    <div class="campo"><label>Observações</label><textarea id="pObs" rows="2">${p ? p.observacoes||'' : ''}</textarea></div>
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:14px;">
+      <input type="checkbox" id="pAtivo" ${!p || p.ativo !== false ? 'checked' : ''}> Peça ativa (disponível para reserva)
+    </label>
+    <button class="btn btn-primario btn-bloco" onclick="salvarPeca(${p ? `'${p.id}'` : 'null'})">Salvar peça</button>
+  `;
+  document.getElementById('overlayPeca').classList.add('aberto');
+}
+
+function salvarPeca(id) {
+  const dados = {
+    nome: document.getElementById('pNome').value.trim(),
+    formato: document.getElementById('pFormato').value.trim(),
+    cor: document.getElementById('pCor').value.trim(),
+    tamanho: document.getElementById('pTamanho').value.trim(),
+    modelo: document.getElementById('pModelo').value.trim(),
+    codigo: document.getElementById('pCodigo').value.trim(),
+    foto: document.getElementById('pFoto').value.trim(),
+    estoqueTotal: Number(document.getElementById('pEstoque').value) || 0,
+    precoLocacao: Number(document.getElementById('pPreco').value) || 0,
+    observacoes: document.getElementById('pObs').value.trim(),
+    ativo: document.getElementById('pAtivo').checked,
+  };
+  if (!dados.nome) { alert('Dê um nome à peça.'); return; }
+
+  if (window.__fbSalvarPeca) {
+    window.__fbSalvarPeca(dados, id).catch(err => alert('Erro ao salvar na nuvem: ' + err.message));
+  } else {
+    if (id) { const i = pecas.findIndex(x => x.id === id); pecas[i] = { ...pecas[i], ...dados }; }
+    else pecas.push({ id: 'local-' + Date.now(), ...dados });
+    irPara('pecas');
+  }
+  fecharOverlay('overlayPeca');
+}
+
+function excluirPeca(id) {
+  if (!confirm('Excluir esta peça do catálogo interno?')) return;
+  if (window.__fbExcluirPeca) window.__fbExcluirPeca(id).catch(err => alert('Erro: ' + err.message));
+  else { pecas = pecas.filter(p => p.id !== id); irPara('pecas'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CLIENTES
+// ══════════════════════════════════════════════════════════════
+function viewClientes() {
+  return `
+    <div class="barra-filtros"><input type="text" id="fBuscaCliente" placeholder="Buscar por nome, telefone ou documento..." oninput="aplicarFiltroClientes()" style="flex:1;"></div>
+    <div class="tabela-wrap">
+      <table class="tabela">
+        <thead><tr><th>Nome</th><th>Documento</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead>
+        <tbody id="corpoTabelaClientes"></tbody>
+      </table>
+    </div>
+  `;
+}
+
+function aplicarFiltroClientes() {
+  const busca = normalizarTexto(document.getElementById('fBuscaCliente') ? document.getElementById('fBuscaCliente').value : '');
+  const lista = clientes.filter(c => !busca || normalizarTexto(`${c.nome} ${c.telefone} ${c.documento||''}`).includes(busca));
+  const corpo = document.getElementById('corpoTabelaClientes');
+  if (!corpo) return;
+  corpo.innerHTML = lista.map(c => `
+    <tr>
+      <td><b>${c.nome}</b></td>
+      <td class="mono">${c.documento || '—'}</td>
+      <td class="mono">${c.telefone}</td>
+      <td>${c.email || '—'}</td>
+      <td class="cel-acoes">
+        <button class="btn-fantasma" onclick="abrirFormCliente('${c.id}')">Editar</button>
+        <button class="btn-perigo" onclick="excluirCliente('${c.id}')">Excluir</button>
+      </td>
+    </tr>
+  `).join('') || `<tr><td colspan="5" class="vazio-lista">Nenhum cliente encontrado.</td></tr>`;
+}
+
+function abrirFormCliente(id, callback) {
+  const c = id ? clientes.find(x => x.id === id) : null;
+  document.getElementById('tituloFormCliente').textContent = c ? 'Editar cliente' : 'Novo cliente';
+  document.getElementById('corpoFormCliente').innerHTML = `
+    <div class="campo"><label>Nome completo</label><input id="clNome" value="${c ? c.nome : ''}"></div>
+    <div class="grid-2">
+      <div class="campo"><label>CPF/CNPJ</label><input id="clDocumento" value="${c ? c.documento||'' : ''}"></div>
+      <div class="campo"><label>Telefone</label><input id="clTelefone" value="${c ? c.telefone : ''}" placeholder="(00) 00000-0000"></div>
+    </div>
+    <div class="campo"><label>E-mail</label><input id="clEmail" value="${c ? c.email||'' : ''}"></div>
+    <div class="campo"><label>Endereço</label><input id="clEndereco" value="${c ? c.endereco||'' : ''}"></div>
+    <div class="campo"><label>Observações</label><textarea id="clObs" rows="2">${c ? c.observacoes||'' : ''}</textarea></div>
+    <button class="btn btn-primario btn-bloco" onclick="salvarCliente(${c ? `'${c.id}'` : 'null'})">Salvar cliente</button>
+  `;
+  window.__callbackClienteSalvo = callback || null;
+  document.getElementById('overlayCliente').classList.add('aberto');
+}
+
+function salvarCliente(id) {
+  const dados = {
+    nome: document.getElementById('clNome').value.trim(),
+    documento: document.getElementById('clDocumento').value.trim(),
+    telefone: document.getElementById('clTelefone').value.trim(),
+    email: document.getElementById('clEmail').value.trim(),
+    endereco: document.getElementById('clEndereco').value.trim(),
+    observacoes: document.getElementById('clObs').value.trim(),
+  };
+  if (!dados.nome || !dados.telefone) { alert('Preencha ao menos nome e telefone.'); return; }
+
+  const aoConcluir = (idFinal) => {
+    fecharOverlay('overlayCliente');
+    if (window.__callbackClienteSalvo) { window.__callbackClienteSalvo(idFinal); window.__callbackClienteSalvo = null; }
+  };
+
+  if (window.__fbSalvarCliente) {
+    window.__fbSalvarCliente(dados, id).then(ref => aoConcluir(id || (ref && ref.id))).catch(err => alert('Erro ao salvar na nuvem: ' + err.message));
+  } else {
+    let idFinal = id;
+    if (id) { const i = clientes.findIndex(x => x.id === id); clientes[i] = { ...clientes[i], ...dados }; }
+    else { idFinal = 'local-' + Date.now(); clientes.push({ id: idFinal, ...dados }); }
+    if (tabAtiva === 'clientes') irPara('clientes');
+    aoConcluir(idFinal);
+  }
+}
+
+function excluirCliente(id) {
+  if (!confirm('Excluir este cliente?')) return;
+  if (window.__fbExcluirCliente) window.__fbExcluirCliente(id).catch(err => alert('Erro: ' + err.message));
+  else { clientes = clientes.filter(c => c.id !== id); irPara('clientes'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESERVAS — lista
+// ══════════════════════════════════════════════════════════════
+function viewListaReservas() {
+  const ordenadas = [...reservas].sort((a,b) => (b.criadoEm||'').localeCompare(a.criadoEm||''));
+  return `
+    <div class="tabela-wrap">
+      <table class="tabela">
+        <thead><tr><th>Guia</th><th>Cliente</th><th>Retirada</th><th>Devolução</th><th>Peças</th><th>Total</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+          ${ordenadas.map(r => `
+            <tr>
+              <td class="mono">#${r.numeroGuia}</td>
+              <td><b>${r.clienteNome}</b></td>
+              <td>${formatarData(r.dataRetirada)}</td>
+              <td>${formatarData(r.dataDevolucao)}</td>
+              <td>${r.itens.reduce((s,i)=>s+i.quantidade,0)} peça(s)</td>
+              <td>${formatarMoeda(r.valorTotal)}</td>
+              <td><span class="status-pill status-${r.status}">${r.status}</span></td>
+              <td class="cel-acoes">
+                <button class="btn-fantasma" onclick="abrirContrato('${r.id}')">Ver guia</button>
+                ${r.status === 'pendente' ? `<button class="btn-primario" style="padding:6px 10px; font-size:12px;" onclick="mudarStatusReserva('${r.id}','confirmada')">Confirmar</button>` : ''}
+                ${r.status !== 'cancelada' && r.status !== 'concluida' ? `<button class="btn-perigo" onclick="mudarStatusReserva('${r.id}','cancelada')">Cancelar</button>` : ''}
+              </td>
+            </tr>
+          `).join('') || `<tr><td colspan="8" class="vazio-lista">Nenhuma reserva cadastrada ainda.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function mudarStatusReserva(id, status) {
+  if (window.__fbMudarStatusReserva) window.__fbMudarStatusReserva(id, status).catch(err => alert('Erro: ' + err.message));
+  else { const r = reservas.find(x => x.id === id); if (r) r.status = status; irPara('reservas'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// RESERVAS — nova (formulário)
+// ══════════════════════════════════════════════════════════════
+let novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[] };
+
+function abrirNovaReserva() {
+  novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[] };
+  document.getElementById('acoesTab').innerHTML = `<button class="btn btn-neutro" onclick="irPara('reservas')">← Voltar</button>`;
+  document.getElementById('conteudoTab').innerHTML = `
+    <div class="painel">
+      <h3>1. Cliente</h3>
+      <div id="blocoCliente"></div>
+    </div>
+    <div class="painel">
+      <h3>2. Período da locação</h3>
+      <div class="grid-2">
+        <div class="campo"><label>Data de retirada</label><input type="date" id="rRetirada" onchange="atualizarDisponibilidadePecas()"></div>
+        <div class="campo"><label>Data de devolução</label><input type="date" id="rDevolucao" onchange="atualizarDisponibilidadePecas()"></div>
+      </div>
+    </div>
+    <div class="painel">
+      <h3>3. Peças</h3>
+      <input type="text" id="buscaPecaReserva" placeholder="Buscar peça por nome, formato, cor..." oninput="atualizarDisponibilidadePecas()" style="width:100%; padding:9px 12px; border:1.5px solid var(--tinta4); border-radius:9px; font-size:13px; margin-bottom:10px;">
+      <div class="lista-selecionaveis" id="listaPecasDisponiveis"></div>
+    </div>
+    <div class="painel">
+      <h3>4. Resumo da reserva</h3>
+      <div class="carrinho-reserva" id="carrinhoReserva"></div>
+      <div id="avisoReserva"></div>
+      <button class="btn btn-primario btn-bloco" style="margin-top:14px;" id="btnSalvarReserva" onclick="salvarReserva()">Salvar reserva e gerar guia</button>
+    </div>
+  `;
+  renderBlocoCliente();
+  atualizarDisponibilidadePecas();
+  renderCarrinhoReserva();
+}
+
+function renderBlocoCliente() {
+  const bloco = document.getElementById('blocoCliente');
+  if (novaReserva.clienteId) {
+    bloco.innerHTML = `
+      <div class="cliente-selecionado">
+        <span>Cliente: <b>${novaReserva.clienteNome}</b></span>
+        <button class="btn-fantasma" style="padding:5px 10px; font-size:12px;" onclick="limparClienteReserva()">Trocar</button>
+      </div>
+    `;
+    return;
+  }
+  bloco.innerHTML = `
+    <div class="autocompletar">
+      <input type="text" id="buscaCliente" placeholder="Digite o nome ou telefone do cliente..." oninput="filtrarClientesReserva()" autocomplete="off">
+      <div class="autocompletar-lista" id="listaClientesReserva"></div>
+    </div>
+    <button class="btn btn-fantasma" style="margin-top:10px;" onclick="abrirFormCliente(null, selecionarClienteReserva)">+ Cadastrar novo cliente</button>
+  `;
+}
+
+function filtrarClientesReserva() {
+  const termo = normalizarTexto(document.getElementById('buscaCliente').value.trim());
+  const lista = document.getElementById('listaClientesReserva');
+  if (!termo) { lista.classList.remove('aberta'); lista.innerHTML=''; return; }
+  const encontrados = clientes.filter(c => normalizarTexto(`${c.nome} ${c.telefone}`).includes(termo));
+  lista.innerHTML = encontrados.map(c => `<div class="autocompletar-item" onclick="selecionarClienteReserva('${c.id}')">${c.nome}<small>${c.telefone}</small></div>`).join('')
+    || `<div class="autocompletar-item" style="color:var(--tinta3);">Nenhum cliente encontrado.</div>`;
+  lista.classList.add('aberta');
+}
+
+function selecionarClienteReserva(id) {
+  const c = clientes.find(x => x.id === id);
+  if (!c) return;
+  novaReserva.clienteId = c.id;
+  novaReserva.clienteNome = c.nome;
+  renderBlocoCliente();
+}
+function limparClienteReserva() { novaReserva.clienteId = null; novaReserva.clienteNome=''; renderBlocoCliente(); }
+
+function quantidadeReservadaNoPeriodo(pecaId, ret, dev, ignorarReservaId) {
+  return reservas
+    .filter(r => r.id !== ignorarReservaId && r.status !== 'cancelada' && intervalosSobrepoem(ret, dev, r.dataRetirada, r.dataDevolucao))
+    .reduce((soma, r) => soma + (r.itens.find(i => i.pecaId === pecaId)?.quantidade || 0), 0);
+}
+
+function atualizarDisponibilidadePecas() {
+  const ret = document.getElementById('rRetirada').value;
+  const dev = document.getElementById('rDevolucao').value;
+  const termo = normalizarTexto(document.getElementById('buscaPecaReserva').value.trim());
+  const cont = document.getElementById('listaPecasDisponiveis');
+
+  const datasOk = ret && dev && dev >= ret;
+  let lista = pecas.filter(p => p.ativo !== false);
+  if (termo) lista = lista.filter(p => normalizarTexto(`${p.nome} ${p.formato} ${p.cor} ${p.tamanho} ${p.modelo}`).includes(termo));
+
+  if (!lista.length) { cont.innerHTML = `<div class="vazio-lista">Nenhuma peça encontrada.</div>`; return; }
+
+  cont.innerHTML = lista.map(p => {
+    const jaReservadoAqui = novaReserva.itens.find(i => i.pecaId === p.id);
+    let dispHtml = '<span class="disp-tag" style="background:var(--tinta5); color:var(--tinta3);">defina as datas</span>';
+    let disponivel = 0;
+    if (datasOk) {
+      const usadoPorOutras = quantidadeReservadaNoPeriodo(p.id, ret, dev);
+      disponivel = p.estoqueTotal - usadoPorOutras;
+      const classe = disponivel <= 0 ? 'disp-zero' : (disponivel <= 1 ? 'disp-baixa' : 'disp-ok');
+      dispHtml = `<span class="disp-tag ${classe}">${disponivel <= 0 ? 'sem estoque' : disponivel + ' disponível(is)'}</span>`;
+    }
+    return `
+      <div class="item-selecionavel">
+        <div class="thumb">${p.foto ? `<img src="${p.foto}">` : '📦'}</div>
+        <div class="info">
+          <b>${p.nome}</b>
+          <span>${[p.formato,p.cor,p.tamanho,p.modelo].filter(Boolean).join(' • ')} — ${formatarMoeda(p.precoLocacao)}</span>
+        </div>
+        ${dispHtml}
+        ${datasOk ? `
+          <input type="number" min="1" max="${jaReservadoAqui ? jaReservadoAqui.quantidade + disponivel : disponivel}" value="${jaReservadoAqui ? jaReservadoAqui.quantidade : 1}" class="qtd-input" id="qtd-${p.id}" ${disponivel<=0 && !jaReservadoAqui ? 'disabled' : ''}>
+          <button class="btn ${jaReservadoAqui ? 'btn-neutro' : 'btn-fantasma'}" style="padding:6px 12px; font-size:12px;" ${disponivel<=0 && !jaReservadoAqui ? 'disabled' : ''} onclick="adicionarPecaReserva('${p.id}')">${jaReservadoAqui ? 'Atualizar' : 'Adicionar'}</button>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function adicionarPecaReserva(pecaId) {
+  const p = pecas.find(x => x.id === pecaId);
+  const qtdInput = document.getElementById('qtd-' + pecaId);
+  const qtd = Number(qtdInput.value) || 0;
+  if (qtd <= 0) return;
+
+  const existente = novaReserva.itens.find(i => i.pecaId === pecaId);
+  if (existente) existente.quantidade = qtd;
+  else novaReserva.itens.push({ pecaId, pecaNome: p.nome, quantidade: qtd, precoUnitario: p.precoLocacao });
+
+  renderCarrinhoReserva();
+  atualizarDisponibilidadePecas();
+}
+
+function removerPecaReserva(pecaId) {
+  novaReserva.itens = novaReserva.itens.filter(i => i.pecaId !== pecaId);
+  renderCarrinhoReserva();
+  atualizarDisponibilidadePecas();
+}
+
+function renderCarrinhoReserva() {
+  const cont = document.getElementById('carrinhoReserva');
+  if (!novaReserva.itens.length) { cont.innerHTML = `<p style="color:var(--tinta3); font-size:13px;">Nenhuma peça adicionada ainda.</p>`; return; }
+  const total = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  cont.innerHTML = novaReserva.itens.map(i => `
+    <div class="carrinho-item">
+      <span>${i.quantidade}x ${i.pecaNome}</span>
+      <span style="display:flex; align-items:center; gap:10px;">
+        ${formatarMoeda(i.quantidade * i.precoUnitario)}
+        <button class="btn-perigo" style="padding:3px 8px; font-size:11px;" onclick="removerPecaReserva('${i.pecaId}')">remover</button>
+      </span>
+    </div>
+  `).join('') + `<div class="carrinho-total"><span>Total</span><span>${formatarMoeda(total)}</span></div>`;
+}
+
+function salvarReserva() {
+  const ret = document.getElementById('rRetirada').value;
+  const dev = document.getElementById('rDevolucao').value;
+  const aviso = document.getElementById('avisoReserva');
+  aviso.innerHTML = '';
+
+  if (!novaReserva.clienteId) { aviso.innerHTML = `<div class="aviso-caixa erro">Selecione (ou cadastre) o cliente.</div>`; return; }
+  if (!ret || !dev || dev < ret) { aviso.innerHTML = `<div class="aviso-caixa erro">Selecione datas válidas de retirada e devolução.</div>`; return; }
+  if (!novaReserva.itens.length) { aviso.innerHTML = `<div class="aviso-caixa erro">Adicione ao menos uma peça.</div>`; return; }
+
+  for (const item of novaReserva.itens) {
+    const peca = pecas.find(p => p.id === item.pecaId);
+    const usadoPorOutras = quantidadeReservadaNoPeriodo(item.pecaId, ret, dev);
+    if (item.quantidade > peca.estoqueTotal - usadoPorOutras) {
+      aviso.innerHTML = `<div class="aviso-caixa erro">"${peca.nome}" não tem estoque suficiente para essas datas.</div>`;
+      return;
+    }
+  }
+
+  const valorTotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  const reserva = {
+    clienteId: novaReserva.clienteId,
+    clienteNome: novaReserva.clienteNome,
+    dataRetirada: ret,
+    dataDevolucao: dev,
+    itens: novaReserva.itens,
+    valorTotal,
+    status: 'pendente',
+    numeroGuia: reservas.length + 1,
+    criadoEm: new Date().toISOString(),
+  };
+
+  if (window.__fbSalvarReserva) {
+    window.__fbSalvarReserva(reserva)
+      .then(ref => { irPara('reservas'); abrirContrato(ref.id); })
+      .catch(err => { aviso.innerHTML = `<div class="aviso-caixa erro">Erro ao salvar na nuvem: ${err.message}</div>`; });
+  } else {
+    const id = 'local-' + Date.now();
+    reservas.push({ id, ...reserva });
+    irPara('reservas');
+    abrirContrato(id);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONTRATO / GUIA (impressão)
+// ══════════════════════════════════════════════════════════════
+function abrirContrato(reservaId) {
+  const r = reservas.find(x => x.id === reservaId);
+  if (!r) return;
+  const cliente = clientes.find(c => c.id === r.clienteId) || {};
+
+  document.getElementById('folhaContrato').innerHTML = `
+    <div class="contrato-doc">
+      <div class="contrato-cabecalho">
+        <div class="empresa">
+          <b>${configSistema.nomeEmpresa}</b>
+          <div>CNPJ: ${configSistema.cnpj}</div>
+          <div>${configSistema.endereco}</div>
+          <div>Tel/WhatsApp: ${configSistema.telefone}</div>
+        </div>
+        <div class="guia-numero">
+          Guia Nº <b class="mono">${String(r.numeroGuia).padStart(4,'0')}</b><br>
+          Emitido em ${new Date().toLocaleDateString('pt-BR')}
+        </div>
+      </div>
+      <div class="contrato-titulo">Contrato de Locação de Peças para Decoração</div>
+
+      <div class="contrato-secao">
+        <h4>Locatário (Cliente)</h4>
+        <div class="contrato-grid">
+          <div><b>Nome:</b> ${r.clienteNome}</div>
+          <div><b>Documento:</b> ${cliente.documento || '—'}</div>
+          <div><b>Telefone:</b> ${cliente.telefone || '—'}</div>
+          <div><b>Endereço:</b> ${cliente.endereco || '—'}</div>
+        </div>
+      </div>
+
+      <div class="contrato-secao">
+        <h4>Período da locação</h4>
+        <div class="contrato-grid">
+          <div><b>Retirada:</b> ${formatarData(r.dataRetirada)}</div>
+          <div><b>Devolução:</b> ${formatarData(r.dataDevolucao)}</div>
+        </div>
+      </div>
+
+      <div class="contrato-secao">
+        <h4>Peças locadas</h4>
+        <table class="contrato-tabela">
+          <thead><tr><th>Peça</th><th>Qtde</th><th>Valor unit.</th><th>Subtotal</th></tr></thead>
+          <tbody>
+            ${r.itens.map(i => `<tr><td>${i.pecaNome}</td><td>${i.quantidade}</td><td>${formatarMoeda(i.precoUnitario)}</td><td>${formatarMoeda(i.quantidade*i.precoUnitario)}</td></tr>`).join('')}
+          </tbody>
+        </table>
+        <div class="contrato-total">Valor total: ${formatarMoeda(r.valorTotal)}</div>
+      </div>
+
+      <div class="contrato-secao">
+        <h4>Termo de responsabilidade</h4>
+        <div class="contrato-termo">${configSistema.textoTermo}</div>
+      </div>
+
+      <div class="contrato-assinaturas">
+        <div class="assinatura-bloco"><div class="linha-assinatura">Assinatura do Cliente</div></div>
+        <div class="assinatura-bloco"><div class="linha-assinatura">Assinatura do Responsável — ${configSistema.nomeEmpresa}</div></div>
+      </div>
+    </div>
+    <div class="contrato-rodape-acoes">
+      <button class="btn btn-primario" onclick="window.print()">🖨️ Imprimir / salvar como PDF</button>
+      <button class="btn btn-neutro" onclick="document.getElementById('folhaContrato').style.display='none'; document.body.style.overflow='';">Fechar guia</button>
+    </div>
+  `;
+  document.getElementById('folhaContrato').style.display = 'block';
+  document.getElementById('folhaContrato').scrollIntoView();
+}
+
+// ══════════════════════════════════════════════════════════════
+// CONFIGURAÇÕES
+// ══════════════════════════════════════════════════════════════
+function viewConfig() {
+  return `
+    <div class="painel">
+      <h3>Dados da empresa (aparecem no contrato)</h3>
+      <div class="grid-2">
+        <div class="campo"><label>Nome da loja</label><input id="cfgNome" value="${configSistema.nomeEmpresa}"></div>
+        <div class="campo"><label>CNPJ</label><input id="cfgCnpj" value="${configSistema.cnpj}"></div>
+      </div>
+      <div class="grid-2">
+        <div class="campo"><label>Endereço</label><input id="cfgEndereco" value="${configSistema.endereco}"></div>
+        <div class="campo"><label>Telefone</label><input id="cfgTelefone" value="${configSistema.telefone}"></div>
+      </div>
+    </div>
+    <div class="painel">
+      <h3>Termo de responsabilidade (contrato)</h3>
+      <div class="campo"><textarea id="cfgTermo" rows="12">${configSistema.textoTermo}</textarea></div>
+      <p class="nota">Esse texto aparece em toda guia gerada, acima da área de assinatura. Ajuste com seu contador/advogado antes de usar oficialmente.</p>
+    </div>
+    <button class="btn btn-primario" onclick="salvarConfigSistema()">Salvar configurações</button>
+  `;
+}
+
+function salvarConfigSistema() {
+  const dados = {
+    nomeEmpresa: document.getElementById('cfgNome').value.trim() || '[Nome da Loja]',
+    cnpj: document.getElementById('cfgCnpj').value.trim(),
+    endereco: document.getElementById('cfgEndereco').value.trim(),
+    telefone: document.getElementById('cfgTelefone').value.trim(),
+    textoTermo: document.getElementById('cfgTermo').value,
+  };
+  configSistema = { ...configSistema, ...dados };
+  if (window.__fbSalvarConfig) window.__fbSalvarConfig(dados);
+  alert('Configurações salvas!');
+}
+
+// ══════════════════════════════════════════════════════════════
+// SINCRONIZAÇÃO COM A NUVEM
+// ══════════════════════════════════════════════════════════════
+window.__onPecasNuvem = (lista) => { pecas = lista; if (tabAtiva === 'pecas') irPara('pecas'); };
+window.__onClientesNuvem = (lista) => { clientes = lista; if (tabAtiva === 'clientes') irPara('clientes'); };
+window.__onReservasNuvem = (lista) => { reservas = lista; if (tabAtiva === 'reservas') irPara('reservas'); };
+window.__onConfigNuvem = (cfg) => { if (cfg) configSistema = { ...configSistema, ...cfg }; };
+
+// ══════════════════════════════════════════════════════════════
+// INICIALIZAÇÃO — se a nuvem não estiver configurada, entra direto
+// em modo demonstração local (sem exigir login) para dar pra testar.
+// ══════════════════════════════════════════════════════════════
+setTimeout(() => {
+  if (!window.__FIREBASE_CONFIGURADO) {
+    document.getElementById('notaFirebase').textContent = 'Nuvem não configurada — entrando em modo demonstração local...';
+    setTimeout(() => entrarModoLogado(null), 600);
+  }
+}, 50);
+</script>
+
+<!-- ──────────────────────────────────────────────────────────
+     FIREBASE — cole as credenciais do SEU projeto para ativar
+     login da equipe e sincronizar peças, clientes e reservas
+     entre computadores/tablets. Veja README.md.
+     ────────────────────────────────────────────────────────── -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI",
+};
+const FIREBASE_CONFIGURADO = !!(firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('COLE_AQUI'));
+window.__FIREBASE_CONFIGURADO = FIREBASE_CONFIGURADO;
+
+if (FIREBASE_CONFIGURADO) {
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, user => { window.__onAdminAuthChanged && window.__onAdminAuthChanged(user); });
+
+  // Toda a leitura (peças, clientes, reservas, config) só é assinada depois
+  // do login — o sistema é 100% interno, sem visão pública.
+  let pararTudo = [];
+  onAuthStateChanged(auth, user => {
+    pararTudo.forEach(fn => fn());
+    pararTudo = [];
+    if (!user) return;
+    pararTudo.push(onSnapshot(collection(db, 'pecas'), snap => window.__onPecasNuvem(snap.docs.map(d => ({ id:d.id, ...d.data() })))));
+    pararTudo.push(onSnapshot(collection(db, 'clientes'), snap => window.__onClientesNuvem(snap.docs.map(d => ({ id:d.id, ...d.data() })))));
+    pararTudo.push(onSnapshot(collection(db, 'locacoes'), snap => window.__onReservasNuvem(snap.docs.map(d => ({ id:d.id, ...d.data() })))));
+    pararTudo.push(onSnapshot(doc(db, 'configOperacional', 'geral'), snap => window.__onConfigNuvem(snap.exists() ? snap.data() : null)));
+  });
+
+  window.__fbLogin = (email, senha) => signInWithEmailAndPassword(auth, email, senha);
+  window.__fbLogout = () => signOut(auth);
+
+  window.__fbSalvarPeca = (dados, idExistente) =>
+    idExistente ? updateDoc(doc(db, 'pecas', idExistente), dados) : addDoc(collection(db, 'pecas'), dados);
+  window.__fbExcluirPeca = (id) => deleteDoc(doc(db, 'pecas', id));
+
+  window.__fbSalvarCliente = (dados, idExistente) =>
+    idExistente ? updateDoc(doc(db, 'clientes', idExistente), dados) : addDoc(collection(db, 'clientes'), dados);
+  window.__fbExcluirCliente = (id) => deleteDoc(doc(db, 'clientes', id));
+
+  window.__fbSalvarReserva = (dados) => addDoc(collection(db, 'locacoes'), dados);
+  window.__fbMudarStatusReserva = (id, status) => updateDoc(doc(db, 'locacoes', id), { status });
+
+  window.__fbSalvarConfig = (dados) => setDoc(doc(db, 'configOperacional', 'geral'), dados, { merge: true });
+}
+</script>
+</body>
+</html>
