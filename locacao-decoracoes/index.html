@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Locação de Decorações — Kits Pegue e Monte</title>
+<meta name="description" content="Alugue kits de decoração para festas no formato pegue e monte: você retira, monta em casa e devolve depois do evento.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --roxo:    #6D28D9;
+    --roxo-m:  #7C3AED;
+    --roxo-l:  #F3EBFF;
+    --dourado: #F0A430;
+    --creme:   #FFF9F2;
+    --branco:  #FFFFFF;
+    --tinta1:  #251F30;
+    --tinta2:  #5C5468;
+    --tinta3:  #8E8698;
+    --tinta4:  #E7E1EF;
+    --ok:      #1E9E5A;
+    --alerta:  #D64545;
+    --sombra:  0 2px 12px rgba(109,40,217,0.10);
+    --sombra2: 0 12px 34px rgba(109,40,217,0.18);
+    --r: 16px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:'Poppins', sans-serif;
+    background: var(--creme);
+    color: var(--tinta1);
+    min-height:100vh;
+  }
+  h1,h2,h3,.brand { font-family:'Fraunces', serif; }
+  img { max-width:100%; display:block; }
+  button { font-family:inherit; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, var(--roxo), var(--roxo-m));
+    position: sticky; top:0; z-index:100;
+    box-shadow: 0 2px 18px rgba(109,40,217,0.28);
+  }
+  .header-inner {
+    max-width: 1000px; margin:0 auto; padding:16px 20px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+  }
+  .brand {
+    color:#fff; font-size:22px; font-weight:600; flex-shrink:0;
+    display:flex; align-items:center; gap:8px;
+  }
+  .brand small {
+    display:block; font-family:'Poppins',sans-serif; font-size:11px;
+    font-weight:400; color: rgba(255,255,255,0.75); margin-top:-2px;
+  }
+  .search-wrap { flex:1; min-width:180px; position:relative; }
+  .search-wrap input {
+    width:100%; padding:11px 40px 11px 14px; border:none; border-radius:12px;
+    background: rgba(255,255,255,0.16); color:#fff; font-size:14px; outline:none;
+    transition: background .2s;
+  }
+  .search-wrap input::placeholder { color: rgba(255,255,255,0.65); }
+  .search-wrap input:focus { background: rgba(255,255,255,0.28); }
+  .zap-btn {
+    background:#fff; color:var(--roxo); border:none; border-radius:12px;
+    padding:11px 16px; font-weight:600; font-size:13.5px; cursor:pointer;
+    display:flex; align-items:center; gap:7px; box-shadow:0 2px 8px rgba(0,0,0,0.18);
+    transition: transform .15s;
+    text-decoration:none; flex-shrink:0;
+  }
+  .zap-btn:hover { transform: scale(1.04); }
+
+  .cats { background: var(--roxo-m); overflow-x:auto; scrollbar-width:none; }
+  .cats::-webkit-scrollbar{ display:none; }
+  .cats-inner {
+    max-width:1000px; margin:0 auto; padding:0 16px 12px; display:flex; gap:6px;
+  }
+  .cat-pill {
+    padding:6px 14px; border-radius:20px; border:1.5px solid rgba(255,255,255,0.35);
+    color:rgba(255,255,255,0.9); font-size:13px; font-weight:500; white-space:nowrap;
+    cursor:pointer; background:transparent; transition:all .18s;
+  }
+  .cat-pill:hover, .cat-pill.ativo { background:#fff; color:var(--roxo); border-color:#fff; }
+
+  /* MAIN */
+  main { max-width:1000px; margin:0 auto; padding:24px 16px 100px; }
+  .hero {
+    background: var(--roxo-l); border-radius: var(--r); padding:20px 22px;
+    margin-bottom:22px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  .hero-icone { font-size:34px; }
+  .hero h1 { font-size:19px; color:var(--roxo); margin-bottom:4px; }
+  .hero p { font-size:13.5px; color:var(--tinta2); line-height:1.5; }
+
+  .grid {
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:16px;
+  }
+  .card {
+    background:var(--branco); border-radius:var(--r); overflow:hidden;
+    box-shadow: var(--sombra); cursor:pointer; transition: transform .15s, box-shadow .15s;
+    display:flex; flex-direction:column;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: var(--sombra2); }
+  .card-foto {
+    width:100%; aspect-ratio: 4/3; background: linear-gradient(135deg,var(--roxo-l),#fff);
+    display:flex; align-items:center; justify-content:center; font-size:40px;
+    position:relative; overflow:hidden;
+  }
+  .card-foto img { width:100%; height:100%; object-fit:cover; }
+  .card-tag {
+    position:absolute; top:8px; left:8px; background:rgba(255,255,255,0.92); color:var(--roxo);
+    font-size:11px; font-weight:600; padding:3px 9px; border-radius:20px;
+  }
+  .card-body { padding:12px 14px 14px; display:flex; flex-direction:column; gap:6px; flex:1; }
+  .card-nome { font-size:14.5px; font-weight:600; color:var(--tinta1); line-height:1.3; }
+  .card-desc { font-size:12px; color:var(--tinta3); line-height:1.4; flex:1; }
+  .card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:4px; }
+  .card-preco { font-size:16px; font-weight:700; color:var(--roxo); }
+  .card-preco small { font-size:11px; font-weight:500; color:var(--tinta3); }
+  .card-btn {
+    background:var(--roxo); color:#fff; border:none; border-radius:9px; padding:7px 12px;
+    font-size:12.5px; font-weight:600; cursor:pointer;
+  }
+  .vazio { text-align:center; padding:60px 20px; color:var(--tinta3); }
+
+  /* MODAL genérico */
+  .overlay {
+    position:fixed; inset:0; background:rgba(37,31,48,0.55); z-index:300;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .overlay.aberto { display:flex; }
+  @media (min-width:640px) { .overlay { align-items:center; } }
+  .modal {
+    background:#fff; width:100%; max-width:560px; max-height:92vh; overflow-y:auto;
+    border-radius: 20px 20px 0 0; padding:22px 20px 24px; position:relative;
+  }
+  @media (min-width:640px) { .modal { border-radius:20px; } }
+  .modal-fechar {
+    position:absolute; top:14px; right:14px; background:var(--tinta4); border:none;
+    width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:16px; color:var(--tinta2);
+  }
+  .modal h2 { font-size:19px; color:var(--tinta1); margin-bottom:4px; padding-right:30px; }
+  .modal .cat-label { font-size:12px; color:var(--roxo); font-weight:600; margin-bottom:10px; }
+  .modal-fotos { border-radius:14px; overflow:hidden; margin-bottom:14px; aspect-ratio:16/10; background:var(--roxo-l); display:flex; align-items:center; justify-content:center; font-size:44px; }
+  .modal-fotos img { width:100%; height:100%; object-fit:cover; }
+  .modal p.desc { font-size:13.5px; color:var(--tinta2); line-height:1.6; margin-bottom:14px; }
+  .itens-lista { list-style:none; margin-bottom:16px; }
+  .itens-lista li {
+    font-size:13.5px; color:var(--tinta2); padding:7px 0; border-bottom:1px solid var(--tinta4);
+    display:flex; gap:8px; align-items:flex-start;
+  }
+  .itens-lista li:last-child { border-bottom:none; }
+  .itens-lista li::before { content:"✓"; color:var(--ok); font-weight:700; flex-shrink:0; }
+  .precos-box {
+    display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .preco-item {
+    flex:1; min-width:120px; background:var(--roxo-l); border-radius:12px; padding:10px 14px;
+  }
+  .preco-item span { display:block; font-size:11px; color:var(--tinta2); margin-bottom:2px; }
+  .preco-item b { font-size:17px; color:var(--roxo); }
+  .form-linha { margin-bottom:12px; }
+  .form-linha label { display:block; font-size:12.5px; font-weight:600; color:var(--tinta2); margin-bottom:5px; }
+  .form-linha input, .form-linha select, .form-linha textarea {
+    width:100%; padding:10px 12px; border:1.5px solid var(--tinta4); border-radius:10px;
+    font-size:13.5px; font-family:inherit; outline:none; transition:border .15s;
+  }
+  .form-linha input:focus, .form-linha select:focus, .form-linha textarea:focus { border-color:var(--roxo-m); }
+  .form-dupla { display:flex; gap:10px; }
+  .form-dupla .form-linha { flex:1; }
+  .aviso-disp {
+    font-size:12.5px; font-weight:600; padding:9px 12px; border-radius:10px; margin-bottom:14px; display:none;
+  }
+  .aviso-disp.ok { display:block; background:#E8F8EE; color:var(--ok); }
+  .aviso-disp.ocupado { display:block; background:#FBEAEA; color:var(--alerta); }
+  .btn-primario {
+    width:100%; background:var(--roxo); color:#fff; border:none; border-radius:12px;
+    padding:13px; font-size:14.5px; font-weight:600; cursor:pointer; margin-top:4px;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-primario:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-secundario {
+    width:100%; background:var(--roxo-l); color:var(--roxo); border:none; border-radius:12px;
+    padding:11px; font-size:13.5px; font-weight:600; cursor:pointer; margin-top:8px;
+  }
+  .nota-caucao { font-size:11.5px; color:var(--tinta3); margin-top:10px; line-height:1.5; }
+
+  /* FOOTER + admin gear */
+  footer { text-align:center; padding:30px 16px 90px; color:var(--tinta3); font-size:12px; }
+  .admin-gear {
+    position:fixed; bottom:16px; right:16px; width:40px; height:40px; border-radius:50%;
+    background:#fff; border:1.5px solid var(--tinta4); color:var(--tinta3); cursor:pointer;
+    display:flex; align-items:center; justify-content:center; font-size:17px; z-index:90;
+    box-shadow: var(--sombra);
+  }
+
+  /* ADMIN */
+  .admin-modal { max-width:720px; }
+  .admin-tabs { display:flex; gap:6px; margin-bottom:16px; }
+  .admin-tab {
+    padding:8px 14px; border-radius:10px; border:none; background:var(--roxo-l); color:var(--roxo);
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .admin-tab.ativo { background:var(--roxo); color:#fff; }
+  .admin-lista-item {
+    border:1.5px solid var(--tinta4); border-radius:12px; padding:12px 14px; margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap;
+  }
+  .admin-lista-item b { font-size:13.5px; }
+  .admin-lista-item .meta { font-size:12px; color:var(--tinta3); margin-top:3px; }
+  .status-pill {
+    font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase;
+  }
+  .status-pendente { background:#FFF3D6; color:#95690A; }
+  .status-confirmada { background:#E8F8EE; color:var(--ok); }
+  .status-cancelada { background:#FBEAEA; color:var(--alerta); }
+  .admin-acoes { display:flex; gap:6px; }
+  .admin-acoes button {
+    border:none; border-radius:8px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .btn-mini-ok { background:#E8F8EE; color:var(--ok); }
+  .btn-mini-cancel { background:#FBEAEA; color:var(--alerta); }
+  .btn-mini-edit { background:var(--roxo-l); color:var(--roxo); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="brand">🎈 [Nome da Loja]<small>Kits pegue e monte</small></div>
+    <div class="search-wrap">
+      <input id="busca" type="text" placeholder="Buscar tema (ex: safári, unicórnio...)">
+    </div>
+    <a class="zap-btn" id="btnZapTopo" href="#" target="_blank">💬 Falar no WhatsApp</a>
+  </div>
+  <div class="cats">
+    <div class="cats-inner" id="catsInner"></div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="hero-icone">🎉</div>
+    <div>
+      <h1>Alugue, monte, comemore e devolva</h1>
+      <p>Escolha um tema, retire o kit completo, siga o passo a passo de montagem e devolva depois da festa. Sem contratar equipe de decoração — você mesmo monta em minutos.</p>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>© <span id="anoRodape"></span> [Nome da Loja] — Locação de kits de decoração para festas</footer>
+
+<button class="admin-gear" id="btnAdminGear" title="Área administrativa">⚙️</button>
+
+<!-- MODAL: detalhe do kit + reserva -->
+<div class="overlay" id="overlayKit">
+  <div class="modal" id="modalKit"></div>
+</div>
+
+<!-- MODAL: login admin -->
+<div class="overlay" id="overlayLogin">
+  <div class="modal" style="max-width:360px;">
+    <button class="modal-fechar" onclick="fecharOverlay('overlayLogin')">✕</button>
+    <h2 style="margin-bottom:16px;">Área administrativa</h2>
+    <div class="form-linha"><label>E-mail</label><input type="email" id="loginEmail"></div>
+    <div class="form-linha"><label>Senha</label><input type="password" id="loginSenha"></div>
+    <div id="loginErro" style="color:var(--alerta); font-size:12.5px; margin-bottom:8px; display:none;"></div>
+    <button class="btn-primario" onclick="fazerLogin()">Entrar</button>
+    <p style="font-size:11.5px; color:var(--tinta3); margin-top:12px;">Sem conta em nuvem configurada ainda? Enquanto o Firebase não é conectado, o site funciona só com os dados de demonstração (modo local).</p>
+  </div>
+</div>
+
+<!-- MODAL: painel admin -->
+<div class="overlay" id="overlayAdmin">
+  <div class="modal admin-modal">
+    <button class="modal-fechar" onclick="fecharOverlay('overlayAdmin')">✕</button>
+    <h2 style="margin-bottom:14px;">Painel administrativo</h2>
+    <div class="admin-tabs">
+      <button class="admin-tab ativo" data-tab="kits" onclick="mudarTabAdmin('kits')">Kits</button>
+      <button class="admin-tab" data-tab="reservas" onclick="mudarTabAdmin('reservas')">Reservas</button>
+      <button class="admin-tab" data-tab="config" onclick="mudarTabAdmin('config')">Configurações</button>
+      <button class="admin-tab" style="margin-left:auto; background:var(--tinta4); color:var(--tinta2);" onclick="fazerLogout()">Sair</button>
+    </div>
+    <div id="adminConteudo"></div>
+  </div>
+</div>
+
+<script>
+// ──────────────────────────────────────────────────────────
+// DADOS DE DEMONSTRAÇÃO — substitua pelos kits reais no painel
+// admin (ou diretamente na coleção "kits" do Firestore, quando
+// configurado). Servem para o site funcionar mesmo antes da nuvem
+// estar conectada.
+// ──────────────────────────────────────────────────────────
+const kitsDemo = [
+  {
+    id: 'demo1',
+    nome: 'Kit Safári Aventura',
+    categoria: 'Infantil',
+    descricao: 'Painel redondo com tecido safári, arco de balões verde/marrom/bege e bichinhos decorativos 3D.',
+    itens: [
+      'Painel redondo 1,5m (tecido safári)',
+      'Arco de balões (verde, marrom, bege e branco)',
+      '2 bichinhos decorativos 3D (leão e girafa)',
+      'Plaquinha "Bem-vindos ao Safári"',
+      'Guia de montagem em PDF/vídeo'
+    ],
+    fotos: [],
+    precoLocacao: 180,
+    caucao: 100,
+    periodo: 'Retirada na sexta • devolução até segunda',
+    ativo: true,
+  },
+  {
+    id: 'demo2',
+    nome: 'Kit Unicórnio Encantado',
+    categoria: 'Infantil',
+    descricao: 'Painel redondo rosa/lilás com nuvens, arco de balões pastel e topo de bolo unicórnio.',
+    itens: [
+      'Painel redondo 1,5m (rosa/lilás com nuvens)',
+      'Arco de balões pastel (rosa, lilás, dourado)',
+      'Topo de bolo "Unicórnio"',
+      'Cortineiro metalizado dourado',
+      'Guia de montagem em PDF/vídeo'
+    ],
+    fotos: [],
+    precoLocacao: 190,
+    caucao: 100,
+    periodo: 'Retirada na sexta • devolução até segunda',
+    ativo: true,
+  },
+  {
+    id: 'demo3',
+    nome: 'Kit Chá de Bebê Nuvem',
+    categoria: 'Chá de bebê',
+    descricao: 'Decoração em tons pastel com nuvens e estrelas, painel retangular e mesa do bolo.',
+    itens: [
+      'Painel retangular 2x1,5m (nuvens e estrelas)',
+      'Arco de balões branco/azul bebê/dourado',
+      'Toalha de mesa + centro de mesa',
+      'Plaquinha "Chá de Bebê"',
+      'Guia de montagem em PDF/vídeo'
+    ],
+    fotos: [],
+    precoLocacao: 220,
+    caucao: 120,
+    periodo: 'Retirada na sexta • devolução até segunda',
+    ativo: true,
+  },
+  {
+    id: 'demo4',
+    nome: 'Kit Elegance Dourado',
+    categoria: 'Adulto',
+    descricao: 'Decoração sofisticada preto e dourado, ideal para aniversários adultos e formaturas.',
+    itens: [
+      'Painel redondo 1,5m (preto e dourado)',
+      'Arco de balões preto/dourado/transparente',
+      'Letras luminosas "LOVE" ou número (a combinar)',
+      'Cortineiro metalizado dourado',
+      'Guia de montagem em PDF/vídeo'
+    ],
+    fotos: [],
+    precoLocacao: 250,
+    caucao: 150,
+    periodo: 'Retirada na sexta • devolução até segunda',
+    ativo: true,
+  },
+];
+
+let kits = [...kitsDemo];
+let reservas = [];   // lista completa de reservas — só o admin autenticado lê da nuvem
+let ocupacoes = [];  // versão pública e mínima (kit + datas + status), usada para checar disponibilidade
+let categoriaAtiva = 'Todos';
+let kitSelecionado = null;
+let usuarioAdmin = null;
+
+document.getElementById('anoRodape').textContent = new Date().getFullYear();
+
+// ──────────────────────────────────────────────────────────
+// CONFIGURAÇÃO DA LOJA — pode ser editada aqui ou pelo painel
+// admin (fica salva em config/geral no Firestore quando configurado)
+// ──────────────────────────────────────────────────────────
+let configLoja = {
+  nomeLoja: '[Nome da Loja]',
+  whatsapp: '5599999999999', // troque pelo número real, só dígitos, com DDI 55
+};
+
+function linkWhatsapp(mensagem) {
+  const numero = (configLoja.whatsapp || '').replace(/\D/g, '');
+  return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem || '')}`;
+}
+
+function aplicarConfigNaTela() {
+  document.querySelector('.brand').innerHTML = `🎈 ${configLoja.nomeLoja}<small>Kits pegue e monte</small>`;
+  document.getElementById('btnZapTopo').href = linkWhatsapp(`Olá! Vim pelo site e quero saber mais sobre os kits de decoração 🎉`);
+}
+
+// ──────────────────────────────────────────────────────────
+// CATEGORIAS + GRID
+// ──────────────────────────────────────────────────────────
+function categoriasDisponiveis() {
+  const set = new Set(kits.filter(k => k.ativo !== false).map(k => k.categoria));
+  return ['Todos', ...Array.from(set)];
+}
+
+function renderCategorias() {
+  const cont = document.getElementById('catsInner');
+  cont.innerHTML = categoriasDisponiveis().map(cat =>
+    `<button class="cat-pill ${cat === categoriaAtiva ? 'ativo' : ''}" onclick="selecionarCategoria('${cat.replace(/'/g,"\\'")}')">${cat}</button>`
+  ).join('');
+}
+
+function selecionarCategoria(cat) {
+  categoriaAtiva = cat;
+  renderCategorias();
+  renderGrid();
+}
+
+function normalizarTexto(txt) {
+  return (txt || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('grid');
+  const busca = normalizarTexto(document.getElementById('busca').value.trim());
+  const lista = kits.filter(k => {
+    if (k.ativo === false) return false;
+    if (categoriaAtiva !== 'Todos' && k.categoria !== categoriaAtiva) return false;
+    if (busca && !normalizarTexto(`${k.nome} ${k.categoria} ${k.descricao||''}`).includes(busca)) return false;
+    return true;
+  });
+
+  if (!lista.length) {
+    grid.innerHTML = `<div class="vazio">Nenhum kit encontrado para essa busca.</div>`;
+    return;
+  }
+
+  grid.innerHTML = lista.map(k => `
+    <div class="card" onclick="abrirKit('${k.id}')">
+      <div class="card-foto">
+        <span class="card-tag">${k.categoria}</span>
+        ${k.fotos && k.fotos[0] ? `<img src="${k.fotos[0]}" alt="${k.nome}">` : '🎈'}
+      </div>
+      <div class="card-body">
+        <div class="card-nome">${k.nome}</div>
+        <div class="card-desc">${k.descricao || ''}</div>
+        <div class="card-footer">
+          <div class="card-preco">R$ ${Number(k.precoLocacao).toFixed(0)}<small> /locação</small></div>
+          <button class="card-btn">Ver kit</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+document.getElementById('busca').addEventListener('input', renderGrid);
+
+// ──────────────────────────────────────────────────────────
+// DISPONIBILIDADE — verifica se já existe reserva não cancelada
+// do mesmo kit com intervalo de datas sobreposto
+// ──────────────────────────────────────────────────────────
+function intervalosSobrepoem(inicioA, fimA, inicioB, fimB) {
+  return inicioA <= fimB && inicioB <= fimA;
+}
+
+function kitDisponivel(kitId, dataRetirada, dataDevolucao) {
+  return !ocupacoes.some(o =>
+    o.kitId === kitId &&
+    o.status !== 'cancelada' &&
+    intervalosSobrepoem(dataRetirada, dataDevolucao, o.dataRetirada, o.dataDevolucao)
+  );
+}
+
+// ──────────────────────────────────────────────────────────
+// MODAL DE DETALHE DO KIT + FORMULÁRIO DE RESERVA
+// ──────────────────────────────────────────────────────────
+function abrirKit(id) {
+  kitSelecionado = kits.find(k => k.id === id);
+  if (!kitSelecionado) return;
+  const k = kitSelecionado;
+
+  document.getElementById('modalKit').innerHTML = `
+    <button class="modal-fechar" onclick="fecharOverlay('overlayKit')">✕</button>
+    <div class="cat-label">${k.categoria}</div>
+    <h2>${k.nome}</h2>
+    <div class="modal-fotos">${k.fotos && k.fotos[0] ? `<img src="${k.fotos[0]}" alt="${k.nome}">` : '🎈'}</div>
+    <p class="desc">${k.descricao || ''}</p>
+    <ul class="itens-lista">${(k.itens||[]).map(i => `<li>${i}</li>`).join('')}</ul>
+    <div class="precos-box">
+      <div class="preco-item"><span>Valor da locação</span><b>R$ ${Number(k.precoLocacao).toFixed(0)}</b></div>
+      <div class="preco-item"><span>Caução (devolvida)</span><b>R$ ${Number(k.caucao||0).toFixed(0)}</b></div>
+    </div>
+    ${k.periodo ? `<p class="desc" style="margin-top:-8px;">🗓️ ${k.periodo}</p>` : ''}
+
+    <div class="form-dupla">
+      <div class="form-linha"><label>Data de retirada</label><input type="date" id="fRetirada"></div>
+      <div class="form-linha"><label>Data de devolução</label><input type="date" id="fDevolucao"></div>
+    </div>
+    <div id="avisoDisp" class="aviso-disp"></div>
+    <button class="btn-secundario" onclick="verificarDisponibilidade()">Verificar disponibilidade</button>
+
+    <div style="margin-top:16px;">
+      <div class="form-linha"><label>Seu nome</label><input type="text" id="fNome"></div>
+      <div class="form-linha"><label>WhatsApp para contato</label><input type="text" id="fTelefone" placeholder="(00) 00000-0000"></div>
+      <button class="btn-primario" id="btnReservar" onclick="confirmarReserva()">💬 Reservar via WhatsApp</button>
+      <p class="nota-caucao">A reserva é confirmada com o combinado direto pelo WhatsApp (pagamento da locação + caução). A caução é devolvida na entrega do kit, se tudo voltar completo e sem danos.</p>
+    </div>
+  `;
+  document.getElementById('overlayKit').classList.add('aberto');
+}
+
+function verificarDisponibilidade() {
+  const ret = document.getElementById('fRetirada').value;
+  const dev = document.getElementById('fDevolucao').value;
+  const aviso = document.getElementById('avisoDisp');
+  const btn = document.getElementById('btnReservar');
+
+  if (!ret || !dev) {
+    aviso.className = 'aviso-disp ocupado';
+    aviso.textContent = 'Preencha as duas datas para verificar.';
+    return;
+  }
+  if (dev < ret) {
+    aviso.className = 'aviso-disp ocupado';
+    aviso.textContent = 'A data de devolução precisa ser igual ou depois da retirada.';
+    return;
+  }
+
+  const disponivel = kitDisponivel(kitSelecionado.id, ret, dev);
+  if (disponivel) {
+    aviso.className = 'aviso-disp ok';
+    aviso.textContent = '✓ Disponível para essas datas!';
+    btn.disabled = false;
+  } else {
+    aviso.className = 'aviso-disp ocupado';
+    aviso.textContent = '✕ Esse kit já está reservado em parte desse período. Tente outras datas.';
+    btn.disabled = true;
+  }
+}
+
+function confirmarReserva() {
+  const ret = document.getElementById('fRetirada').value;
+  const dev = document.getElementById('fDevolucao').value;
+  const nome = document.getElementById('fNome').value.trim();
+  const telefone = document.getElementById('fTelefone').value.trim();
+
+  if (!ret || !dev) { alert('Preencha as datas de retirada e devolução.'); return; }
+  if (!kitDisponivel(kitSelecionado.id, ret, dev)) { alert('Esse kit não está disponível para essas datas.'); return; }
+  if (!nome || !telefone) { alert('Preencha seu nome e WhatsApp para contato.'); return; }
+
+  const reserva = {
+    kitId: kitSelecionado.id,
+    kitNome: kitSelecionado.nome,
+    dataRetirada: ret,
+    dataDevolucao: dev,
+    cliente: { nome, telefone },
+    status: 'pendente',
+    criadoEm: new Date().toISOString(),
+  };
+
+  // Salva como pré-reserva (bloqueia as datas) e depois manda pro WhatsApp
+  salvarReserva(reserva);
+
+  const msg = `Olá! Quero reservar o *${kitSelecionado.nome}* 🎉\n\n` +
+    `📅 Retirada: ${ret}\n📅 Devolução: ${dev}\n` +
+    `👤 Nome: ${nome}\n📱 WhatsApp: ${telefone}\n\n` +
+    `Valor da locação: R$ ${Number(kitSelecionado.precoLocacao).toFixed(0)} + caução de R$ ${Number(kitSelecionado.caucao||0).toFixed(0)} (devolvida ao final).`;
+
+  window.open(linkWhatsapp(msg), '_blank');
+  fecharOverlay('overlayKit');
+}
+
+function salvarReserva(reserva) {
+  const idLocal = 'local-' + Date.now();
+  reservas.push({ ...reserva, id: idLocal });
+  ocupacoes.push({ kitId: reserva.kitId, dataRetirada: reserva.dataRetirada, dataDevolucao: reserva.dataDevolucao, status: reserva.status, id: idLocal });
+  if (window.__fbSalvarReserva) {
+    window.__fbSalvarReserva(reserva).catch(err => console.warn('Falha ao salvar reserva na nuvem:', err));
+  }
+}
+
+function fecharOverlay(id) {
+  document.getElementById(id).classList.remove('aberto');
+}
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('aberto'); });
+});
+
+// ──────────────────────────────────────────────────────────
+// ADMIN — login e painel (kits, reservas, config)
+// ──────────────────────────────────────────────────────────
+document.getElementById('btnAdminGear').addEventListener('click', () => {
+  if (usuarioAdmin) {
+    abrirAdmin();
+  } else {
+    document.getElementById('overlayLogin').classList.add('aberto');
+  }
+});
+
+function fazerLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  const erro = document.getElementById('loginErro');
+  erro.style.display = 'none';
+
+  if (!window.__FIREBASE_CONFIGURADO) {
+    erro.textContent = 'Nuvem ainda não configurada — conecte o Firebase para acessar o painel admin.';
+    erro.style.display = 'block';
+    return;
+  }
+  window.__fbLogin(email, senha)
+    .then(() => { fecharOverlay('overlayLogin'); abrirAdmin(); })
+    .catch(() => { erro.textContent = 'E-mail ou senha inválidos.'; erro.style.display = 'block'; });
+}
+
+function fazerLogout() {
+  if (window.__fbLogout) window.__fbLogout();
+  fecharOverlay('overlayAdmin');
+}
+
+window.__onAdminAuthChanged = (user) => { usuarioAdmin = user || null; };
+
+let tabAdminAtiva = 'kits';
+function abrirAdmin() {
+  mudarTabAdmin(tabAdminAtiva);
+  document.getElementById('overlayAdmin').classList.add('aberto');
+}
+
+function mudarTabAdmin(tab) {
+  tabAdminAtiva = tab;
+  document.querySelectorAll('.admin-tab[data-tab]').forEach(b => b.classList.toggle('ativo', b.dataset.tab === tab));
+  const cont = document.getElementById('adminConteudo');
+  if (tab === 'kits') cont.innerHTML = renderAdminKits();
+  if (tab === 'reservas') cont.innerHTML = renderAdminReservas();
+  if (tab === 'config') cont.innerHTML = renderAdminConfig();
+}
+
+function renderAdminKits() {
+  return `
+    <button class="btn-secundario" style="margin-bottom:14px;" onclick="abrirFormKit()">+ Novo kit</button>
+    ${kits.map(k => `
+      <div class="admin-lista-item">
+        <div>
+          <b>${k.nome}</b> ${k.ativo === false ? '<span class="status-pill status-cancelada">Inativo</span>' : ''}
+          <div class="meta">${k.categoria} • R$ ${Number(k.precoLocacao).toFixed(0)} + caução R$ ${Number(k.caucao||0).toFixed(0)}</div>
+        </div>
+        <div class="admin-acoes">
+          <button class="btn-mini-edit" onclick="abrirFormKit('${k.id}')">Editar</button>
+          <button class="btn-mini-cancel" onclick="excluirKit('${k.id}')">Excluir</button>
+        </div>
+      </div>
+    `).join('') || '<p class="desc">Nenhum kit cadastrado ainda.</p>'}
+  `;
+}
+
+function abrirFormKit(id) {
+  const k = id ? kits.find(x => x.id === id) : null;
+  const html = `
+    <div style="border:1.5px solid var(--tinta4); border-radius:12px; padding:14px; margin-bottom:14px;">
+      <div class="form-linha"><label>Nome do kit</label><input id="kNome" value="${k ? k.nome : ''}"></div>
+      <div class="form-dupla">
+        <div class="form-linha"><label>Categoria</label><input id="kCategoria" value="${k ? k.categoria : ''}"></div>
+        <div class="form-linha"><label>Foto (URL)</label><input id="kFoto" value="${k && k.fotos ? k.fotos[0]||'' : ''}"></div>
+      </div>
+      <div class="form-linha"><label>Descrição curta</label><textarea id="kDescricao" rows="2">${k ? k.descricao||'' : ''}</textarea></div>
+      <div class="form-linha"><label>Itens inclusos (um por linha)</label><textarea id="kItens" rows="4">${k && k.itens ? k.itens.join('\n') : ''}</textarea></div>
+      <div class="form-dupla">
+        <div class="form-linha"><label>Valor da locação (R$)</label><input type="number" id="kPreco" value="${k ? k.precoLocacao : ''}"></div>
+        <div class="form-linha"><label>Caução (R$)</label><input type="number" id="kCaucao" value="${k ? k.caucao||0 : ''}"></div>
+      </div>
+      <div class="form-linha"><label>Período padrão (texto livre)</label><input id="kPeriodo" value="${k ? k.periodo||'' : ''}" placeholder="Ex: Retirada sexta • devolução segunda"></div>
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:10px;">
+        <input type="checkbox" id="kAtivo" ${!k || k.ativo !== false ? 'checked' : ''}> Kit ativo no catálogo
+      </label>
+      <button class="btn-primario" onclick="salvarKit(${k ? `'${k.id}'` : 'null'})">Salvar kit</button>
+    </div>
+  `;
+  document.getElementById('adminConteudo').insertAdjacentHTML('afterbegin', html);
+}
+
+function salvarKit(id) {
+  const dados = {
+    nome: document.getElementById('kNome').value.trim(),
+    categoria: document.getElementById('kCategoria').value.trim() || 'Geral',
+    descricao: document.getElementById('kDescricao').value.trim(),
+    itens: document.getElementById('kItens').value.split('\n').map(s => s.trim()).filter(Boolean),
+    fotos: [document.getElementById('kFoto').value.trim()].filter(Boolean),
+    precoLocacao: Number(document.getElementById('kPreco').value) || 0,
+    caucao: Number(document.getElementById('kCaucao').value) || 0,
+    periodo: document.getElementById('kPeriodo').value.trim(),
+    ativo: document.getElementById('kAtivo').checked,
+  };
+  if (!dados.nome) { alert('Dê um nome ao kit.'); return; }
+
+  if (window.__fbSalvarKit) {
+    window.__fbSalvarKit(dados, id).catch(err => alert('Erro ao salvar na nuvem: ' + err.message));
+  } else {
+    if (id) {
+      const i = kits.findIndex(k => k.id === id);
+      kits[i] = { ...kits[i], ...dados };
+    } else {
+      kits.push({ id: 'local-' + Date.now(), ...dados });
+    }
+    renderCategorias(); renderGrid();
+  }
+  mudarTabAdmin('kits');
+}
+
+function excluirKit(id) {
+  if (!confirm('Excluir este kit?')) return;
+  if (window.__fbExcluirKit) {
+    window.__fbExcluirKit(id).catch(err => alert('Erro ao excluir na nuvem: ' + err.message));
+  } else {
+    kits = kits.filter(k => k.id !== id);
+    renderCategorias(); renderGrid();
+  }
+  mudarTabAdmin('kits');
+}
+
+function renderAdminReservas() {
+  const ordenadas = [...reservas].sort((a,b) => a.dataRetirada.localeCompare(b.dataRetirada));
+  return `
+    ${ordenadas.map(r => `
+      <div class="admin-lista-item">
+        <div>
+          <b>${r.kitNome}</b> <span class="status-pill status-${r.status}">${r.status}</span>
+          <div class="meta">${r.dataRetirada} → ${r.dataDevolucao} • ${r.cliente.nome} • ${r.cliente.telefone}</div>
+        </div>
+        <div class="admin-acoes">
+          ${r.status !== 'confirmada' ? `<button class="btn-mini-ok" onclick="mudarStatusReserva('${r.id}','confirmada')">Confirmar</button>` : ''}
+          ${r.status !== 'cancelada' ? `<button class="btn-mini-cancel" onclick="mudarStatusReserva('${r.id}','cancelada')">Cancelar</button>` : ''}
+        </div>
+      </div>
+    `).join('') || '<p class="desc">Nenhuma reserva ainda.</p>'}
+  `;
+}
+
+function mudarStatusReserva(id, status) {
+  if (window.__fbMudarStatusReserva) {
+    window.__fbMudarStatusReserva(id, status).catch(err => alert('Erro ao atualizar na nuvem: ' + err.message));
+  } else {
+    const r = reservas.find(x => x.id === id);
+    if (r) r.status = status;
+    const o = ocupacoes.find(x => x.id === id);
+    if (o) o.status = status;
+  }
+  mudarTabAdmin('reservas');
+}
+
+function renderAdminConfig() {
+  return `
+    <div class="form-linha"><label>Nome da loja</label><input id="cNome" value="${configLoja.nomeLoja}"></div>
+    <div class="form-linha"><label>WhatsApp (com DDI, só números — ex: 5599999999999)</label><input id="cZap" value="${configLoja.whatsapp}"></div>
+    <button class="btn-primario" onclick="salvarConfig()">Salvar configurações</button>
+    <p class="nota-caucao">Para ativar a nuvem (sincronizar kits e reservas entre aparelhos), configure um projeto Firebase e cole as credenciais no final do arquivo index.html — veja o README.md do projeto.</p>
+  `;
+}
+
+function salvarConfig() {
+  const dados = {
+    nomeLoja: document.getElementById('cNome').value.trim() || '[Nome da Loja]',
+    whatsapp: document.getElementById('cZap').value.trim(),
+  };
+  configLoja = { ...configLoja, ...dados };
+  aplicarConfigNaTela();
+  if (window.__fbSalvarConfig) window.__fbSalvarConfig(dados);
+  alert('Configurações salvas!');
+}
+
+// ──────────────────────────────────────────────────────────
+// SINCRONIZAÇÃO COM A NUVEM (chamada pelos hooks do módulo Firebase abaixo)
+// ──────────────────────────────────────────────────────────
+window.__onKitsNuvem = (lista) => { if (lista && lista.length) { kits = lista; renderCategorias(); renderGrid(); } };
+window.__onReservasNuvem = (lista) => { reservas = lista || []; if (tabAdminAtiva === 'reservas') mudarTabAdmin('reservas'); };
+window.__onOcupacoesNuvem = (lista) => { ocupacoes = lista || []; };
+window.__onConfigNuvem = (cfg) => { if (cfg) { configLoja = { ...configLoja, ...cfg }; aplicarConfigNaTela(); } };
+
+// Inicialização
+aplicarConfigNaTela();
+renderCategorias();
+renderGrid();
+</script>
+
+<!-- ──────────────────────────────────────────────────────────
+     FIREBASE (opcional) — cole as credenciais do SEU projeto
+     Firebase abaixo para ativar sincronização em nuvem de kits e
+     reservas entre aparelhos. Enquanto ficar com "COLE_AQUI", o
+     site roda 100% local com os dados de demonstração acima.
+     Veja o passo a passo em README.md.
+     ────────────────────────────────────────────────────────── -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, setDoc,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI",
+};
+const FIREBASE_CONFIGURADO = !!(firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('COLE_AQUI'));
+window.__FIREBASE_CONFIGURADO = FIREBASE_CONFIGURADO;
+let auth, db;
+
+if (FIREBASE_CONFIGURADO) {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+
+  let reservasCache = []; // espelha a coleção "reservas" (só chega dados quando autenticado)
+  let pararReservas = null;
+
+  onSnapshot(collection(db, 'kits'), snap => {
+    window.__onKitsNuvem && window.__onKitsNuvem(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, err => console.warn('Falha ao sincronizar kits:', err));
+
+  // "disponibilidade" é pública e só guarda kit+datas+status — é o que o
+  // site usa para checar se um kit está livre, sem expor nome/telefone
+  // de clientes a quem não está logado como admin.
+  onSnapshot(collection(db, 'disponibilidade'), snap => {
+    window.__onOcupacoesNuvem && window.__onOcupacoesNuvem(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+  }, err => console.warn('Falha ao sincronizar disponibilidade:', err));
+
+  onSnapshot(doc(db, 'config', 'geral'), snap => {
+    window.__onConfigNuvem && window.__onConfigNuvem(snap.exists() ? snap.data() : null);
+  }, err => console.warn('Falha ao sincronizar configurações:', err));
+
+  onAuthStateChanged(auth, user => {
+    window.__onAdminAuthChanged && window.__onAdminAuthChanged(user);
+    if (pararReservas) { pararReservas(); pararReservas = null; }
+    if (user) {
+      // "reservas" tem os dados completos do cliente (nome/telefone) —
+      // só é lida depois do login do admin (ver firestore.rules).
+      pararReservas = onSnapshot(collection(db, 'reservas'), snap => {
+        reservasCache = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        window.__onReservasNuvem && window.__onReservasNuvem(reservasCache);
+      }, err => console.warn('Falha ao sincronizar reservas:', err));
+    } else {
+      reservasCache = [];
+      window.__onReservasNuvem && window.__onReservasNuvem([]);
+    }
+  });
+
+  window.__fbLogin = (email, senha) => signInWithEmailAndPassword(auth, email, senha);
+  window.__fbLogout = () => signOut(auth);
+
+  window.__fbSalvarKit = (dados, idExistente) =>
+    idExistente ? updateDoc(doc(db, 'kits', idExistente), dados) : addDoc(collection(db, 'kits'), dados);
+  window.__fbExcluirKit = (id) => deleteDoc(doc(db, 'kits', id));
+
+  window.__fbSalvarReserva = async (dados) => {
+    const ocupacaoRef = await addDoc(collection(db, 'disponibilidade'), {
+      kitId: dados.kitId, dataRetirada: dados.dataRetirada, dataDevolucao: dados.dataDevolucao, status: dados.status,
+    });
+    return addDoc(collection(db, 'reservas'), { ...dados, ocupacaoId: ocupacaoRef.id });
+  };
+
+  window.__fbMudarStatusReserva = async (id, status) => {
+    await updateDoc(doc(db, 'reservas', id), { status });
+    const reserva = reservasCache.find(r => r.id === id);
+    if (reserva && reserva.ocupacaoId) {
+      await updateDoc(doc(db, 'disponibilidade', reserva.ocupacaoId), { status });
+    }
+  };
+
+  window.__fbSalvarConfig = (dados) => setDoc(doc(db, 'config', 'geral'), dados, { merge: true });
+}
+</script>
+</body>
+</html>
