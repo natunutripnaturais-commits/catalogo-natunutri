@@ -152,6 +152,7 @@
   table.tabela tbody tr:hover { background:var(--tinta5); }
   .cel-acoes { display:flex; gap:6px; }
   .cel-acoes button { border:none; border-radius:7px; padding:6px 10px; font-size:12px; font-weight:600; cursor:pointer; }
+  .btn-mini-ok { background:var(--ok-bg); color:var(--ok); }
   .vazio-lista { text-align:center; padding:50px 20px; color:var(--tinta3); font-size:13.5px; }
 
   .status-pill { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:20px; text-transform:uppercase; letter-spacing:.02em; white-space:nowrap; }
@@ -176,7 +177,10 @@
   .dia-cel.hoje { border-color:var(--dourado); border-width:2px; font-weight:700; }
   .dia-cel.selecionado { background:var(--roxo); color:#fff; border-color:var(--roxo); }
   .dia-cel.selecionado .dia-badge { background:#fff; color:var(--roxo); }
-  .dia-badge { font-size:10px; font-weight:700; background:var(--rosa); color:#fff; border-radius:20px; padding:1px 7px; line-height:1.4; }
+  .dia-cel.selecionado .dia-ponto { background:#fff; }
+  .dia-badge { font-size:9.5px; font-weight:700; background:var(--rosa); color:#fff; border-radius:20px; padding:1px 6px; line-height:1.4; }
+  .badge-devolucao { background:var(--roxo); }
+  .dia-ponto { width:6px; height:6px; border-radius:50%; background:var(--tinta3); }
   .reserva-dia-card { border:1.5px solid var(--tinta4); border-radius:10px; padding:12px 14px; margin-bottom:10px; }
   .reserva-dia-card ul { list-style:none; font-size:13px; }
   .reserva-dia-card ul li { padding:3px 0; }
@@ -431,6 +435,13 @@ function normalizarTexto(txt) {
 function intervalosSobrepoem(iA, fA, iB, fB) { return iA <= fB && iB <= fA; }
 function formatarMoeda(v) { return 'R$ ' + Number(v || 0).toFixed(2).replace('.', ','); }
 function formatarData(iso) { if (!iso) return ''; const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; }
+
+// uma reserva só "ocupa" estoque enquanto não for cancelada nem concluída —
+// assim que devolvida (concluída), a peça libera na hora, mesmo antes da
+// data de devolução prevista.
+function statusOcupaEstoque(status) { return status !== 'cancelada' && status !== 'concluida'; }
+function hojeISO() { const h = new Date(); return isoData(h.getFullYear(), h.getMonth(), h.getDate()); }
+function reservaAtrasada(r) { return statusOcupaEstoque(r.status) && r.dataDevolucao < hojeISO(); }
 
 function fecharOverlay(id) { document.getElementById(id).classList.remove('aberto'); }
 document.addEventListener('DOMContentLoaded', () => {
@@ -713,24 +724,63 @@ function excluirCliente(id) {
 // RESERVAS — lista
 // ══════════════════════════════════════════════════════════════
 function viewListaReservas() {
+  const hoje = hojeISO();
+  const retiradasHoje = reservas.filter(r => statusOcupaEstoque(r.status) && r.dataRetirada === hoje);
+  const devolucoesHoje = reservas.filter(r => statusOcupaEstoque(r.status) && r.dataDevolucao === hoje);
+  const atrasadas = reservas.filter(reservaAtrasada);
   const ordenadas = [...reservas].sort((a,b) => (b.criadoEm||'').localeCompare(a.criadoEm||''));
+
   return `
+    <div class="painel">
+      <h3>Agenda de hoje — ${formatarData(hoje)}</h3>
+      ${!retiradasHoje.length && !devolucoesHoje.length ? `<p style="color:var(--tinta3); font-size:13.5px;">Nada previsto para hoje.</p>` : ''}
+      ${retiradasHoje.map(r => `
+        <div class="disponibilidade-dia-item">
+          <span>📤 Retirar hoje — <b>${r.clienteNome}</b> <span class="mono" style="color:var(--tinta3);">(guia #${String(r.numeroGuia).padStart(4,'0')})</span></span>
+          <button class="btn-fantasma" style="padding:5px 10px; font-size:12px;" onclick="abrirContrato('${r.id}')">Ver guia</button>
+        </div>
+      `).join('')}
+      ${devolucoesHoje.map(r => `
+        <div class="disponibilidade-dia-item">
+          <span>📥 Devolver hoje — <b>${r.clienteNome}</b> <span class="mono" style="color:var(--tinta3);">(guia #${String(r.numeroGuia).padStart(4,'0')})</span></span>
+          <button class="btn-fantasma" style="padding:5px 10px; font-size:12px;" onclick="abrirContrato('${r.id}')">Ver guia</button>
+        </div>
+      `).join('')}
+    </div>
+
+    ${atrasadas.length ? `
+      <div class="painel" style="border:1.5px solid var(--alerta);">
+        <h3 style="color:var(--alerta);">⚠️ ${atrasadas.length} reserva(s) com devolução atrasada</h3>
+        ${atrasadas.map(r => `
+          <div class="disponibilidade-dia-item">
+            <span><b>${r.clienteNome}</b> — devolução era ${formatarData(r.dataDevolucao)}</span>
+            <button class="btn-fantasma" style="padding:5px 10px; font-size:12px;" onclick="abrirContrato('${r.id}')">Ver guia</button>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
     <div class="tabela-wrap">
       <table class="tabela">
         <thead><tr><th>Guia</th><th>Cliente</th><th>Retirada</th><th>Devolução</th><th>Peças</th><th>Total</th><th>Status</th><th></th></tr></thead>
         <tbody>
           ${ordenadas.map(r => `
-            <tr>
+            <tr ${reservaAtrasada(r) ? 'style="background:var(--alerta-bg);"' : ''}>
               <td class="mono">#${r.numeroGuia}</td>
               <td><b>${r.clienteNome}</b></td>
               <td>${formatarData(r.dataRetirada)}</td>
               <td>${formatarData(r.dataDevolucao)}</td>
               <td>${r.itens.reduce((s,i)=>s+i.quantidade,0)} peça(s)</td>
               <td>${formatarMoeda(r.valorTotal)}</td>
-              <td><span class="status-pill status-${r.status}">${r.status}</span></td>
+              <td>
+                <span class="status-pill status-${r.status}">${r.status}</span>
+                ${reservaAtrasada(r) ? `<span class="status-pill status-cancelada" style="margin-left:4px;">atrasada</span>` : ''}
+              </td>
               <td class="cel-acoes">
                 <button class="btn-fantasma" onclick="abrirContrato('${r.id}')">Ver guia</button>
+                ${r.status !== 'cancelada' && r.status !== 'concluida' ? `<button class="btn-fantasma" onclick="editarReserva('${r.id}')">Editar</button>` : ''}
                 ${r.status === 'pendente' ? `<button class="btn-primario" style="padding:6px 10px; font-size:12px;" onclick="mudarStatusReserva('${r.id}','confirmada')">Confirmar</button>` : ''}
+                ${r.status === 'pendente' || r.status === 'confirmada' ? `<button class="btn-mini-ok" onclick="mudarStatusReserva('${r.id}','concluida')">Concluir</button>` : ''}
                 ${r.status !== 'cancelada' && r.status !== 'concluida' ? `<button class="btn-perigo" onclick="mudarStatusReserva('${r.id}','cancelada')">Cancelar</button>` : ''}
               </td>
             </tr>
@@ -746,15 +796,36 @@ function mudarStatusReserva(id, status) {
   else { const r = reservas.find(x => x.id === id); if (r) r.status = status; irPara('reservas'); }
 }
 
+function editarReserva(id) { irPara('reservas'); abrirNovaReserva(id); }
+function novaReservaComData(iso) { irPara('reservas'); abrirNovaReserva(null, iso); }
+
 // ══════════════════════════════════════════════════════════════
 // RESERVAS — nova (formulário)
 // ══════════════════════════════════════════════════════════════
-let novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[] };
+let novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[], desconto:0 };
+let reservaEmEdicaoId = null;
 
-function abrirNovaReserva() {
-  novaReserva = { clienteId:null, clienteNome:'', dataRetirada:'', dataDevolucao:'', itens:[] };
+function abrirNovaReserva(reservaId, dataPrefill) {
+  const editando = reservaId ? reservas.find(r => r.id === reservaId) : null;
+
+  if (editando) {
+    reservaEmEdicaoId = editando.id;
+    novaReserva = {
+      clienteId: editando.clienteId,
+      clienteNome: editando.clienteNome,
+      dataRetirada: editando.dataRetirada,
+      dataDevolucao: editando.dataDevolucao,
+      itens: editando.itens.map(i => ({ ...i })),
+      desconto: editando.desconto || 0,
+    };
+  } else {
+    reservaEmEdicaoId = null;
+    novaReserva = { clienteId:null, clienteNome:'', dataRetirada: dataPrefill || '', dataDevolucao:'', itens:[], desconto:0 };
+  }
+
   document.getElementById('acoesTab').innerHTML = `<button class="btn btn-neutro" onclick="irPara('reservas')">← Voltar</button>`;
   document.getElementById('conteudoTab').innerHTML = `
+    ${editando ? `<div class="aviso-caixa ok">Editando a reserva de <b>${editando.clienteNome}</b> — guia #${String(editando.numeroGuia).padStart(4,'0')}</div>` : ''}
     <div class="painel">
       <h3>1. Cliente</h3>
       <div id="blocoCliente"></div>
@@ -762,8 +833,8 @@ function abrirNovaReserva() {
     <div class="painel">
       <h3>2. Período da locação</h3>
       <div class="grid-2">
-        <div class="campo"><label>Data de retirada</label><input type="date" id="rRetirada" onchange="atualizarDisponibilidadePecas()"></div>
-        <div class="campo"><label>Data de devolução</label><input type="date" id="rDevolucao" onchange="atualizarDisponibilidadePecas()"></div>
+        <div class="campo"><label>Data de retirada</label><input type="date" id="rRetirada" value="${novaReserva.dataRetirada}" onchange="atualizarDisponibilidadePecas()"></div>
+        <div class="campo"><label>Data de devolução</label><input type="date" id="rDevolucao" value="${novaReserva.dataDevolucao}" onchange="atualizarDisponibilidadePecas()"></div>
       </div>
     </div>
     <div class="painel">
@@ -775,7 +846,7 @@ function abrirNovaReserva() {
       <h3>4. Resumo da reserva</h3>
       <div class="carrinho-reserva" id="carrinhoReserva"></div>
       <div id="avisoReserva"></div>
-      <button class="btn btn-primario btn-bloco" style="margin-top:14px;" id="btnSalvarReserva" onclick="salvarReserva()">Salvar reserva e gerar guia</button>
+      <button class="btn btn-primario btn-bloco" style="margin-top:14px;" id="btnSalvarReserva" onclick="salvarReserva()">${editando ? 'Salvar alterações' : 'Salvar reserva e gerar guia'}</button>
     </div>
   `;
   renderBlocoCliente();
@@ -824,7 +895,7 @@ function limparClienteReserva() { novaReserva.clienteId = null; novaReserva.clie
 
 function quantidadeReservadaNoPeriodo(pecaId, ret, dev, ignorarReservaId) {
   return reservas
-    .filter(r => r.id !== ignorarReservaId && r.status !== 'cancelada' && intervalosSobrepoem(ret, dev, r.dataRetirada, r.dataDevolucao))
+    .filter(r => r.id !== ignorarReservaId && statusOcupaEstoque(r.status) && intervalosSobrepoem(ret, dev, r.dataRetirada, r.dataDevolucao))
     .reduce((soma, r) => soma + (r.itens.find(i => i.pecaId === pecaId)?.quantidade || 0), 0);
 }
 
@@ -845,7 +916,7 @@ function atualizarDisponibilidadePecas() {
     let dispHtml = '<span class="disp-tag" style="background:var(--tinta5); color:var(--tinta3);">defina as datas</span>';
     let disponivel = 0;
     if (datasOk) {
-      const usadoPorOutras = quantidadeReservadaNoPeriodo(p.id, ret, dev);
+      const usadoPorOutras = quantidadeReservadaNoPeriodo(p.id, ret, dev, reservaEmEdicaoId);
       disponivel = p.estoqueTotal - usadoPorOutras;
       const classe = disponivel <= 0 ? 'disp-zero' : (disponivel <= 1 ? 'disp-baixa' : 'disp-ok');
       dispHtml = `<span class="disp-tag ${classe}">${disponivel <= 0 ? 'sem estoque' : disponivel + ' disponível(is)'}</span>`;
@@ -889,8 +960,16 @@ function removerPecaReserva(pecaId) {
 
 function renderCarrinhoReserva() {
   const cont = document.getElementById('carrinhoReserva');
-  if (!novaReserva.itens.length) { cont.innerHTML = `<p style="color:var(--tinta3); font-size:13px;">Nenhuma peça adicionada ainda.</p>`; return; }
-  const total = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  if (!novaReserva.itens.length) {
+    novaReserva.desconto = 0;
+    cont.innerHTML = `<p style="color:var(--tinta3); font-size:13px;">Nenhuma peça adicionada ainda.</p>`;
+    return;
+  }
+  const subtotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  if (!novaReserva.desconto || novaReserva.desconto < 0) novaReserva.desconto = 0;
+  if (novaReserva.desconto > subtotal) novaReserva.desconto = subtotal;
+  const total = subtotal - novaReserva.desconto;
+
   cont.innerHTML = novaReserva.itens.map(i => `
     <div class="carrinho-item">
       <span>${i.quantidade}x ${i.pecaNome}</span>
@@ -899,7 +978,36 @@ function renderCarrinhoReserva() {
         <button class="btn-perigo" style="padding:3px 8px; font-size:11px;" onclick="removerPecaReserva('${i.pecaId}')">remover</button>
       </span>
     </div>
-  `).join('') + `<div class="carrinho-total"><span>Total</span><span>${formatarMoeda(total)}</span></div>`;
+  `).join('')
+  + `<div class="carrinho-item"><span>Subtotal</span><span>${formatarMoeda(subtotal)}</span></div>`
+  + `<div class="carrinho-item">
+      <span>Desconto (R$)</span>
+      <input type="number" min="0" max="${subtotal}" step="0.01" id="rDesconto" value="${novaReserva.desconto.toFixed(2)}"
+        oninput="aoMudarDesconto()" style="width:100px; padding:5px 8px; border:1.5px solid var(--tinta4); border-radius:7px; text-align:right; font-size:13px;">
+    </div>`
+  + `<div class="carrinho-total">
+      <span>Total</span>
+      <input type="number" min="0" max="${subtotal}" step="0.01" id="rTotalFinal" value="${total.toFixed(2)}"
+        oninput="aoMudarTotalFinal()" style="width:120px; padding:6px 8px; border:1.5px solid var(--roxo); border-radius:7px; text-align:right; font-weight:700; color:var(--roxo); font-size:15px;">
+    </div>`;
+}
+
+function aoMudarDesconto() {
+  const subtotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  let desconto = Number(document.getElementById('rDesconto').value);
+  if (isNaN(desconto) || desconto < 0) desconto = 0;
+  if (desconto > subtotal) desconto = subtotal;
+  novaReserva.desconto = desconto;
+  document.getElementById('rTotalFinal').value = (subtotal - desconto).toFixed(2);
+}
+
+function aoMudarTotalFinal() {
+  const subtotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  let total = Number(document.getElementById('rTotalFinal').value);
+  if (isNaN(total) || total < 0) total = 0;
+  if (total > subtotal) total = subtotal;
+  novaReserva.desconto = subtotal - total;
+  document.getElementById('rDesconto').value = novaReserva.desconto.toFixed(2);
 }
 
 function salvarReserva() {
@@ -914,21 +1022,45 @@ function salvarReserva() {
 
   for (const item of novaReserva.itens) {
     const peca = pecas.find(p => p.id === item.pecaId);
-    const usadoPorOutras = quantidadeReservadaNoPeriodo(item.pecaId, ret, dev);
+    const usadoPorOutras = quantidadeReservadaNoPeriodo(item.pecaId, ret, dev, reservaEmEdicaoId);
     if (item.quantidade > peca.estoqueTotal - usadoPorOutras) {
       aviso.innerHTML = `<div class="aviso-caixa erro">"${peca.nome}" não tem estoque suficiente para essas datas.</div>`;
       return;
     }
   }
 
-  const valorTotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  const subtotal = novaReserva.itens.reduce((s,i) => s + i.quantidade * i.precoUnitario, 0);
+  const desconto = Math.min(Math.max(novaReserva.desconto || 0, 0), subtotal);
+  const valorTotal = subtotal - desconto;
+
+  if (reservaEmEdicaoId) {
+    const dadosAtualizados = {
+      clienteId: novaReserva.clienteId,
+      clienteNome: novaReserva.clienteNome,
+      dataRetirada: ret,
+      dataDevolucao: dev,
+      itens: novaReserva.itens,
+      subtotal, desconto, valorTotal,
+    };
+    if (window.__fbAtualizarReserva) {
+      window.__fbAtualizarReserva(reservaEmEdicaoId, dadosAtualizados)
+        .then(() => irPara('reservas'))
+        .catch(err => { aviso.innerHTML = `<div class="aviso-caixa erro">Erro ao salvar na nuvem: ${err.message}</div>`; });
+    } else {
+      const i = reservas.findIndex(r => r.id === reservaEmEdicaoId);
+      if (i > -1) reservas[i] = { ...reservas[i], ...dadosAtualizados };
+      irPara('reservas');
+    }
+    return;
+  }
+
   const reserva = {
     clienteId: novaReserva.clienteId,
     clienteNome: novaReserva.clienteNome,
     dataRetirada: ret,
     dataDevolucao: dev,
     itens: novaReserva.itens,
-    valorTotal,
+    subtotal, desconto, valorTotal,
     status: 'pendente',
     numeroGuia: reservas.length + 1,
     criadoEm: new Date().toISOString(),
@@ -959,7 +1091,7 @@ function pad2(n) { return String(n).padStart(2, '0'); }
 function isoData(ano, mes, dia) { return `${ano}-${pad2(mes + 1)}-${pad2(dia)}`; }
 
 function reservasAtivasNaData(iso) {
-  return reservas.filter(r => r.status !== 'cancelada' && r.dataRetirada <= iso && iso <= r.dataDevolucao);
+  return reservas.filter(r => statusOcupaEstoque(r.status) && r.dataRetirada <= iso && iso <= r.dataDevolucao);
 }
 
 function viewCalendario() {
@@ -1002,14 +1134,21 @@ function renderCalendario() {
   for (let i = 0; i < primeiroDia; i++) html += `<div class="dia-cel vazio"></div>`;
   for (let dia = 1; dia <= totalDias; dia++) {
     const iso = isoData(calAno, calMes, dia);
-    const ativas = reservasAtivasNaData(iso);
+    const retiradas = reservas.filter(r => statusOcupaEstoque(r.status) && r.dataRetirada === iso).length;
+    const devolucoes = reservas.filter(r => statusOcupaEstoque(r.status) && r.dataDevolucao === iso).length;
+    const totalAtivas = reservasAtivasNaData(iso).length;
+    const emAndamento = Math.max(totalAtivas - retiradas - devolucoes, 0);
     const classes = ['dia-cel'];
     if (iso === hojeIso) classes.push('hoje');
     if (iso === calDiaSelecionado) classes.push('selecionado');
     html += `
       <div class="${classes.join(' ')}" onclick="selecionarDiaCalendario('${iso}')">
         <span>${dia}</span>
-        ${ativas.length ? `<span class="dia-badge">${ativas.length}</span>` : ''}
+        <div style="display:flex; gap:3px; flex-wrap:wrap; justify-content:center; align-items:center;">
+          ${retiradas ? `<span class="dia-badge badge-retirada" title="Retirada">↗${retiradas}</span>` : ''}
+          ${devolucoes ? `<span class="dia-badge badge-devolucao" title="Devolução">↘${devolucoes}</span>` : ''}
+          ${emAndamento ? `<span class="dia-ponto" title="Peça(s) ainda locada(s)"></span>` : ''}
+        </div>
       </div>
     `;
   }
@@ -1035,7 +1174,10 @@ function renderDetalheDiaCalendario() {
   }));
 
   cont.innerHTML = `
-    <h3>Peças reservadas em ${formatarData(iso)}</h3>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:2px;">
+      <h3 style="margin-bottom:0;">Peças reservadas em ${formatarData(iso)}</h3>
+      <button class="btn btn-fantasma" style="padding:7px 14px; font-size:12.5px;" onclick="novaReservaComData('${iso}')">+ Nova reserva nesse dia</button>
+    </div>
     ${!ativas.length
       ? `<p style="color:var(--tinta3); font-size:13.5px;">Nenhuma reserva ativa nesta data — todo o estoque está livre.</p>`
       : ativas.map(r => `
@@ -1047,6 +1189,7 @@ function renderDetalheDiaCalendario() {
           <div style="font-size:12px; color:var(--tinta3); margin-bottom:8px;" class="mono">Guia #${String(r.numeroGuia).padStart(4,'0')} • ${formatarData(r.dataRetirada)} → ${formatarData(r.dataDevolucao)}</div>
           <ul>${r.itens.map(i => `<li>${i.quantidade}x ${i.pecaNome}</li>`).join('')}</ul>
           <button class="btn-fantasma" style="margin-top:4px; padding:6px 12px; font-size:12px;" onclick="abrirContrato('${r.id}')">Ver guia</button>
+          ${r.status !== 'cancelada' && r.status !== 'concluida' ? `<button class="btn-fantasma" style="margin-top:4px; padding:6px 12px; font-size:12px;" onclick="editarReserva('${r.id}')">Editar</button>` : ''}
         </div>
       `).join('')
     }
@@ -1118,6 +1261,12 @@ function abrirContrato(reservaId) {
             ${r.itens.map(i => `<tr><td>${i.pecaNome}</td><td>${i.quantidade}</td><td>${formatarMoeda(i.precoUnitario)}</td><td>${formatarMoeda(i.quantidade*i.precoUnitario)}</td></tr>`).join('')}
           </tbody>
         </table>
+        ${r.desconto ? `
+          <div style="display:flex; justify-content:flex-end; gap:22px; margin-top:6px; font-size:12px; color:#444;">
+            <span>Subtotal: ${formatarMoeda(r.subtotal ?? (r.valorTotal + r.desconto))}</span>
+            <span>Desconto: -${formatarMoeda(r.desconto)}</span>
+          </div>
+        ` : ''}
         <div class="contrato-total">Valor total: ${formatarMoeda(r.valorTotal)}</div>
       </div>
 
@@ -1255,6 +1404,7 @@ if (FIREBASE_CONFIGURADO) {
   window.__fbExcluirCliente = (id) => deleteDoc(doc(db, 'clientes', id));
 
   window.__fbSalvarReserva = (dados) => addDoc(collection(db, 'locacoes'), dados);
+  window.__fbAtualizarReserva = (id, dados) => updateDoc(doc(db, 'locacoes', id), dados);
   window.__fbMudarStatusReserva = (id, status) => updateDoc(doc(db, 'locacoes', id), { status });
 
   window.__fbSalvarConfig = (dados) => setDoc(doc(db, 'configOperacional', 'geral'), dados, { merge: true });
