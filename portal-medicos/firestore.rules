@@ -1,0 +1,42 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ────────────────────────────────────────────────────────
+    // PORTAL DO PRESCRITOR — projeto Firebase separado do resto do
+    // Natunutri. Duas coleções:
+    //   medicos/{uid}   — um documento por médico cadastrado (perfil +
+    //                      permissão), com o mesmo id do usuário no
+    //                      Authentication.
+    //   materiais/{id}  — conteúdo da biblioteca (texto/PDF/vídeo).
+    // ────────────────────────────────────────────────────────
+
+    function logado() { return request.auth != null; }
+
+    function souAdmin() {
+      return logado() &&
+        exists(/databases/$(database)/documents/medicos/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/medicos/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function souMedicoAtivo() {
+      return logado() &&
+        exists(/databases/$(database)/documents/medicos/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/medicos/$(request.auth.uid)).data.ativo == true;
+    }
+
+    // Perfis de médico: cada um só lê o próprio; o admin lê e edita todos.
+    // Só o admin cria/edita/desativa perfis (cadastro é feito por ele).
+    match /medicos/{uid} {
+      allow read: if souAdmin() || request.auth.uid == uid;
+      allow write: if souAdmin();
+    }
+
+    // Materiais: o admin lê e edita tudo (inclusive rascunhos não
+    // publicados). Um médico ativo só lê os materiais já publicados.
+    match /materiais/{materialId} {
+      allow read: if souAdmin() || (souMedicoAtivo() && resource.data.publicado == true);
+      allow write: if souAdmin();
+    }
+  }
+}

@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Portal do Prescritor — Botica Beladona</title>
+<meta name="description" content="Área exclusiva para médicos prescritores parceiros da Botica Beladona: materiais de produto, modo de uso e conteúdo técnico.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="../favicon.png">
+<link rel="apple-touch-icon" href="../favicon.png">
+<meta name="theme-color" content="#1B3A2B">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --verde:   #1B3A2B;
+    --verde-m: #2C5A3F;
+    --verde-l: #EBF1EA;
+    --terra:   #A8763E;
+    --areia:   #FAF7F0;
+    --branco:  #FFFFFF;
+    --cinza1:  #22261F;
+    --cinza2:  #5B5C4E;
+    --cinza3:  #8B8A78;
+    --cinza4:  #E2DFD3;
+    --vermelho: #B3432E;
+    --amarelo: #B8862E;
+    --bom:     #3E7A4F;
+    --alerta-bg: #FBEAE6;
+    --aviso-bg: #FBF3E4;
+    --verde-solido: #1B3A2B;
+    --sombra:  0 2px 12px rgba(27,58,43,0.07);
+    --sombra2: 0 10px 32px rgba(27,58,43,0.14);
+    --r: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --verde: #57B37B; --verde-m: #7FCC9C; --verde-l: #17251C; --terra: #D6A868;
+      --areia: #11130F; --branco: #1A1D17; --cinza1: #EDEBE1; --cinza2: #B7B6A6;
+      --cinza3: #8B8A78; --cinza4: #32362B; --vermelho: #E8785F; --amarelo: #E0B15C;
+      --bom: #5FBE85; --alerta-bg: #3A231E; --aviso-bg: #2E2712; --verde-solido: #2F6B48;
+      --sombra: 0 2px 12px rgba(0,0,0,0.35); --sombra2: 0 10px 32px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --verde: #57B37B; --verde-m: #7FCC9C; --verde-l: #17251C; --terra: #D6A868;
+    --areia: #11130F; --branco: #1A1D17; --cinza1: #EDEBE1; --cinza2: #B7B6A6;
+    --cinza3: #8B8A78; --cinza4: #32362B; --vermelho: #E8785F; --amarelo: #E0B15C;
+    --bom: #5FBE85; --alerta-bg: #3A231E; --aviso-bg: #2E2712; --verde-solido: #2F6B48;
+    --sombra: 0 2px 12px rgba(0,0,0,0.35); --sombra2: 0 10px 32px rgba(0,0,0,0.5);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { font-family:'DM Sans',sans-serif; background:var(--areia); color:var(--cinza1); min-height:100vh; }
+
+  .faixa-demo {
+    background: var(--amarelo);
+    color: #2A2000;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    padding: 8px 14px;
+  }
+
+  header { background:var(--verde-solido); position:sticky; top:0; z-index:100; box-shadow:0 2px 16px rgba(27,58,43,0.25); }
+  .header-inner { max-width:900px; margin:0 auto; padding:16px 20px; display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+  .header-inner h1 { font-family:'Fraunces',serif; font-weight:500; font-size:20px; color:#fff; }
+  .header-inner p.sub { font-size:12.5px; color:rgba(255,255,255,0.65); margin-top:2px; }
+  .conta-bar { display:flex; align-items:center; gap:10px; font-size:12px; color:rgba(255,255,255,0.75); }
+  .conta-bar button {
+    background:transparent; border:1.5px solid rgba(255,255,255,0.35); color:#fff;
+    padding:6px 12px; border-radius:8px; font-size:12px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;
+  }
+  .role-pill {
+    display:inline-block; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;
+    background:rgba(255,255,255,0.15); color:#fff; padding:3px 9px; border-radius:999px; margin-left:8px;
+  }
+
+  main { max-width:900px; margin:0 auto; padding:22px 16px 60px; }
+
+  /* ---- login ---- */
+  .login-wrap { max-width:400px; margin:40px auto; }
+  .login-wrap h2 { font-family:'Fraunces',serif; font-weight:500; font-size:19px; color:var(--verde); margin-bottom:4px; }
+  .login-wrap .desc { font-size:12.5px; color:var(--cinza3); margin-bottom:20px; line-height:1.5; }
+  .card { background:var(--branco); border-radius:var(--r); box-shadow:var(--sombra); padding:20px; margin-bottom:16px; }
+
+  .field { margin-bottom:13px; }
+  .field label { display:block; font-size:12.5px; font-weight:600; color:var(--cinza2); margin-bottom:5px; }
+  .field .hint { font-size:11px; font-weight:400; color:var(--cinza3); margin-left:4px; display:block; margin-top:3px; }
+  .field input, .field select, .field textarea {
+    width:100%; padding:11px 12px; border:1.5px solid var(--cinza4); border-radius:9px;
+    font-size:14.5px; font-family:'DM Sans',sans-serif; color:var(--cinza1); background:var(--branco);
+    outline:none; transition:border-color .15s;
+  }
+  .field textarea { resize:vertical; font-size:13.5px; line-height:1.5; }
+  .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--verde-m); }
+  .field-check { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--cinza2); font-weight:600; margin-bottom:13px; }
+  .field-check input { width:auto; }
+  .row2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+
+  .btn {
+    background:var(--verde-solido); color:#fff; border:none; padding:12px; border-radius:10px;
+    font-size:14px; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer; width:100%;
+  }
+  .btn.secondary { background:transparent; color:var(--verde); border:1.5px solid var(--verde); }
+  .btn.small { width:auto; padding:8px 14px; font-size:12.5px; }
+  .btn.danger { background:var(--vermelho); }
+  .btn.ghost { background:transparent; color:var(--cinza3); border:1.5px solid var(--cinza4); }
+  .btn:disabled { opacity:.55; cursor:not-allowed; }
+
+  .msg { font-size:12.5px; font-weight:600; margin-top:8px; }
+  .msg.erro { color:var(--vermelho); }
+  .msg.ok { color:var(--bom); }
+
+  /* ---- tabs (admin) ---- */
+  .tabs { display:flex; gap:8px; margin-bottom:18px; background:var(--verde-l); padding:5px; border-radius:12px; }
+  .tab-btn { flex:1; border:none; background:transparent; padding:10px 8px; font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px; color:var(--verde-m); border-radius:9px; cursor:pointer; }
+  .tab-btn.active { background:var(--verde-solido); color:#fff; }
+  .view { display:none; }
+  .view.active { display:block; }
+
+  .section-title { font-family:'Fraunces',serif; font-weight:500; font-size:16px; color:var(--verde); margin-bottom:12px; }
+
+  /* ---- listas em card ---- */
+  .list { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .item-row {
+    background:var(--branco); border-radius:12px; box-shadow:var(--sombra); padding:14px;
+    border-left:4px solid var(--cinza4); display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;
+  }
+  .item-row.ativo { border-left-color:var(--bom); }
+  .item-row.inativo { border-left-color:var(--cinza4); opacity:.65; }
+  .item-row .info { flex:1; min-width:180px; }
+  .item-row .nome { font-weight:700; font-size:14.5px; color:var(--cinza1); }
+  .item-row .meta { font-size:12px; color:var(--cinza3); margin-top:2px; line-height:1.5; }
+  .item-row .acoes { display:flex; gap:6px; flex-wrap:wrap; }
+
+  .badge {
+    display:inline-block; font-size:10.5px; font-weight:700; color:var(--verde-m); background:var(--verde-l);
+    padding:3px 8px; border-radius:6px; letter-spacing:.01em;
+  }
+  .badge.terra { color:var(--terra); background:rgba(168,118,62,0.13); }
+  .badge.off { color:var(--cinza3); background:var(--cinza4); }
+
+  .credenciais-box {
+    background:var(--verde-l); border-radius:10px; padding:13px; margin-top:12px; font-size:13px; color:var(--cinza1); line-height:1.7;
+  }
+  .credenciais-box strong { color:var(--verde); }
+
+  /* ---- médico: busca e materiais ---- */
+  .search-box { position:relative; margin-bottom:14px; }
+  .search-box input { width:100%; padding:13px 14px 13px 40px; border:1.5px solid var(--cinza4); border-radius:12px; font-size:15px; font-family:'DM Sans',sans-serif; color:var(--cinza1); background:var(--branco); outline:none; }
+  .search-box input:focus { border-color:var(--verde-m); }
+  .search-box .ic { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--cinza3); font-size:16px; pointer-events:none; }
+
+  .chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .chip { border:1.5px solid var(--cinza4); background:var(--branco); color:var(--cinza2); padding:7px 13px; border-radius:999px; font-size:12.5px; font-weight:600; cursor:pointer; }
+  .chip.active { background:var(--verde-solido); border-color:var(--verde-solido); color:#fff; }
+
+  .material-card { background:var(--branco); border-radius:var(--r); box-shadow:var(--sombra); padding:18px; margin-bottom:16px; }
+  .material-card .m-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:8px; }
+  .material-card h3 { font-family:'Fraunces',serif; font-weight:500; font-size:16px; color:var(--verde); }
+  .material-card .m-corpo { font-size:13.5px; color:var(--cinza1); line-height:1.6; white-space:pre-wrap; margin-top:10px; }
+  .material-card .m-embed { margin-top:12px; border-radius:10px; overflow:hidden; background:#000; position:relative; padding-top:56.25%; }
+  .material-card .m-embed iframe { position:absolute; inset:0; width:100%; height:100%; border:none; }
+  .material-card .m-link { display:inline-block; margin-top:12px; background:var(--verde-l); color:var(--verde-m); font-weight:700; font-size:12.5px; padding:9px 14px; border-radius:8px; text-decoration:none; }
+  .material-card .m-link:hover { background:var(--verde); color:#fff; }
+
+  .empty-state { text-align:center; padding:40px 16px; color:var(--cinza3); font-size:13.5px; }
+  .count-info { font-size:12px; color:var(--cinza3); margin-bottom:10px; }
+
+  footer { max-width:900px; margin:10px auto 0; padding:16px 20px 40px; font-size:11px; color:var(--cinza3); line-height:1.6; text-align:center; }
+</style>
+</head>
+<body>
+
+<div class="faixa-demo" id="faixaDemo" style="display:none;">
+  Modo demonstração local — dados de exemplo, nada é salvo de verdade. Configure o Firebase para ativar login real (veja README.md).
+</div>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <h1>Portal do Prescritor</h1>
+      <p class="sub">Botica Beladona · JL Fórmulas Ltda</p>
+    </div>
+    <div class="conta-bar" id="contaBar" style="display:none;">
+      <span id="contaTexto">—</span>
+      <button id="btnAlternarDemo" style="display:none;">Ver como médico</button>
+      <button id="btnSair">Sair</button>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- LOGIN -->
+  <div id="viewLogin" class="login-wrap">
+    <h2>Entrar</h2>
+    <p class="desc">Acesso restrito a médicos prescritores cadastrados pela Botica Beladona. Se você ainda não tem login, fale com o farmacêutico responsável.</p>
+    <div class="card">
+      <div class="field">
+        <label>E-mail</label>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="seuemail@exemplo.com">
+      </div>
+      <div class="field">
+        <label>Senha</label>
+        <input type="password" id="loginSenha" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button class="btn" id="btnEntrar">Entrar</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="viewAdmin" class="view">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="tabMedicos">Médicos</button>
+      <button class="tab-btn" data-tab="tabMateriais">Materiais</button>
+    </div>
+
+    <div id="tabMedicos" class="view active">
+      <div class="section-title">Cadastrar médico</div>
+      <div class="card">
+        <div class="row2">
+          <div class="field"><label>Nome</label><input id="medNome" placeholder="Dra. Nome Completo"></div>
+          <div class="field"><label>CRM</label><input id="medCrm" placeholder="CRM/SP 123456"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>Especialidade</label><input id="medEspecialidade" placeholder="Ortopedia"></div>
+          <div class="field"><label>E-mail de acesso</label><input id="medEmail" type="email" placeholder="medico@exemplo.com"></div>
+        </div>
+        <div class="field">
+          <label>Senha temporária <span class="hint">Envie essa senha ao médico por um canal seguro (WhatsApp, e-mail). Ele pode usá-la para entrar.</span></label>
+          <input id="medSenha" type="text" placeholder="Mínimo 6 caracteres">
+        </div>
+        <button class="btn" id="btnCadastrarMedico">Cadastrar médico</button>
+        <div class="msg" id="cadastroMsg"></div>
+        <div class="credenciais-box" id="credenciaisBox" style="display:none;"></div>
+      </div>
+
+      <div class="section-title">Médicos cadastrados</div>
+      <div class="count-info" id="countMedicos"></div>
+      <div class="list" id="listaMedicos"></div>
+    </div>
+
+    <div id="tabMateriais" class="view">
+      <div class="section-title" id="materialFormTitulo">Novo material</div>
+      <div class="card">
+        <div class="row2">
+          <div class="field"><label>Título</label><input id="matTitulo" placeholder="Ex: Novo produto — Linha Dor Articular"></div>
+          <div class="field"><label>Categoria</label><input id="matCategoria" placeholder="Ex: Novo Produto, Modo de Uso, Institucional…"></div>
+        </div>
+        <div class="field">
+          <label>Tipo de conteúdo</label>
+          <select id="matTipo">
+            <option value="texto">Texto (escrito direto na página)</option>
+            <option value="pdf">PDF (link para download)</option>
+            <option value="video">Vídeo (link do YouTube/Vimeo)</option>
+          </select>
+        </div>
+        <div class="field" id="campoTexto">
+          <label>Conteúdo</label>
+          <textarea id="matCorpo" rows="5" placeholder="Texto do material…"></textarea>
+        </div>
+        <div class="field" id="campoUrl" style="display:none;">
+          <label>Link <span class="hint">Para PDF: link com acesso "qualquer pessoa com o link" (Google Drive, Dropbox etc). Para vídeo: link do YouTube ou Vimeo.</span></label>
+          <input id="matUrl" placeholder="https://…">
+        </div>
+        <div class="field-check">
+          <input type="checkbox" id="matPublicado" checked>
+          <label for="matPublicado" style="margin:0;">Publicado (visível para os médicos)</label>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn" id="btnSalvarMaterial" style="flex:1;">Salvar material</button>
+          <button class="btn ghost" id="btnCancelarEdicaoMaterial" style="display:none; flex:0 0 auto;">Cancelar edição</button>
+        </div>
+        <div class="msg" id="materialMsg"></div>
+      </div>
+
+      <div class="section-title">Materiais cadastrados</div>
+      <div class="count-info" id="countMateriaisAdmin"></div>
+      <div class="list" id="listaMateriaisAdmin"></div>
+    </div>
+  </div>
+
+  <!-- MÉDICO -->
+  <div id="viewMedico" class="view">
+    <div class="search-box">
+      <span class="ic">&#128269;</span>
+      <input type="search" id="buscaMaterial" placeholder="Buscar material…" autocomplete="off">
+    </div>
+    <div class="chips" id="chipsCategorias"></div>
+    <div class="count-info" id="countMateriais"></div>
+    <div id="listaMateriaisMedico"></div>
+    <div class="empty-state" id="emptyMateriais" style="display:none;">Nenhum material disponível ainda.</div>
+  </div>
+
+  <!-- SEM PERFIL / INATIVO -->
+  <div id="viewBloqueado" class="view">
+    <div class="login-wrap">
+      <div class="card">
+        <div class="msg erro" id="bloqueadoMsg" style="font-size:13.5px;"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Acesso exclusivo a profissionais médicos prescritores cadastrados pela Botica Beladona. Conteúdo de apoio técnico e institucional —
+  não constitui propaganda comercial nem indução à prescrição.
+</footer>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {
+  getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+
+// ──────────────────────────────────────────────
+// FIREBASE — projeto separado, exclusivo deste portal (não é o mesmo
+// projeto do etiquetas.html). Pra ligar: crie um projeto grátis em
+// https://console.firebase.google.com, ative Firestore Database e
+// Authentication (provedor E-mail/senha), cole aqui os dados do app
+// (Configurações do projeto → Geral → Seus apps → SDK do Firebase) e
+// aplique as regras de firestore.rules (nesta mesma pasta) em
+// Firestore Database → Regras. Veja o README.md desta pasta.
+// ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "COLE_AQUI",
+  authDomain: "COLE_AQUI.firebaseapp.com",
+  projectId: "COLE_AQUI",
+  storageBucket: "COLE_AQUI.firebasestorage.app",
+  messagingSenderId: "COLE_AQUI",
+  appId: "COLE_AQUI",
+};
+const FIREBASE_CONFIGURADO = !!(firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('COLE_AQUI'));
+
+let auth, db, secondaryAuth;
+if (FIREBASE_CONFIGURADO) {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  // App secundário: permite ao admin criar a conta do médico (createUser)
+  // sem perder a própria sessão logada (o SDK do Firebase loga
+  // automaticamente na conta recém-criada na instância usada).
+  const secondaryApp = initializeApp(firebaseConfig, 'Secondary');
+  secondaryAuth = getAuth(secondaryApp);
+}
+
+// ──────────────────────────────────────────────
+// DADOS DE DEMONSTRAÇÃO — usados só quando o Firebase acima ainda não
+// foi configurado, pra você navegar pelo portal completo (visão do
+// médico e visão do admin) sem precisar configurar nada.
+// ──────────────────────────────────────────────
+let demoMedicos = [
+  { id: 'demo-med-1', nome: 'Dra. Camila Andrade', crm: 'CRM/SP 184532', especialidade: 'Ortopedia', email: 'camila.andrade@exemplo.com', ativo: true, isAdmin: false },
+  { id: 'demo-med-2', nome: 'Dr. Rafael Nogueira', crm: 'CRM/SP 209981', especialidade: 'Reumatologia', email: 'rafael.nogueira@exemplo.com', ativo: false, isAdmin: false },
+];
+let demoMateriais = [
+  {
+    id: 'demo-mat-1', titulo: 'Nova linha: Complexo Articular Beladona', categoria: 'Novo Produto', tipo: 'texto', publicado: true,
+    corpo: 'Lançamos três novas apresentações para dor articular, já disponíveis para manipulação:\n\n• Gel-creme anti-inflamatório multi-ativo\n• Cápsulas condroprotetoras (glucosamina + condroitina + MSM + colágeno tipo II)\n• Complexo oral com curcumina fitossoma + boswellia\n\nAs fichas técnicas completas, com texto pronto para receita, estão no catálogo de fórmulas.',
+    criadoEm: Date.now() - 86400000 * 2,
+  },
+  {
+    id: 'demo-mat-2', titulo: 'Modo de uso — Creme com Capsaicina', categoria: 'Modo de Uso', tipo: 'texto', publicado: true,
+    corpo: 'Orientação para o paciente: aplicar camada fina 2 a 4x/dia, sempre com as mãos limpas e evitando contato com mucosas e olhos. É esperada sensação de ardência nas primeiras aplicações, que tende a diminuir com o uso contínuo. Lavar bem as mãos após aplicar.',
+    criadoEm: Date.now() - 86400000 * 5,
+  },
+  {
+    id: 'demo-mat-3', titulo: 'Sobre a Botica Beladona', categoria: 'Institucional', tipo: 'pdf', publicado: true,
+    url: 'https://exemplo.com/institucional-beladona.pdf',
+    criadoEm: Date.now() - 86400000 * 9,
+  },
+];
+
+let estado = {
+  usuario: null,       // { uid, email }
+  perfil: null,        // doc de medicos/{uid}
+  demoPapel: 'admin',  // no modo demo, alterna entre 'admin' e 'medico' pra visualizar as duas telas
+  materiaisFiltro: { busca: '', categoria: 'todas' },
+  editandoMaterialId: null,
+};
+
+function embedUrl(url) {
+  if (!url) return null;
+  let m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{6,})/);
+  if (m) return `https://www.youtube.com/embed/${m[1]}`;
+  m = url.match(/vimeo\.com\/(\d+)/);
+  if (m) return `https://player.vimeo.com/video/${m[1]}`;
+  return null;
+}
+
+function traduzErroAuth(code) {
+  const mapa = {
+    'auth/invalid-email': 'e-mail inválido.',
+    'auth/user-not-found': 'usuário não encontrado.',
+    'auth/wrong-password': 'senha incorreta.',
+    'auth/invalid-credential': 'e-mail ou senha incorretos.',
+    'auth/too-many-requests': 'muitas tentativas — aguarde um pouco e tente de novo.',
+    'auth/network-request-failed': 'sem conexão com a internet.',
+    'auth/email-already-in-use': 'já existe uma conta com esse e-mail.',
+    'auth/weak-password': 'senha muito curta (mínimo 6 caracteres).',
+  };
+  return mapa[code] || ('erro: ' + code);
+}
+
+// ---------- navegação entre telas ----------
+function mostrarView(id) {
+  ['viewLogin', 'viewAdmin', 'viewMedico', 'viewBloqueado'].forEach(v => {
+    document.getElementById(v).classList.toggle('active', v === id);
+  });
+  document.getElementById('viewLogin').style.display = id === 'viewLogin' ? 'block' : 'none';
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tabMedicos').classList.toggle('active', btn.dataset.tab === 'tabMedicos');
+    document.getElementById('tabMateriais').classList.toggle('active', btn.dataset.tab === 'tabMateriais');
+  });
+});
+
+// ---------- login ----------
+document.getElementById('btnEntrar').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const senha = document.getElementById('loginSenha').value;
+  const msg = document.getElementById('loginMsg');
+  if (!email || !senha) { msg.textContent = 'Preencha e-mail e senha.'; msg.className = 'msg erro'; return; }
+
+  if (!FIREBASE_CONFIGURADO) {
+    msg.textContent = '';
+    entrarModoDemo();
+    return;
+  }
+
+  msg.textContent = 'Entrando…'; msg.className = 'msg';
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+    msg.textContent = '';
+  } catch (err) {
+    msg.textContent = 'Não consegui entrar: ' + traduzErroAuth(err.code);
+    msg.className = 'msg erro';
+  }
+});
+
+document.getElementById('btnSair').addEventListener('click', () => {
+  if (FIREBASE_CONFIGURADO) {
+    signOut(auth);
+  } else {
+    estado.usuario = null; estado.perfil = null;
+    mostrarView('viewLogin');
+    document.getElementById('contaBar').style.display = 'none';
+    document.getElementById('btnAlternarDemo').style.display = 'none';
+  }
+});
+
+function entrarModoDemo() {
+  estado.usuario = { uid: 'demo-admin', email: 'admin@demo.local' };
+  estado.demoPapel = 'admin';
+  aplicarPapelDemo();
+}
+
+function aplicarPapelDemo() {
+  const toggle = document.getElementById('btnAlternarDemo');
+  toggle.style.display = 'inline-block';
+  if (estado.demoPapel === 'admin') {
+    estado.perfil = { nome: 'Você (admin)', isAdmin: true, ativo: true };
+    toggle.textContent = 'Ver como médico';
+    atualizarContaBar();
+    renderAdmin();
+    mostrarView('viewAdmin');
+  } else {
+    estado.perfil = { nome: 'Dra. Camila Andrade (exemplo)', isAdmin: false, ativo: true };
+    toggle.textContent = 'Ver como admin';
+    atualizarContaBar();
+    renderMedico();
+    mostrarView('viewMedico');
+  }
+}
+
+document.getElementById('btnAlternarDemo').addEventListener('click', () => {
+  estado.demoPapel = estado.demoPapel === 'admin' ? 'medico' : 'admin';
+  aplicarPapelDemo();
+});
+
+function atualizarContaBar() {
+  const bar = document.getElementById('contaBar');
+  const txt = document.getElementById('contaTexto');
+  if (!estado.usuario) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  const papel = estado.perfil?.isAdmin ? 'Admin' : 'Prescritor';
+  txt.innerHTML = (estado.perfil?.nome || estado.usuario.email) + `<span class="role-pill">${papel}</span>`;
+}
+
+// ---------- carregar perfil (Firestore real) ----------
+async function carregarPerfil(uid) {
+  const snap = await getDoc(doc(db, 'medicos', uid));
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+if (FIREBASE_CONFIGURADO) {
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      estado.usuario = null; estado.perfil = null;
+      atualizarContaBar();
+      mostrarView('viewLogin');
+      return;
+    }
+    estado.usuario = { uid: user.uid, email: user.email };
+    const perfil = await carregarPerfil(user.uid);
+    estado.perfil = perfil;
+    atualizarContaBar();
+
+    if (!perfil) {
+      document.getElementById('bloqueadoMsg').textContent = 'Sua conta ainda não tem um perfil vinculado. Fale com o farmacêutico responsável para concluir seu cadastro.';
+      mostrarView('viewBloqueado');
+    } else if (!perfil.ativo) {
+      document.getElementById('bloqueadoMsg').textContent = 'Seu acesso está temporariamente desativado. Fale com o farmacêutico responsável.';
+      mostrarView('viewBloqueado');
+    } else if (perfil.isAdmin) {
+      renderAdmin();
+      mostrarView('viewAdmin');
+    } else {
+      await renderMedico();
+      mostrarView('viewMedico');
+    }
+  });
+} else {
+  document.getElementById('faixaDemo').style.display = 'block';
+}
+
+// ==================================================================
+// ADMIN — cadastro de médicos
+// ==================================================================
+document.getElementById('btnCadastrarMedico').addEventListener('click', async () => {
+  const nome = document.getElementById('medNome').value.trim();
+  const crm = document.getElementById('medCrm').value.trim();
+  const especialidade = document.getElementById('medEspecialidade').value.trim();
+  const email = document.getElementById('medEmail').value.trim();
+  const senha = document.getElementById('medSenha').value;
+  const msg = document.getElementById('cadastroMsg');
+  const box = document.getElementById('credenciaisBox');
+  box.style.display = 'none';
+
+  if (!nome || !email || !senha) { msg.textContent = 'Preencha ao menos nome, e-mail e senha.'; msg.className = 'msg erro'; return; }
+  if (senha.length < 6) { msg.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; msg.className = 'msg erro'; return; }
+
+  const perfil = { nome, crm, especialidade, email, ativo: true, isAdmin: false };
+
+  if (!FIREBASE_CONFIGURADO) {
+    demoMedicos.unshift({ id: 'demo-med-' + Date.now(), ...perfil });
+    msg.textContent = 'Médico cadastrado (demonstração).'; msg.className = 'msg ok';
+    box.innerHTML = `Credenciais para enviar ao médico:<br><strong>E-mail:</strong> ${email}<br><strong>Senha:</strong> ${senha}`;
+    box.style.display = 'block';
+    limparFormMedico();
+    renderListaMedicos();
+    return;
+  }
+
+  msg.textContent = 'Cadastrando…'; msg.className = 'msg';
+  try {
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, senha);
+    await setDoc(doc(db, 'medicos', cred.user.uid), { ...perfil, criadoEm: Date.now() });
+    await signOut(secondaryAuth);
+    msg.textContent = 'Médico cadastrado com sucesso.'; msg.className = 'msg ok';
+    box.innerHTML = `Credenciais para enviar ao médico:<br><strong>E-mail:</strong> ${email}<br><strong>Senha:</strong> ${senha}`;
+    box.style.display = 'block';
+    limparFormMedico();
+    await renderListaMedicos();
+  } catch (err) {
+    msg.textContent = 'Não consegui cadastrar: ' + traduzErroAuth(err.code);
+    msg.className = 'msg erro';
+  }
+});
+
+function limparFormMedico() {
+  ['medNome', 'medCrm', 'medEspecialidade', 'medEmail', 'medSenha'].forEach(id => document.getElementById(id).value = '');
+}
+
+async function listarMedicos() {
+  if (!FIREBASE_CONFIGURADO) return demoMedicos;
+  const snap = await getDocs(collection(db, 'medicos'));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(m => !m.isAdmin);
+}
+
+async function renderListaMedicos() {
+  const medicos = await listarMedicos();
+  const lista = document.getElementById('listaMedicos');
+  document.getElementById('countMedicos').textContent = medicos.length === 1 ? '1 médico cadastrado' : medicos.length + ' médicos cadastrados';
+  if (medicos.length === 0) { lista.innerHTML = '<div class="empty-state">Nenhum médico cadastrado ainda.</div>'; return; }
+
+  lista.innerHTML = medicos.map(m => `
+    <div class="item-row ${m.ativo ? 'ativo' : 'inativo'}">
+      <div class="info">
+        <div class="nome">${m.nome}</div>
+        <div class="meta">${[m.crm, m.especialidade].filter(Boolean).join(' · ')}${m.crm || m.especialidade ? ' · ' : ''}${m.email}</div>
+      </div>
+      <div class="acoes">
+        <span class="badge ${m.ativo ? '' : 'off'}">${m.ativo ? 'Ativo' : 'Inativo'}</span>
+        <button class="btn small ${m.ativo ? 'ghost' : 'secondary'}" data-toggle-medico="${m.id}">${m.ativo ? 'Desativar' : 'Ativar'}</button>
+      </div>
+    </div>
+  `).join('');
+
+  lista.querySelectorAll('[data-toggle-medico]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.toggleMedico;
+      const m = medicos.find(x => x.id === id);
+      const novoAtivo = !m.ativo;
+      if (!FIREBASE_CONFIGURADO) {
+        demoMedicos = demoMedicos.map(x => x.id === id ? { ...x, ativo: novoAtivo } : x);
+      } else {
+        await updateDoc(doc(db, 'medicos', id), { ativo: novoAtivo });
+      }
+      renderListaMedicos();
+    });
+  });
+}
+
+// ==================================================================
+// ADMIN — materiais
+// ==================================================================
+const tipoParaCampo = () => {
+  const tipo = document.getElementById('matTipo').value;
+  document.getElementById('campoTexto').style.display = tipo === 'texto' ? 'block' : 'none';
+  document.getElementById('campoUrl').style.display = tipo === 'texto' ? 'none' : 'block';
+};
+document.getElementById('matTipo').addEventListener('change', tipoParaCampo);
+tipoParaCampo();
+
+document.getElementById('btnSalvarMaterial').addEventListener('click', async () => {
+  const titulo = document.getElementById('matTitulo').value.trim();
+  const categoria = document.getElementById('matCategoria').value.trim() || 'Geral';
+  const tipo = document.getElementById('matTipo').value;
+  const corpo = document.getElementById('matCorpo').value.trim();
+  const url = document.getElementById('matUrl').value.trim();
+  const publicado = document.getElementById('matPublicado').checked;
+  const msg = document.getElementById('materialMsg');
+
+  if (!titulo) { msg.textContent = 'Dê um título ao material.'; msg.className = 'msg erro'; return; }
+  if (tipo === 'texto' && !corpo) { msg.textContent = 'Escreva o conteúdo do texto.'; msg.className = 'msg erro'; return; }
+  if (tipo !== 'texto' && !url) { msg.textContent = 'Cole o link do material.'; msg.className = 'msg erro'; return; }
+
+  const dados = { titulo, categoria, tipo, publicado, criadoEm: Date.now() };
+  if (tipo === 'texto') dados.corpo = corpo; else dados.url = url;
+
+  if (!FIREBASE_CONFIGURADO) {
+    if (estado.editandoMaterialId) {
+      demoMateriais = demoMateriais.map(m => m.id === estado.editandoMaterialId ? { ...m, ...dados, id: m.id, criadoEm: m.criadoEm } : m);
+    } else {
+      demoMateriais.unshift({ id: 'demo-mat-' + Date.now(), ...dados });
+    }
+  } else {
+    const id = estado.editandoMaterialId || (crypto.randomUUID ? crypto.randomUUID() : 'mat-' + Date.now());
+    await setDoc(doc(db, 'materiais', id), dados, { merge: false });
+  }
+
+  msg.textContent = 'Material salvo.'; msg.className = 'msg ok';
+  cancelarEdicaoMaterial();
+  renderListaMateriaisAdmin();
+});
+
+document.getElementById('btnCancelarEdicaoMaterial').addEventListener('click', cancelarEdicaoMaterial);
+
+function cancelarEdicaoMaterial() {
+  estado.editandoMaterialId = null;
+  document.getElementById('materialFormTitulo').textContent = 'Novo material';
+  document.getElementById('btnCancelarEdicaoMaterial').style.display = 'none';
+  document.getElementById('btnSalvarMaterial').textContent = 'Salvar material';
+  ['matTitulo', 'matCategoria', 'matCorpo', 'matUrl'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('matTipo').value = 'texto';
+  document.getElementById('matPublicado').checked = true;
+  tipoParaCampo();
+}
+
+async function listarMateriais() {
+  if (!FIREBASE_CONFIGURADO) return [...demoMateriais].sort((a, b) => b.criadoEm - a.criadoEm);
+  const snap = await getDocs(query(collection(db, 'materiais'), orderBy('criadoEm', 'desc')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function renderListaMateriaisAdmin() {
+  const materiais = await listarMateriais();
+  const lista = document.getElementById('listaMateriaisAdmin');
+  document.getElementById('countMateriaisAdmin').textContent = materiais.length === 1 ? '1 material cadastrado' : materiais.length + ' materiais cadastrados';
+  if (materiais.length === 0) { lista.innerHTML = '<div class="empty-state">Nenhum material cadastrado ainda.</div>'; return; }
+
+  lista.innerHTML = materiais.map(m => `
+    <div class="item-row ${m.publicado ? 'ativo' : 'inativo'}">
+      <div class="info">
+        <div class="nome">${m.titulo}</div>
+        <div class="meta">${m.categoria} · ${({texto:'Texto', pdf:'PDF', video:'Vídeo'})[m.tipo] || m.tipo}</div>
+      </div>
+      <div class="acoes">
+        <span class="badge ${m.publicado ? '' : 'off'}">${m.publicado ? 'Publicado' : 'Rascunho'}</span>
+        <button class="btn small ghost" data-editar-material="${m.id}">Editar</button>
+        <button class="btn small danger" data-excluir-material="${m.id}">Excluir</button>
+      </div>
+    </div>
+  `).join('');
+
+  lista.querySelectorAll('[data-editar-material]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const m = materiais.find(x => x.id === btn.dataset.editarMaterial);
+      estado.editandoMaterialId = m.id;
+      document.getElementById('materialFormTitulo').textContent = 'Editar material';
+      document.getElementById('btnCancelarEdicaoMaterial').style.display = 'inline-block';
+      document.getElementById('btnSalvarMaterial').textContent = 'Salvar alterações';
+      document.getElementById('matTitulo').value = m.titulo;
+      document.getElementById('matCategoria').value = m.categoria;
+      document.getElementById('matTipo').value = m.tipo;
+      document.getElementById('matCorpo').value = m.corpo || '';
+      document.getElementById('matUrl').value = m.url || '';
+      document.getElementById('matPublicado').checked = !!m.publicado;
+      tipoParaCampo();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+
+  lista.querySelectorAll('[data-excluir-material]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Excluir este material? Essa ação não pode ser desfeita.')) return;
+      const id = btn.dataset.excluirMaterial;
+      if (!FIREBASE_CONFIGURADO) {
+        demoMateriais = demoMateriais.filter(m => m.id !== id);
+      } else {
+        await deleteDoc(doc(db, 'materiais', id));
+      }
+      renderListaMateriaisAdmin();
+    });
+  });
+}
+
+function renderAdmin() {
+  renderListaMedicos();
+  renderListaMateriaisAdmin();
+}
+
+// ==================================================================
+// MÉDICO — biblioteca de materiais
+// ==================================================================
+function norm(s) { return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+
+async function materiaisPublicados() {
+  if (!FIREBASE_CONFIGURADO) return [...demoMateriais].filter(m => m.publicado).sort((a, b) => b.criadoEm - a.criadoEm);
+  const snap = await getDocs(query(collection(db, 'materiais'), where('publicado', '==', true), orderBy('criadoEm', 'desc')));
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function renderMedico() {
+  const todos = await materiaisPublicados();
+  window.__todosMateriaisMedico = todos;
+  renderChipsCategorias(todos);
+  renderListaMateriaisMedico();
+
+  document.getElementById('buscaMaterial').oninput = (e) => {
+    estado.materiaisFiltro.busca = e.target.value;
+    renderListaMateriaisMedico();
+  };
+}
+
+function renderChipsCategorias(materiais) {
+  const categorias = [...new Set(materiais.map(m => m.categoria))];
+  const chipsEl = document.getElementById('chipsCategorias');
+  let html = `<button class="chip ${estado.materiaisFiltro.categoria === 'todas' ? 'active' : ''}" data-cat="todas">Todos</button>`;
+  categorias.forEach(c => {
+    html += `<button class="chip ${estado.materiaisFiltro.categoria === c ? 'active' : ''}" data-cat="${c}">${c}</button>`;
+  });
+  chipsEl.innerHTML = html;
+  chipsEl.querySelectorAll('.chip').forEach(btn => {
+    btn.addEventListener('click', () => {
+      estado.materiaisFiltro.categoria = btn.dataset.cat;
+      renderChipsCategorias(materiais);
+      renderListaMateriaisMedico();
+    });
+  });
+}
+
+function renderListaMateriaisMedico() {
+  const todos = window.__todosMateriaisMedico || [];
+  const { busca, categoria } = estado.materiaisFiltro;
+  const filtrados = todos.filter(m => {
+    if (categoria !== 'todas' && m.categoria !== categoria) return false;
+    if (!busca) return true;
+    return norm([m.titulo, m.categoria, m.corpo].join(' ')).includes(norm(busca));
+  });
+
+  document.getElementById('countMateriais').textContent = filtrados.length === 1 ? '1 material' : filtrados.length + ' materiais';
+  const lista = document.getElementById('listaMateriaisMedico');
+  const empty = document.getElementById('emptyMateriais');
+
+  if (filtrados.length === 0) { lista.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  lista.innerHTML = filtrados.map(m => {
+    let corpoHtml = '';
+    if (m.tipo === 'texto') {
+      corpoHtml = `<div class="m-corpo">${m.corpo}</div>`;
+    } else if (m.tipo === 'pdf') {
+      corpoHtml = `<a class="m-link" href="${m.url}" target="_blank" rel="noopener">Abrir PDF ↗</a>`;
+    } else if (m.tipo === 'video') {
+      const embed = embedUrl(m.url);
+      corpoHtml = embed
+        ? `<div class="m-embed"><iframe src="${embed}" allowfullscreen loading="lazy"></iframe></div>`
+        : `<a class="m-link" href="${m.url}" target="_blank" rel="noopener">Assistir vídeo ↗</a>`;
+    }
+    return `
+      <div class="material-card">
+        <div class="m-top">
+          <div>
+            <h3>${m.titulo}</h3>
+            <span class="badge terra">${m.categoria}</span>
+          </div>
+        </div>
+        ${corpoHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+</script>
+
+</body>
+</html>
