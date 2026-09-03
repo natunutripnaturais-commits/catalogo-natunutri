@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Catálogo de Fórmulas para Prescritores — Botica Beladona</title>
+<meta name="description" content="Catálogo técnico de fórmulas magistrais da Botica Beladona (JL Fórmulas Ltda), organizado por indicação, com texto pronto para copiar na prescrição.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<meta name="theme-color" content="#1B3A2B">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,500;0,700;1,300&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+  :root {
+    --verde:   #1B3A2B;
+    --verde-m: #2C5A3F;
+    --verde-l: #EBF1EA;
+    --terra:   #A8763E;
+    --areia:   #FAF7F0;
+    --branco:  #FFFFFF;
+    --cinza1:  #22261F;
+    --cinza2:  #5B5C4E;
+    --cinza3:  #8B8A78;
+    --cinza4:  #E2DFD3;
+    --vermelho: #B3432E;
+    --amarelo: #B8862E;
+    --bom:     #3E7A4F;
+    --alerta-bg: #FBEAE6;
+    --aviso-bg: #FBF3E4;
+    --verde-solido: #1B3A2B;
+    --sombra:  0 2px 12px rgba(27,58,43,0.07);
+    --sombra2: 0 10px 32px rgba(27,58,43,0.14);
+    --r: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --verde:   #57B37B;
+      --verde-m: #7FCC9C;
+      --verde-l: #17251C;
+      --terra:   #D6A868;
+      --areia:   #11130F;
+      --branco:  #1A1D17;
+      --cinza1:  #EDEBE1;
+      --cinza2:  #B7B6A6;
+      --cinza3:  #8B8A78;
+      --cinza4:  #32362B;
+      --vermelho: #E8785F;
+      --amarelo: #E0B15C;
+      --bom:     #5FBE85;
+      --alerta-bg: #3A231E;
+      --aviso-bg: #2E2712;
+      --verde-solido: #2F6B48;
+      --sombra:  0 2px 12px rgba(0,0,0,0.35);
+      --sombra2: 0 10px 32px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    --verde:   #57B37B;
+    --verde-m: #7FCC9C;
+    --verde-l: #17251C;
+    --terra:   #D6A868;
+    --areia:   #11130F;
+    --branco:  #1A1D17;
+    --cinza1:  #EDEBE1;
+    --cinza2:  #B7B6A6;
+    --cinza3:  #8B8A78;
+    --cinza4:  #32362B;
+    --vermelho: #E8785F;
+    --amarelo: #E0B15C;
+    --bom:     #5FBE85;
+    --alerta-bg: #3A231E;
+    --aviso-bg: #2E2712;
+    --verde-solido: #2F6B48;
+    --sombra:  0 2px 12px rgba(0,0,0,0.35);
+    --sombra2: 0 10px 32px rgba(0,0,0,0.5);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--areia);
+    color: var(--cinza1);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--verde-solido);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(27,58,43,0.25);
+  }
+  .header-inner {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 16px 20px;
+  }
+  .header-inner h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: #fff;
+  }
+  .header-inner p.sub {
+    font-size: 12.5px;
+    color: rgba(255,255,255,0.65);
+    margin-top: 2px;
+  }
+  .header-inner .institucional {
+    margin-top: 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    line-height: 1.5;
+    border-top: 1px solid rgba(255,255,255,0.15);
+    padding-top: 8px;
+  }
+
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 18px 16px 60px;
+  }
+
+  .search-box {
+    position: relative;
+    margin-bottom: 14px;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 13px 14px 13px 40px;
+    border: 1.5px solid var(--cinza4);
+    border-radius: 12px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--cinza1);
+    background: var(--branco);
+    outline: none;
+    transition: border-color .15s;
+  }
+  .search-box input:focus { border-color: var(--verde-m); }
+  .search-box .ic {
+    position: absolute;
+    left: 13px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--cinza3);
+    font-size: 16px;
+    pointer-events: none;
+  }
+
+  .chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .chip {
+    border: 1.5px solid var(--cinza4);
+    background: var(--branco);
+    color: var(--cinza2);
+    padding: 7px 13px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .chip.active {
+    background: var(--verde-solido);
+    border-color: var(--verde-solido);
+    color: #fff;
+  }
+
+  .aviso-nicho {
+    background: var(--aviso-bg);
+    border: 1px solid var(--amarelo);
+    border-radius: 10px;
+    padding: 11px 13px;
+    font-size: 12px;
+    color: var(--cinza2);
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+  .aviso-nicho strong { color: var(--amarelo); }
+
+  .count-info {
+    font-size: 12px;
+    color: var(--cinza3);
+    margin-bottom: 10px;
+  }
+
+  .ficha {
+    background: var(--branco);
+    border-radius: var(--r);
+    box-shadow: var(--sombra);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .ficha .f-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ficha h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 16.5px;
+    color: var(--verde);
+  }
+  .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .badge {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--verde-m);
+    background: var(--verde-l);
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: .01em;
+  }
+  .badge.terra { color: var(--terra); background: rgba(168,118,62,0.13); }
+
+  .f-field { margin-bottom: 11px; }
+  .f-field .f-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--cinza3);
+    margin-bottom: 3px;
+  }
+  .f-field .f-value {
+    font-size: 13.5px;
+    color: var(--cinza1);
+    line-height: 1.5;
+  }
+
+  .receita-box {
+    background: var(--verde-l);
+    border-radius: 10px;
+    padding: 13px;
+    margin-top: 14px;
+  }
+  .receita-box .rb-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .receita-box .rb-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: var(--verde-m);
+  }
+  .receita-box .rb-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    color: var(--cinza1);
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+  .btn-copiar {
+    background: var(--verde-solido);
+    color: #fff;
+    border: none;
+    padding: 7px 13px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-copiar.ok { background: var(--bom); }
+
+  .disclaimer {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--cinza3);
+    line-height: 1.5;
+    border-top: 1px solid var(--cinza4);
+    padding-top: 9px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--cinza3);
+    font-size: 13.5px;
+  }
+
+  footer {
+    max-width: 780px;
+    margin: 10px auto 0;
+    padding: 16px 20px 40px;
+    font-size: 11px;
+    color: var(--cinza3);
+    line-height: 1.6;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>Catálogo Técnico de Fórmulas — Prescritores</h1>
+    <p class="sub">Botica Beladona · JL Fórmulas Ltda</p>
+    <div class="institucional">
+      Farmacêutico(a) responsável técnico: Thiago — CRF [preencher] &nbsp;·&nbsp;
+      CNPJ: [preencher] &nbsp;·&nbsp;
+      Contato técnico: [preencher]
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="search-box">
+    <span class="ic">&#128269;</span>
+    <input type="search" id="busca" placeholder="Buscar por indicação, ativo ou especialidade…" autocomplete="off">
+  </div>
+
+  <div class="chips" id="chips"></div>
+
+  <div class="aviso-nicho">
+    <strong>Em validação técnica.</strong> As fórmulas abaixo usam como referência combinações consagradas em
+    formulários magistrais publicados (ex.: Formulário Nacional da Farmacopeia Brasileira) e servem como ponto
+    de partida. Concentrações, veículo e posologia estão sujeitos a validação final do responsável técnico antes
+    da divulgação a prescritores. Material de apoio técnico — não constitui propaganda comercial, indução à
+    prescrição ou promessa terapêutica (RDC 67/2007 e Código de Ética Farmacêutica).
+  </div>
+
+  <div class="count-info" id="countInfo"></div>
+  <div id="lista"></div>
+  <div class="empty-state" id="emptyState" style="display:none;">Nenhuma fórmula encontrada para essa busca.</div>
+</main>
+
+<footer>
+  Este material é destinado exclusivamente a profissionais médicos prescritores, como apoio técnico-farmacêutico.
+  Cada fórmula é uma sugestão técnica sujeita à avaliação individual do paciente e não substitui o julgamento
+  clínico do prescritor. A dispensação segue avaliação e ajuste do farmacêutico responsável técnico no ato da
+  manipulação.
+</footer>
+
+<script>
+  const NICHOS = [
+    {
+      id: 'dor-articulacoes',
+      nome: 'Dor e Articulações',
+      especialidade: 'Ortopedia / Reumatologia / Clínica Geral',
+      formulas: [
+        {
+          titulo: 'Gel Anti-inflamatório Tópico Multi-ativo',
+          forma: 'Gel-creme',
+          indicacao: 'Dor articular localizada, tendinite, osteoartrite leve/moderada',
+          ativos: 'Diclofenaco dietilamônio 1–5% + Mentol 1% + Cânfora 2%',
+          posologia: 'Aplicar 3x/dia na região afetada',
+          observacoes: 'Uso tópico. Evitar em pele lesionada. Sujeito a avaliação individual do paciente.',
+          receita: 'Diclofenaco dietilamônio 3% + Mentol 1% + Cânfora 2% — gel-creme qsp 60g.\nAplicar 3x/dia na região dolorosa.'
+        },
+        {
+          titulo: 'Cápsulas Condroprotetoras',
+          forma: 'Cápsulas',
+          indicacao: 'Osteoartrite, desgaste articular, prevenção',
+          ativos: 'Glucosamina 500mg + Condroitina 400mg + MSM 300mg + Colágeno tipo II não desnaturado 40mg',
+          posologia: '1 cápsula 2x/dia',
+          observacoes: 'Uso contínuo para efeito condroprotetor. Sujeito a avaliação individual do paciente.',
+          receita: 'Glucosamina 500mg + Condroitina 400mg + MSM 300mg + Colágeno tipo II 40mg — cápsulas, qsp 60 cáps.\nTomar 1 cáp 2x/dia.'
+        },
+        {
+          titulo: 'Creme com Capsaicina',
+          forma: 'Creme',
+          indicacao: 'Dor neuropática/musculoesquelética crônica',
+          ativos: 'Capsaicina 0,025–0,075%',
+          posologia: 'Aplicar 2–4x/dia (orientar sensação de ardência inicial)',
+          observacoes: 'Orientar o paciente sobre sensação de ardência nas primeiras aplicações. Evitar contato com mucosas e olhos.',
+          receita: 'Capsaicina 0,05% — creme qsp 30g.\nAplicar 2–4x/dia na região dolorosa (orientar sensação de ardência inicial).'
+        },
+        {
+          titulo: 'Complexo Oral Anti-inflamatório Natural',
+          forma: 'Cápsulas',
+          indicacao: 'Dor inflamatória crônica, coadjuvante em osteoartrite',
+          ativos: 'Curcumina (fitossoma) 500mg + Boswellia serrata (65% ác. boswélico) 300mg',
+          posologia: '1 cápsula 2x/dia, com alimento',
+          observacoes: 'Administrar junto às refeições para melhor absorção e tolerância gastrointestinal.',
+          receita: 'Curcumina (fitossoma) 500mg + Boswellia serrata (65% ác. boswélico) 300mg — cápsulas, qsp 60 cáps.\nTomar 1 cáp 2x/dia, com alimento.'
+        },
+        {
+          titulo: 'Gel Tópico Fitoterápico',
+          forma: 'Gel',
+          indicacao: 'Dor articular leve, uso contínuo, público que evita anti-inflamatório tópico convencional',
+          ativos: 'Arnica montana extrato 5% + Harpagofito extrato 3%',
+          posologia: 'Aplicar 2–3x/dia',
+          observacoes: 'Alternativa fitoterápica para uso contínuo. Sujeito a avaliação individual do paciente.',
+          receita: 'Arnica montana extrato 5% + Harpagofito extrato 3% — gel qsp 60g.\nAplicar 2–3x/dia na região dolorosa.'
+        }
+      ]
+    }
+  ];
+
+  function norm(s) {
+    return (s || '').toString().normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  }
+
+  let nichoAtivo = 'todos';
+  let termoBusca = '';
+
+  function renderChips() {
+    const chipsEl = document.getElementById('chips');
+    let html = `<button class="chip ${nichoAtivo === 'todos' ? 'active' : ''}" data-nicho="todos">Todos os nichos</button>`;
+    NICHOS.forEach(n => {
+      html += `<button class="chip ${nichoAtivo === n.id ? 'active' : ''}" data-nicho="${n.id}">${n.nome}</button>`;
+    });
+    chipsEl.innerHTML = html;
+    chipsEl.querySelectorAll('.chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        nichoAtivo = btn.dataset.nicho;
+        render();
+      });
+    });
+  }
+
+  function fichaMatches(nicho, f, termo) {
+    if (!termo) return true;
+    const alvo = norm([nicho.nome, nicho.especialidade, f.titulo, f.indicacao, f.ativos, f.forma].join(' '));
+    return alvo.includes(norm(termo));
+  }
+
+  function copiarTexto(btn, texto) {
+    const feedback = () => {
+      const original = btn.textContent;
+      btn.textContent = 'Copiado!';
+      btn.classList.add('ok');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('ok'); }, 1600);
+    };
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(texto).then(feedback).catch(() => fallbackCopy(texto, feedback));
+    } else {
+      fallbackCopy(texto, feedback);
+    }
+  }
+
+  function fallbackCopy(texto, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try { document.execCommand('copy'); cb(); } catch (e) {}
+    document.body.removeChild(ta);
+  }
+
+  function render() {
+    renderChips();
+    const lista = document.getElementById('lista');
+    const empty = document.getElementById('emptyState');
+    const countInfo = document.getElementById('countInfo');
+
+    let itens = [];
+    NICHOS.forEach(n => {
+      if (nichoAtivo !== 'todos' && nichoAtivo !== n.id) return;
+      n.formulas.forEach(f => {
+        if (fichaMatches(n, f, termoBusca)) itens.push({ nicho: n, f });
+      });
+    });
+
+    countInfo.textContent = itens.length === 1 ? '1 fórmula encontrada' : itens.length + ' fórmulas encontradas';
+
+    if (itens.length === 0) {
+      lista.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    lista.innerHTML = itens.map(({ nicho, f }) => `
+      <div class="ficha">
+        <div class="f-top">
+          <div>
+            <h2>${f.titulo}</h2>
+            <div class="badges">
+              <span class="badge">${nicho.especialidade}</span>
+              <span class="badge terra">${f.forma}</span>
+            </div>
+          </div>
+        </div>
+        <div class="f-field">
+          <span class="f-label">Indicação</span>
+          <span class="f-value">${f.indicacao}</span>
+        </div>
+        <div class="f-field">
+          <span class="f-label">Fórmula sugerida</span>
+          <span class="f-value">${f.ativos}</span>
+        </div>
+        <div class="f-field">
+          <span class="f-label">Posologia sugerida</span>
+          <span class="f-value">${f.posologia}</span>
+        </div>
+        <div class="f-field">
+          <span class="f-label">Observações técnicas</span>
+          <span class="f-value">${f.observacoes}</span>
+        </div>
+        <div class="receita-box">
+          <div class="rb-top">
+            <span class="rb-label">Texto pronto para receita</span>
+            <button class="btn-copiar" data-texto="${encodeURIComponent(f.receita)}">Copiar</button>
+          </div>
+          <div class="rb-text">${f.receita}</div>
+        </div>
+        <div class="disclaimer">
+          Fórmula sujeita a avaliação individual do paciente. Sugestão técnica, não substitui o julgamento clínico
+          do prescritor nem a validação final do farmacêutico responsável técnico.
+        </div>
+      </div>
+    `).join('');
+
+    lista.querySelectorAll('.btn-copiar').forEach(btn => {
+      btn.addEventListener('click', () => copiarTexto(btn, decodeURIComponent(btn.dataset.texto)));
+    });
+  }
+
+  document.getElementById('busca').addEventListener('input', (e) => {
+    termoBusca = e.target.value;
+    render();
+  });
+
+  render();
+</script>
+
+</body>
+</html>
