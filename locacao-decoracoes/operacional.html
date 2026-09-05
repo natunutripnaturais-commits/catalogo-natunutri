@@ -342,6 +342,7 @@
     </div>
     <button class="nav-item ativo" data-tab="reservas" onclick="irPara('reservas')"><span class="nav-icone">📅</span> Reservas</button>
     <button class="nav-item" data-tab="pecas" onclick="irPara('pecas')"><span class="nav-icone">📦</span> Peças</button>
+    <button class="nav-item" data-tab="arcos" onclick="irPara('arcos')"><span class="nav-icone">🎈</span> Arcos de Bexiga</button>
     <button class="nav-item" data-tab="clientes" onclick="irPara('clientes')"><span class="nav-icone">👤</span> Clientes</button>
     <button class="nav-item" data-tab="calendario" onclick="irPara('calendario')"><span class="nav-icone">🗓️</span> Calendário</button>
     <button class="nav-item" data-tab="config" onclick="irPara('config')"><span class="nav-icone">🧾</span> Contrato / Config</button>
@@ -388,10 +389,17 @@
 // ══════════════════════════════════════════════════════════════
 const pecasDemo = [
   { id:'p1', nome:'Painel redondo dourado 1,5m', formato:'Redondo', cor:'Dourado', tamanho:'1,5m', modelo:'Liso', codigo:'PN-001', foto:'', estoqueTotal:2, precoLocacao:120, observacoes:'', ativo:true },
-  { id:'p2', nome:'Arco de balões rosa/lilás', formato:'Arco', cor:'Rosa/Lilás', tamanho:'2m', modelo:'Orgânico', codigo:'AR-004', foto:'', estoqueTotal:3, precoLocacao:90, observacoes:'', ativo:true },
   { id:'p3', nome:'Letra "A" volumétrica branca', formato:'Letra', cor:'Branco', tamanho:'60cm', modelo:'Volumétrica', codigo:'LT-012', foto:'', estoqueTotal:4, precoLocacao:35, observacoes:'', ativo:true },
   { id:'p4', nome:'Coluna de balões safári', formato:'Coluna', cor:'Verde/Marrom', tamanho:'1,8m', modelo:'Temático Safári', codigo:'CL-007', foto:'', estoqueTotal:2, precoLocacao:110, observacoes:'', ativo:true },
   { id:'p5', nome:'Painel retangular nuvens', formato:'Retangular', cor:'Azul/Branco', tamanho:'2x1,5m', modelo:'Chá de bebê', codigo:'PN-009', foto:'', estoqueTotal:1, precoLocacao:150, observacoes:'', ativo:true },
+];
+
+// Arcos de bexiga prontos — produto à parte, já pronto pra entregar
+// (mesma coleção das peças, marcados com tipo:'arco').
+const arcosDemo = [
+  { id:'a1', tipo:'arco', nome:'Arco Clássico Dourado e Branco', formato:'Arco', cor:'Dourado/Branco', tamanho:'2m', modelo:'Cheio de bexigas', codigo:'AR-001', foto:'', estoqueTotal:3, precoLocacao:150, observacoes:'', ativo:true },
+  { id:'a2', tipo:'arco', nome:'Arco de balões rosa/lilás', formato:'Arco', cor:'Rosa/Lilás', tamanho:'2m', modelo:'Orgânico', codigo:'AR-004', foto:'', estoqueTotal:3, precoLocacao:90, observacoes:'', ativo:true },
+  { id:'a3', tipo:'arco', nome:'Arco Tropical Verde e Coral', formato:'Arco', cor:'Verde/Coral', tamanho:'2,5m', modelo:'Orgânico', codigo:'AR-008', foto:'', estoqueTotal:2, precoLocacao:170, observacoes:'', ativo:true },
 ];
 
 const clientesDemo = [
@@ -401,7 +409,7 @@ const clientesDemo = [
 
 const reservasDemo = [];
 
-let pecas = [...pecasDemo];
+let pecas = [...pecasDemo, ...arcosDemo];
 let clientes = [...clientesDemo];
 let reservas = [...reservasDemo];
 let usuarioLogado = null;
@@ -440,6 +448,12 @@ function formatarData(iso) { if (!iso) return ''; const [a,m,d] = iso.split('-')
 // assim que devolvida (concluída), a peça libera na hora, mesmo antes da
 // data de devolução prevista.
 function statusOcupaEstoque(status) { return status !== 'cancelada' && status !== 'concluida'; }
+
+// Arcos de bexiga prontos vivem na mesma coleção "pecas" (marcados com
+// tipo:'arco'), pra entrar junto nas mesmas reservas/calendário/contrato
+// sem duplicar todo o sistema — só ganham uma aba de cadastro própria.
+function ehArco(p) { return p.tipo === 'arco'; }
+function ehPeca(p) { return p.tipo !== 'arco'; }
 function hojeISO() { const h = new Date(); return isoData(h.getFullYear(), h.getMonth(), h.getDate()); }
 function reservaAtrasada(r) { return statusOcupaEstoque(r.status) && r.dataDevolucao < hojeISO(); }
 
@@ -494,7 +508,7 @@ window.__onAdminAuthChanged = (user) => {
 // ══════════════════════════════════════════════════════════════
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════════════════════
-const titulos = { reservas:'Reservas', pecas:'Peças', clientes:'Clientes', calendario:'Calendário', config:'Contrato / Configurações' };
+const titulos = { reservas:'Reservas', pecas:'Peças', arcos:'Arcos de Bexiga', clientes:'Clientes', calendario:'Calendário', config:'Contrato / Configurações' };
 
 function irPara(tab) {
   tabAtiva = tab;
@@ -504,6 +518,7 @@ function irPara(tab) {
   const conteudo = document.getElementById('conteudoTab');
 
   if (tab === 'pecas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormPeca()">+ Nova peça</button>`; conteudo.innerHTML = viewPecas(); aplicarFiltroPecas(); }
+  if (tab === 'arcos') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormArco()">+ Novo arco</button>`; conteudo.innerHTML = viewArcos(); aplicarFiltroArcos(); }
   if (tab === 'clientes') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirFormCliente()">+ Novo cliente</button>`; conteudo.innerHTML = viewClientes(); aplicarFiltroClientes(); }
   if (tab === 'reservas') { acoes.innerHTML = `<button class="btn btn-primario" onclick="abrirNovaReserva()">+ Nova reserva</button>`; conteudo.innerHTML = viewListaReservas(); }
   if (tab === 'calendario') { acoes.innerHTML = ''; conteudo.innerHTML = viewCalendario(); renderCalendario(); }
@@ -514,7 +529,10 @@ function irPara(tab) {
 // PEÇAS
 // ══════════════════════════════════════════════════════════════
 function valoresUnicos(campo) {
-  return Array.from(new Set(pecas.map(p => p[campo]).filter(Boolean))).sort();
+  return Array.from(new Set(pecas.filter(ehPeca).map(p => p[campo]).filter(Boolean))).sort();
+}
+function valoresUnicosArco(campo) {
+  return Array.from(new Set(pecas.filter(ehArco).map(p => p[campo]).filter(Boolean))).sort();
 }
 
 function viewPecas() {
@@ -538,6 +556,7 @@ function aplicarFiltroPecas() {
   const modelo = document.getElementById('fModelo') ? document.getElementById('fModelo').value : '';
 
   const lista = pecas.filter(p => {
+    if (!ehPeca(p)) return false;
     if (formato && p.formato !== formato) return false;
     if (cor && p.cor !== cor) return false;
     if (tamanho && p.tamanho !== tamanho) return false;
@@ -633,6 +652,124 @@ function excluirPeca(id) {
   if (!confirm('Excluir esta peça do catálogo interno?')) return;
   if (window.__fbExcluirPeca) window.__fbExcluirPeca(id).catch(err => alert('Erro: ' + err.message));
   else { pecas = pecas.filter(p => p.id !== id); irPara('pecas'); }
+}
+
+// ══════════════════════════════════════════════════════════════
+// ARCOS DE BEXIGA — mesma coleção de peças (tipo:'arco'), aba própria de
+// cadastro porque já é um produto pronto à parte. Entram normalmente nas
+// reservas, calendário e contrato junto com as outras peças.
+// ══════════════════════════════════════════════════════════════
+function viewArcos() {
+  return `
+    <div class="barra-filtros">
+      <input type="text" id="fBuscaArco" placeholder="Buscar arco por nome ou código..." oninput="aplicarFiltroArcos()" style="flex:1; min-width:200px;">
+      <select id="fCorArco" onchange="aplicarFiltroArcos()"><option value="">Cor (todas)</option>${valoresUnicosArco('cor').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fTamanhoArco" onchange="aplicarFiltroArcos()"><option value="">Tamanho (todos)</option>${valoresUnicosArco('tamanho').map(v=>`<option>${v}</option>`).join('')}</select>
+      <select id="fEstiloArco" onchange="aplicarFiltroArcos()"><option value="">Estilo (todos)</option>${valoresUnicosArco('modelo').map(v=>`<option>${v}</option>`).join('')}</select>
+    </div>
+    <div class="grade-pecas" id="gradeArcos"></div>
+  `;
+}
+
+function aplicarFiltroArcos() {
+  const busca = normalizarTexto(document.getElementById('fBuscaArco') ? document.getElementById('fBuscaArco').value : '');
+  const cor = document.getElementById('fCorArco') ? document.getElementById('fCorArco').value : '';
+  const tamanho = document.getElementById('fTamanhoArco') ? document.getElementById('fTamanhoArco').value : '';
+  const estilo = document.getElementById('fEstiloArco') ? document.getElementById('fEstiloArco').value : '';
+
+  const lista = pecas.filter(p => {
+    if (!ehArco(p)) return false;
+    if (cor && p.cor !== cor) return false;
+    if (tamanho && p.tamanho !== tamanho) return false;
+    if (estilo && p.modelo !== estilo) return false;
+    if (busca && !normalizarTexto(`${p.nome} ${p.codigo||''}`).includes(busca)) return false;
+    return true;
+  });
+
+  const grade = document.getElementById('gradeArcos');
+  if (!lista.length) { grade.innerHTML = `<div class="vazio-lista">Nenhum arco encontrado.</div>`; return; }
+
+  grade.innerHTML = lista.map(p => `
+    <div class="peca-card">
+      <div class="peca-foto">${p.foto ? `<img src="${p.foto}" alt="${p.nome}">` : '🎈'}</div>
+      <div class="peca-corpo">
+        <div class="peca-nome">${p.nome}</div>
+        <div class="peca-tags">
+          ${p.cor ? `<span class="peca-tag">${p.cor}</span>` : ''}
+          ${p.tamanho ? `<span class="peca-tag">${p.tamanho}</span>` : ''}
+          ${p.modelo ? `<span class="peca-tag">${p.modelo}</span>` : ''}
+        </div>
+        <div class="peca-estoque mono">Cód. ${p.codigo || '—'} • Estoque: ${p.estoqueTotal}</div>
+        <div class="peca-rodape">
+          <div class="peca-preco">${formatarMoeda(p.precoLocacao)}</div>
+          <div class="peca-acoes">
+            <button class="btn-fantasma" onclick="abrirFormArco('${p.id}')">Editar</button>
+            <button class="btn-perigo" onclick="excluirArco('${p.id}')">Excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function abrirFormArco(id) {
+  const p = id ? pecas.find(x => x.id === id) : null;
+  document.getElementById('tituloFormPeca').textContent = p ? 'Editar arco' : 'Novo arco de bexiga';
+  document.getElementById('corpoFormPeca').innerHTML = `
+    <div class="campo"><label>Nome / tema do arco</label><input id="pNome" value="${p ? p.nome : ''}" placeholder="Ex: Arco Safári Verde e Marrom"></div>
+    <div class="grid-2">
+      <div class="campo"><label>Cor(es)</label><input id="pCor" value="${p ? p.cor : ''}" placeholder="Ex: Verde, marrom e bege"></div>
+      <div class="campo"><label>Tamanho</label><input id="pTamanho" value="${p ? p.tamanho : ''}" placeholder="Ex: 2m"></div>
+    </div>
+    <div class="grid-2">
+      <div class="campo"><label>Estilo</label><input id="pModelo" value="${p ? p.modelo : ''}" placeholder="Ex: Orgânico, Cheio de bexigas..."></div>
+      <div class="campo"><label>Código interno</label><input id="pCodigo" value="${p ? p.codigo||'' : ''}"></div>
+    </div>
+    <div class="campo"><label>Foto (URL)</label><input id="pFoto" value="${p ? p.foto||'' : ''}"></div>
+    <div class="grid-2">
+      <div class="campo"><label>Quantidade pronta em estoque</label><input type="number" min="0" id="pEstoque" value="${p ? p.estoqueTotal : 1}"></div>
+      <div class="campo"><label>Valor da locação (R$)</label><input type="number" min="0" step="0.01" id="pPreco" value="${p ? p.precoLocacao : ''}"></div>
+    </div>
+    <div class="campo"><label>Observações</label><textarea id="pObs" rows="2">${p ? p.observacoes||'' : ''}</textarea></div>
+    <label style="display:flex; align-items:center; gap:6px; font-size:13px; margin-bottom:14px;">
+      <input type="checkbox" id="pAtivo" ${!p || p.ativo !== false ? 'checked' : ''}> Arco ativo (disponível para reserva)
+    </label>
+    <button class="btn btn-primario btn-bloco" onclick="salvarArco(${p ? `'${p.id}'` : 'null'})">Salvar arco</button>
+  `;
+  document.getElementById('overlayPeca').classList.add('aberto');
+}
+
+function salvarArco(id) {
+  const dados = {
+    nome: document.getElementById('pNome').value.trim(),
+    tipo: 'arco',
+    formato: 'Arco',
+    cor: document.getElementById('pCor').value.trim(),
+    tamanho: document.getElementById('pTamanho').value.trim(),
+    modelo: document.getElementById('pModelo').value.trim(),
+    codigo: document.getElementById('pCodigo').value.trim(),
+    foto: document.getElementById('pFoto').value.trim(),
+    estoqueTotal: Number(document.getElementById('pEstoque').value) || 0,
+    precoLocacao: Number(document.getElementById('pPreco').value) || 0,
+    observacoes: document.getElementById('pObs').value.trim(),
+    ativo: document.getElementById('pAtivo').checked,
+  };
+  if (!dados.nome) { alert('Dê um nome ao arco.'); return; }
+
+  if (window.__fbSalvarPeca) {
+    window.__fbSalvarPeca(dados, id).catch(err => alert('Erro ao salvar na nuvem: ' + err.message));
+  } else {
+    if (id) { const i = pecas.findIndex(x => x.id === id); pecas[i] = { ...pecas[i], ...dados }; }
+    else pecas.push({ id: 'local-' + Date.now(), ...dados });
+    irPara('arcos');
+  }
+  fecharOverlay('overlayPeca');
+}
+
+function excluirArco(id) {
+  if (!confirm('Excluir este arco do catálogo interno?')) return;
+  if (window.__fbExcluirPeca) window.__fbExcluirPeca(id).catch(err => alert('Erro: ' + err.message));
+  else { pecas = pecas.filter(p => p.id !== id); irPara('arcos'); }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -838,8 +975,8 @@ function abrirNovaReserva(reservaId, dataPrefill) {
       </div>
     </div>
     <div class="painel">
-      <h3>3. Peças</h3>
-      <input type="text" id="buscaPecaReserva" placeholder="Buscar peça por nome, formato, cor..." oninput="atualizarDisponibilidadePecas()" style="width:100%; padding:9px 12px; border:1.5px solid var(--tinta4); border-radius:9px; font-size:13px; margin-bottom:10px;">
+      <h3>3. Peças e arcos</h3>
+      <input type="text" id="buscaPecaReserva" placeholder="Buscar peça ou arco por nome, formato, cor..." oninput="atualizarDisponibilidadePecas()" style="width:100%; padding:9px 12px; border:1.5px solid var(--tinta4); border-radius:9px; font-size:13px; margin-bottom:10px;">
       <div class="lista-selecionaveis" id="listaPecasDisponiveis"></div>
     </div>
     <div class="painel">
@@ -1330,7 +1467,7 @@ function salvarConfigSistema() {
 // ══════════════════════════════════════════════════════════════
 // SINCRONIZAÇÃO COM A NUVEM
 // ══════════════════════════════════════════════════════════════
-window.__onPecasNuvem = (lista) => { pecas = lista; if (tabAtiva === 'pecas') irPara('pecas'); if (tabAtiva === 'calendario') renderDetalheDiaCalendario(); };
+window.__onPecasNuvem = (lista) => { pecas = lista; if (tabAtiva === 'pecas') irPara('pecas'); if (tabAtiva === 'arcos') irPara('arcos'); if (tabAtiva === 'calendario') renderDetalheDiaCalendario(); };
 window.__onClientesNuvem = (lista) => { clientes = lista; if (tabAtiva === 'clientes') irPara('clientes'); };
 window.__onReservasNuvem = (lista) => { reservas = lista; if (tabAtiva === 'reservas') irPara('reservas'); if (tabAtiva === 'calendario') renderCalendario(); };
 window.__onConfigNuvem = (cfg) => { if (cfg) configSistema = { ...configSistema, ...cfg }; };
