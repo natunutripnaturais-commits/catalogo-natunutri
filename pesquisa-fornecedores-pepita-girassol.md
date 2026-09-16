@@ -15,6 +15,26 @@ Achado relevante: a esmagadora maioria das importadoras/atacadistas desse nicho 
 
 ---
 
+## Atualização: Cisbra Agroindustrial e a diferença entre "processadora primária" x "revendedora"
+
+O fornecedor atual do usuário (melhor preço, sacaria com nome próprio) é a **Cisbra Agroindustrial Ltda**, CNPJ 94.669.611/0001-70:
+
+- **Endereços industriais:** Av. Presidente Kennedy, 4681, Panambi/RS; Rua Ragnar Thorstenberg, 288, Ijuí/RS; Rod. BR 158, Água Boa/MT.
+- **Contato:** (55) 3376-5100 · atendimentocisbra@cisbra.com.br · cisbra.com.br
+- **Perfil real:** não é uma revendedora/cerealista — é uma **agroindústria beneficiadora**, com mais de 30 anos de atuação em mix de grãos, flocos e farinhas integrais. A página "Produtores Cisbra" documenta parcerias diretas com produtores rurais de até 20 anos (ex.: caso do produtor Iriné Roberto), ou seja, eles contratam a matéria-prima direto do produtor e fazem beneficiamento/classificação/seleção internamente. Isso explica o preço: **não há elo intermediário nem custo de importação** entre a lavoura e a sacaria com o nome deles.
+- **Pedido:** site tem formulário B2B com faixas de 1–99kg até >5.000kg; embalagem padrão de 25kg. Vale negociar diretamente a faixa de volume da Natunutri para ver se há espaço abaixo do preço atual.
+- ⚠️ **Cuidado para não confundir:** existe um **"Grupo Cisbra" de Formosa/GO** que é uma empresa de fertilizantes (Cisbra Fol/NPK/Log) — homônima, sem relação com a Cisbra Agroindustrial de Panambi/RS.
+
+### "Dá pra triangular melhor que a Cisbra?"
+
+Na prática, **é difícil bater o preço da Cisbra pela via de um distribuidor/importador**, porque:
+
+1. Cisbra já *é* a origem — compra do produtor rural e processa. Qualquer distribuidora da lista abaixo (Vimacedo, Brasbol, N E Importadora etc.) compra de terceiros (muitas vezes produto importado) e revende com margem, ou seja, parte de um custo igual ou maior ao da Cisbra e ainda soma frete/margem.
+2. Busquei ativamente por **outra agroindústria brasileira que faça beneficiamento próprio de girassol confeiteiro/pepita** (o mesmo papel da Cisbra) para servir de alternativa ou fator de barganha, e não encontrei uma segunda empresa confirmada nesse porte. Candidatas que apareceram na busca acabaram não se confirmando: "Girassol Alimentos" (São Lourenço do Oeste/SC) é fabricante de biscoitos/wafers, não processa girassol apesar do nome; "Jasmine Alimentos" (Campina Grande do Sul/PR) vende sementes de girassol em varejo mas é uma marca de produto acabado (concorrente de prateleira, não fornecedor atacadista); "Ativa Beneficiamento e Com de Alimentos" (Contagem/MG) é uma distribuidora de cereais/leguminosas, sem confirmação de que beneficia girassol.
+3. Onde a triangulação **de fato ajuda**: (a) negociar direto com a Cisbra por faixa de volume maior/contrato, caso hoje a compra seja pequena e não esteja pegando o preço-teto de tabela; (b) usar as importadoras da lista abaixo como **segunda fonte de reserva/negociação** (garantia de suprimento se a safra ou a fábrica da Cisbra tiver problema), não necessariamente para ganhar preço; (c) vale uma ligação para a Cisbra perguntando se eles vendem também para outras regiões/praças com frete melhor, e se têm política de preço por contrato anual x spot.
+
+---
+
 ## Empresas confirmadas com pepita de girassol no catálogo
 
 | Empresa | Cidade/UF | Contato | Observações / preço / MOQ |
