@@ -385,6 +385,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
         Análises
       </button>
+      <button class="tab-btn" data-tab="rotulos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" stroke="none"/></svg>
+        Rótulos
+      </button>
     </div>
 
   <main>
@@ -656,6 +660,63 @@
       <div id="analiseLista"></div>
     </div>
   </div>
+
+  <div id="tabRotulos" class="tabpanel">
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Cadastrar rótulo</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Suba o arquivo do rótulo pronto pra impressão (PDF ou imagem) uma vez por produto/tamanho — fica salvo aqui pra usar sempre que for imprimir.
+      </div>
+      <div class="compra-form">
+        <input type="text" id="inputRotuloNome" placeholder="Nome do rótulo (ex: Camomila Flor 250g)" style="flex:2; min-width:220px;">
+        <input type="file" id="inputRotuloArquivo" accept=".pdf,application/pdf,image/png,image/jpeg">
+      </div>
+      <div class="compra-form" id="rotuloLarguraMmGrupo" style="display:none; margin-top:8px;">
+        <input type="number" id="inputRotuloLarguraMm" step="0.1" min="1" placeholder="Largura real do rótulo (mm)">
+        <span style="font-size:12px; color:var(--texto-suave); align-self:center;">Só pra imagem — o PDF já traz o tamanho certo.</span>
+      </div>
+      <div class="actions" style="margin:8px 0 0">
+        <button class="secondary" id="btnSalvarRotulo">📎 Salvar rótulo</button>
+      </div>
+      <div style="border-top:1px solid var(--linha); margin:16px 0 12px;"></div>
+      <div id="listaRotulos"></div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Posição do lote/fabricação/validade</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Mesma posição pra todos os rótulos (pensado pra você já deixar a caixinha de "Fabricado" sempre no mesmo lugar no design). Medido a partir do canto inferior esquerdo da página.
+      </div>
+      <div class="compra-form">
+        <input type="number" id="inputCarimboOffsetX" step="0.5" min="0" placeholder="Distância da borda esquerda (mm)">
+        <input type="number" id="inputCarimboOffsetY" step="0.5" min="0" placeholder="Distância da borda inferior (mm)">
+        <input type="number" id="inputCarimboFonte" step="0.5" min="4" placeholder="Tamanho da fonte (pt)">
+        <input type="number" id="inputCarimboEspacamento" step="0.5" min="4" placeholder="Espaço entre linhas (pt)">
+        <button class="secondary" id="btnSalvarCarimboConfig">💾 Salvar posição</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Imprimir rótulo</h2>
+      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+        Escolha o rótulo e a quantidade — o sistema gera um lote novo (aleatório), usa a data de hoje como fabricação e validade de 6 meses depois, imprime já carimbado em todas as cópias e registra no histórico.
+      </div>
+      <div class="compra-form">
+        <div class="produto-picker">
+          <input type="text" id="buscaRotuloImprimir" placeholder="Pesquisar rótulo…" autocomplete="off">
+          <select id="selRotuloImprimir"></select>
+        </div>
+        <input type="number" id="inputQtdImprimir" step="1" min="1" value="1" placeholder="Quantidade">
+        <button class="secondary" id="btnGerarImpressao">🖨 Gerar PDF e registrar lote</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section" style="margin:0 0 8px">Histórico de lotes impressos</h2>
+      <input type="search" id="buscaHistoricoLotes" placeholder="Pesquisar rótulo ou lote…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
+      <div id="listaHistoricoLotes"></div>
+    </div>
+  </div>
   </main>
     </div>
 
@@ -690,6 +751,9 @@ import {
   getFirestore, collection, doc, onSnapshot, writeBatch, connectFirestoreEmulator,
   setDoc, deleteDoc,
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL, deleteObject, connectStorageEmulator,
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
 
 // ──────────────────────────────────────────────
 // FIREBASE — dados da área administrativa (estoque, compras, ajustes e as
@@ -709,14 +773,16 @@ const firebaseConfig = {
   appId: "1:1033048008434:web:23a1bcf272e11594ebd26b",
 };
 const FIREBASE_CONFIGURADO = !!(firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('COLE_AQUI'));
-let auth, db;
+let auth, db, storage;
 if (FIREBASE_CONFIGURADO) {
   const firebaseApp = initializeApp(firebaseConfig);
   auth = getAuth(firebaseApp);
   db = getFirestore(firebaseApp);
+  storage = getStorage(firebaseApp);
   if (window.__firebaseEmulator) {
     connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
     connectFirestoreEmulator(db, 'localhost', 8080);
+    connectStorageEmulator(storage, 'localhost', 9199);
   }
 }
 
@@ -1554,6 +1620,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'producao') renderProducao();
     if (btn.dataset.tab === 'precos') renderPrecos();
     if (btn.dataset.tab === 'analises') renderAnalise();
+    if (btn.dataset.tab === 'rotulos') renderRotulos();
   });
 });
 
@@ -1580,6 +1647,46 @@ let anuncios = []; // [{ id, nomeAnuncio, variacao, custo, precoVenda }]
 let vendasAnuncio = []; // [{ id, data, nomeAnuncio, variacao, qtd, usuario }]
 let taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4 };
 let unsubAnuncios = null, unsubVendasAnuncio = null, unsubTaxasVenda = null;
+
+// ──────────────────────────────────────────────
+// RÓTULOS — catálogo de rótulos prontos pra impressão (PDF ou imagem, um
+// por produto/tamanho) com lote/fabricação/validade carimbados na hora de
+// imprimir. Posição do carimbo é a mesma pra todos os rótulos, medida a
+// partir do canto inferior esquerdo da página.
+// ──────────────────────────────────────────────
+let rotulosEtiqueta = []; // [{ id, nome, tipo: 'pdf'|'imagem', storagePath, larguraMm, alturaMm }]
+let lotesImpressos = []; // [{ id, rotuloId, rotuloNome, lote, dataFabricacao, dataValidade, quantidade, usuario, criadoEm }]
+let carimboConfig = { offsetXmm: 10, offsetYmm: 10, fonteTamanhoPt: 8, espacamentoPt: 10 };
+let unsubRotulos = null, unsubLotesImpressos = null, unsubCarimboConfig = null;
+
+function mmParaPt(mm) { return mm * 72 / 25.4; }
+function ptParaMm(pt) { return pt * 25.4 / 72; }
+
+function formatarDataBR(dataISO) {
+  const [ano, mes, dia] = dataISO.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+// Lote = "L" + data de fabricação (AAMMDD) + 3 dígitos aleatórios — único
+// na prática e ainda dá pra saber a data de fabricação só de olhar.
+function gerarLote(dataFabricacaoISO) {
+  const [ano, mes, dia] = dataFabricacaoISO.split('-');
+  const prefixo = ano.slice(2) + mes + dia;
+  const aleatorio = String(Math.floor(Math.random() * 1000)).padStart(3, '0');
+  return `L${prefixo}-${aleatorio}`;
+}
+
+// Soma meses a uma data, "grudando" no último dia do mês de destino quando
+// o mês de origem tem mais dias (ex: 31/08 + 6 meses = 28 ou 29/02, não
+// "03/03" como Date faria sozinho).
+function somarMeses(dataISO, n) {
+  const [ano, mes, dia] = dataISO.split('-').map(Number);
+  const d = new Date(ano, mes - 1 + n, 1);
+  const ultimoDiaMes = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(dia, ultimoDiaMes));
+  const pad = x => String(x).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
 
 function acharEstoque(nomeProduto) {
   return estoque.find(e => e.nome.toLowerCase() === nomeProduto.toLowerCase());
@@ -1644,6 +1751,11 @@ function analiseAtiva() {
   return el && el.classList.contains('ativo');
 }
 
+function rotulosAtivo() {
+  const el = document.getElementById('tabRotulos');
+  return el && el.classList.contains('ativo');
+}
+
 // Liga os "ouvintes" em tempo real: qualquer alteração feita neste ou em
 // outro aparelho logado na mesma conta aparece aqui em poucos instantes,
 // sem precisar recarregar a página.
@@ -1695,11 +1807,30 @@ function iniciarSincronizacao() {
     if (precosAtivo()) renderPrecos();
     if (analiseAtiva()) renderAnalise();
   });
+
+  unsubRotulos = onSnapshot(collection(db, 'rotulosEtiqueta'), snap => {
+    rotulosEtiqueta = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    if (rotulosAtivo()) renderRotulos();
+  });
+
+  unsubLotesImpressos = onSnapshot(collection(db, 'lotesImpressos'), snap => {
+    lotesImpressos = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || ''));
+    if (rotulosAtivo()) renderHistoricoLotes();
+  });
+
+  unsubCarimboConfig = onSnapshot(doc(db, 'configuracoes', 'carimboRotulo'), snap => {
+    if (snap.exists()) carimboConfig = { offsetXmm: 10, offsetYmm: 10, fonteTamanhoPt: 8, espacamentoPt: 10, ...snap.data() };
+    if (rotulosAtivo()) renderCarimboConfigForm();
+  });
 }
 
 function pararSincronizacao() {
-  [unsubEstoque, unsubMovimentos, unsubProducaoCiclos, unsubConfigProducao, unsubAnuncios, unsubVendasAnuncio, unsubTaxasVenda].forEach(fn => fn && fn());
-  unsubEstoque = unsubMovimentos = unsubProducaoCiclos = unsubConfigProducao = unsubAnuncios = unsubVendasAnuncio = unsubTaxasVenda = null;
+  [unsubEstoque, unsubMovimentos, unsubProducaoCiclos, unsubConfigProducao, unsubAnuncios, unsubVendasAnuncio, unsubTaxasVenda, unsubRotulos, unsubLotesImpressos, unsubCarimboConfig].forEach(fn => fn && fn());
+  unsubEstoque = unsubMovimentos = unsubProducaoCiclos = unsubConfigProducao = unsubAnuncios = unsubVendasAnuncio = unsubTaxasVenda = unsubRotulos = unsubLotesImpressos = unsubCarimboConfig = null;
   estoque = [];
   movimentos = [];
   producaoCiclos = [];
@@ -1707,6 +1838,9 @@ function pararSincronizacao() {
   anuncios = [];
   vendasAnuncio = [];
   taxasVenda = { comissaoPct: 18, transacaoPct: 2, taxaFixa: 4 };
+  rotulosEtiqueta = [];
+  lotesImpressos = [];
+  carimboConfig = { offsetXmm: 10, offsetYmm: 10, fonteTamanhoPt: 8, espacamentoPt: 10 };
   document.getElementById('alertaEstoque').style.display = 'none';
 }
 
@@ -2521,6 +2655,256 @@ document.getElementById('btnExportarAnaliseCsv').addEventListener('click', () =>
   }
   downloadBlob(csvBlob(linhas), `natunutri-analise-${de}-a-${ate}.csv`);
 });
+
+// ──────────────────────────────────────────────
+// RÓTULOS — UI
+// ──────────────────────────────────────────────
+function renderRotulos() {
+  renderListaRotulosCadastrados();
+  preencherSelectRotulos();
+  renderCarimboConfigForm();
+  renderHistoricoLotes();
+}
+
+function renderListaRotulosCadastrados() {
+  const el = document.getElementById('listaRotulos');
+  el.innerHTML = '';
+  if (!rotulosEtiqueta.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum rótulo cadastrado ainda.</div>';
+    return;
+  }
+  rotulosEtiqueta.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'painel-row';
+    row.innerHTML = `
+      <div style="flex:1; min-width:180px;">
+        <div class="painel-nome">${escapeHtml(r.nome)}</div>
+        <div class="painel-detalhe">${r.tipo === 'pdf' ? 'PDF' : 'Imagem'} · ${r.larguraMm.toFixed(1)} × ${r.alturaMm.toFixed(1)} mm</div>
+      </div>
+      <button class="secondary" data-excluir-rotulo="${escapeHtml(r.id)}" style="color:#b91c1c; border-color:#b91c1c; padding:6px 10px; font-size:12px;">🗑 Excluir</button>
+    `;
+    el.appendChild(row);
+  });
+}
+
+document.getElementById('listaRotulos').addEventListener('click', async e => {
+  const btn = e.target.closest('[data-excluir-rotulo]');
+  if (!btn) return;
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const r = rotulosEtiqueta.find(x => x.id === btn.dataset.excluirRotulo);
+  if (!r) return;
+  if (!confirm(`Excluir o rótulo "${r.nome}"? O arquivo cadastrado é apagado — isso não afeta o histórico de lotes já impressos.`)) return;
+  try { await deleteObject(ref(storage, r.storagePath)); } catch (e) {}
+  await deleteDoc(doc(db, 'rotulosEtiqueta', r.id));
+  alert('Rótulo excluído.');
+});
+
+function preencherSelectRotulos() {
+  const sel = document.getElementById('selRotuloImprimir');
+  const termo = norm(document.getElementById('buscaRotuloImprimir').value || '').toLowerCase();
+  const atual = sel.value;
+  const filtrados = rotulosEtiqueta.filter(r => !termo || r.nome.toLowerCase().includes(termo));
+  sel.innerHTML = filtrados
+    .map(r => `<option value="${escapeHtml(r.id)}">${escapeHtml(r.nome)}</option>`)
+    .join('');
+  if (filtrados.some(r => r.id === atual)) sel.value = atual;
+}
+document.getElementById('buscaRotuloImprimir').addEventListener('input', preencherSelectRotulos);
+
+document.getElementById('inputRotuloArquivo').addEventListener('change', () => {
+  const file = document.getElementById('inputRotuloArquivo').files[0];
+  const ehImagem = file && /^image\//.test(file.type);
+  document.getElementById('rotuloLarguraMmGrupo').style.display = ehImagem ? 'flex' : 'none';
+});
+
+document.getElementById('btnSalvarRotulo').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const nome = norm(document.getElementById('inputRotuloNome').value);
+  const file = document.getElementById('inputRotuloArquivo').files[0];
+  if (!nome) { alert('Digite o nome do rótulo.'); return; }
+  if (!file) { alert('Escolha o arquivo do rótulo (PDF ou imagem).'); return; }
+
+  const ehPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
+  const ehImagem = /^image\//.test(file.type);
+  if (!ehPdf && !ehImagem) { alert('Formato não suportado — envie um PDF ou uma imagem (PNG/JPG).'); return; }
+
+  const existente = rotulosEtiqueta.find(r => r.nome.toLowerCase() === nome.toLowerCase());
+  if (existente && !confirm(`Já existe um rótulo chamado "${nome}". Substituir o arquivo?`)) return;
+
+  const bytes = await file.arrayBuffer();
+  let larguraMm, alturaMm;
+
+  if (ehPdf) {
+    const { PDFDocument } = PDFLib;
+    const srcDoc = await PDFDocument.load(bytes.slice(0));
+    const tam = srcDoc.getPage(0).getSize();
+    larguraMm = Math.round(ptParaMm(tam.width) * 10) / 10;
+    alturaMm = Math.round(ptParaMm(tam.height) * 10) / 10;
+  } else {
+    const larguraDigitada = parseFloat(document.getElementById('inputRotuloLarguraMm').value);
+    if (isNaN(larguraDigitada) || larguraDigitada <= 0) { alert('Informe a largura real do rótulo em mm (pra imagem, o sistema não sabe o tamanho físico sozinho).'); return; }
+    const bitmap = await createImageBitmap(new Blob([bytes]));
+    larguraMm = larguraDigitada;
+    alturaMm = Math.round((bitmap.height / bitmap.width) * larguraDigitada * 10) / 10;
+    bitmap.close?.();
+  }
+
+  const ext = ehPdf ? 'pdf' : (file.type === 'image/png' ? 'png' : 'jpg');
+  const id = existente?.id || doc(collection(db, 'rotulosEtiqueta')).id;
+  const storagePath = `rotulos/${id}.${ext}`;
+
+  // Se trocar de tipo (ex: era PDF, virou imagem) o arquivo antigo fica
+  // órfão no Storage — apaga primeiro se o caminho for diferente.
+  if (existente && existente.storagePath && existente.storagePath !== storagePath) {
+    try { await deleteObject(ref(storage, existente.storagePath)); } catch (e) {}
+  }
+
+  await uploadBytes(ref(storage, storagePath), new Uint8Array(bytes), { contentType: ehPdf ? 'application/pdf' : file.type });
+  await setDoc(doc(db, 'rotulosEtiqueta', id), { nome, tipo: ehPdf ? 'pdf' : 'imagem', storagePath, larguraMm, alturaMm });
+
+  document.getElementById('inputRotuloNome').value = '';
+  document.getElementById('inputRotuloArquivo').value = '';
+  document.getElementById('inputRotuloLarguraMm').value = '';
+  document.getElementById('rotuloLarguraMmGrupo').style.display = 'none';
+  alert(`Rótulo "${nome}" salvo (${larguraMm.toFixed(1)} × ${alturaMm.toFixed(1)} mm).`);
+});
+
+function renderCarimboConfigForm() {
+  document.getElementById('inputCarimboOffsetX').value = carimboConfig.offsetXmm;
+  document.getElementById('inputCarimboOffsetY').value = carimboConfig.offsetYmm;
+  document.getElementById('inputCarimboFonte').value = carimboConfig.fonteTamanhoPt;
+  document.getElementById('inputCarimboEspacamento').value = carimboConfig.espacamentoPt;
+}
+
+document.getElementById('btnSalvarCarimboConfig').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const offsetXmm = parseFloat(document.getElementById('inputCarimboOffsetX').value);
+  const offsetYmm = parseFloat(document.getElementById('inputCarimboOffsetY').value);
+  const fonteTamanhoPt = parseFloat(document.getElementById('inputCarimboFonte').value);
+  const espacamentoPt = parseFloat(document.getElementById('inputCarimboEspacamento').value);
+  if ([offsetXmm, offsetYmm, fonteTamanhoPt, espacamentoPt].some(v => isNaN(v) || v < 0)) {
+    alert('Preencha os 4 campos de posição com números válidos.');
+    return;
+  }
+  await setDoc(doc(db, 'configuracoes', 'carimboRotulo'), { offsetXmm, offsetYmm, fonteTamanhoPt, espacamentoPt });
+  alert('Posição do carimbo salva.');
+});
+
+async function baixarBytesRotulo(rotulo) {
+  const url = await getDownloadURL(ref(storage, rotulo.storagePath));
+  const resposta = await fetch(url);
+  return await resposta.arrayBuffer();
+}
+
+// Monta o PDF final com N cópias do rótulo, cada uma já com o carimbo de
+// lote/fabricação/validade desenhado na posição configurada (mesma posição
+// em todas, medida a partir do canto inferior esquerdo da página).
+async function gerarPdfRotuloImpresso(rotulo, quantidade, lote, dataFabricacaoISO, dataValidadeISO) {
+  const { PDFDocument, StandardFonts, rgb } = PDFLib;
+  const bytesOriginais = await baixarBytesRotulo(rotulo);
+  const outDoc = await PDFDocument.create();
+  const fonte = await outDoc.embedFont(StandardFonts.Helvetica);
+
+  const larguraPt = mmParaPt(rotulo.larguraMm);
+  const alturaPt = mmParaPt(rotulo.alturaMm);
+  let desenhavel; // embedded page (pdf) ou embedded image
+  if (rotulo.tipo === 'pdf') {
+    const srcDoc = await PDFDocument.load(bytesOriginais);
+    [desenhavel] = await outDoc.embedPdf(srcDoc, [0]);
+  } else {
+    const ehPng = rotulo.storagePath.toLowerCase().endsWith('.png');
+    desenhavel = ehPng ? await outDoc.embedPng(bytesOriginais) : await outDoc.embedJpg(bytesOriginais);
+  }
+
+  const linhas = [
+    `Lote: ${lote}`,
+    `Fabricação: ${formatarDataBR(dataFabricacaoISO)}`,
+    `Validade: ${formatarDataBR(dataValidadeISO)}`,
+  ];
+  const xPt = mmParaPt(carimboConfig.offsetXmm);
+  const yBasePt = mmParaPt(carimboConfig.offsetYmm);
+
+  for (let i = 0; i < quantidade; i++) {
+    const page = outDoc.addPage([larguraPt, alturaPt]);
+    if (rotulo.tipo === 'pdf') {
+      page.drawPage(desenhavel, { x: 0, y: 0, width: larguraPt, height: alturaPt });
+    } else {
+      page.drawImage(desenhavel, { x: 0, y: 0, width: larguraPt, height: alturaPt });
+    }
+    linhas.forEach((linha, idx) => {
+      page.drawText(linha, {
+        x: xPt,
+        y: yBasePt + (linhas.length - 1 - idx) * carimboConfig.espacamentoPt,
+        size: carimboConfig.fonteTamanhoPt,
+        font: fonte,
+        color: rgb(0, 0, 0),
+      });
+    });
+  }
+
+  return await outDoc.save();
+}
+
+document.getElementById('btnGerarImpressao').addEventListener('click', async () => {
+  if (!auth?.currentUser) { alert('Entre na conta primeiro.'); return; }
+  const rotuloId = document.getElementById('selRotuloImprimir').value;
+  const quantidade = parseInt(document.getElementById('inputQtdImprimir').value, 10);
+  if (!rotuloId) { alert('Escolha um rótulo pra imprimir.'); return; }
+  if (isNaN(quantidade) || quantidade < 1) { alert('Informe uma quantidade válida (mínimo 1).'); return; }
+  const rotulo = rotulosEtiqueta.find(r => r.id === rotuloId);
+  if (!rotulo) { alert('Rótulo não encontrado.'); return; }
+
+  const dataFabricacao = hoje();
+  const dataValidade = somarMeses(dataFabricacao, 6);
+  const lote = gerarLote(dataFabricacao);
+
+  const btn = document.getElementById('btnGerarImpressao');
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando…';
+  try {
+    const pdfBytes = await gerarPdfRotuloImpresso(rotulo, quantidade, lote, dataFabricacao, dataValidade);
+    downloadBlob(new Blob([pdfBytes], { type: 'application/pdf' }), `natunutri-rotulo-${lote}.pdf`);
+    await setDoc(doc(collection(db, 'lotesImpressos')), {
+      rotuloId: rotulo.id, rotuloNome: rotulo.nome, lote,
+      dataFabricacao, dataValidade, quantidade,
+      usuario: auth.currentUser.email, criadoEm: new Date().toISOString(),
+    });
+    alert(`Lote ${lote} gerado e registrado — ${quantidade} cópia(s) de "${rotulo.nome}".\nFabricação: ${formatarDataBR(dataFabricacao)} · Validade: ${formatarDataBR(dataValidade)}`);
+  } catch (err) {
+    alert('Não consegui gerar o PDF do rótulo: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🖨 Gerar PDF e registrar lote';
+  }
+});
+
+function renderHistoricoLotes() {
+  const el = document.getElementById('listaHistoricoLotes');
+  const termo = norm(document.getElementById('buscaHistoricoLotes')?.value || '').toLowerCase();
+  el.innerHTML = '';
+  if (!lotesImpressos.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum lote impresso ainda.</div>';
+    return;
+  }
+  const filtrados = lotesImpressos.filter(l =>
+    !termo || l.rotuloNome.toLowerCase().includes(termo) || l.lote.toLowerCase().includes(termo));
+  if (!filtrados.length) {
+    el.innerHTML = '<div class="estoque-vazio">Nenhum lote encontrado para essa busca.</div>';
+    return;
+  }
+  filtrados.forEach(l => {
+    const row = document.createElement('div');
+    row.className = 'painel-row';
+    row.innerHTML = `
+      <div style="flex:1; min-width:180px;">
+        <div class="painel-nome">${escapeHtml(l.rotuloNome)} — Lote ${escapeHtml(l.lote)}</div>
+        <div class="painel-detalhe">Fab: ${formatarDataBR(l.dataFabricacao)} · Val: ${formatarDataBR(l.dataValidade)} · ${l.quantidade}× · ${escapeHtml(l.usuario || '')}</div>
+      </div>
+    `;
+    el.appendChild(row);
+  });
+}
+document.getElementById('buscaHistoricoLotes').addEventListener('input', renderHistoricoLotes);
 
 // ──────────────────────────────────────────────
 // PAINEL — estoque atual x média de venda dos últimos 30 dias
