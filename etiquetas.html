@@ -130,12 +130,14 @@
   .area-switch{
     display:flex; gap:0; max-width:720px; margin:0 auto; padding:0 16px;
     border-bottom:1px solid var(--linha);
+    overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
   .area-btn{
     background:none; border:none; color:var(--texto-suave); cursor:pointer;
     font-size:13.5px; font-weight:700; padding:14px 4px; margin-right:22px;
     display:flex; align-items:center; gap:7px; border-bottom:2.5px solid transparent;
     margin-bottom:-1px; transition:color .15s, border-color .15s;
+    white-space:nowrap; flex-shrink:0;
   }
   .area-btn svg{width:16px; height:16px; flex-shrink:0;}
   .area-btn.ativo{color:var(--verde-900); border-color:var(--terra);}
@@ -144,6 +146,7 @@
     font-size:13.5px; font-weight:700; padding:14px 4px; margin-right:22px; margin-left:auto;
     display:flex; align-items:center; gap:7px; border-bottom:2.5px solid transparent;
     margin-bottom:-1px; text-decoration:none;
+    white-space:nowrap; flex-shrink:0;
   }
   .area-link svg{width:16px; height:16px; flex-shrink:0;}
   .area{display:none;}
