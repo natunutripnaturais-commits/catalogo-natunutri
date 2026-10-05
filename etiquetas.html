@@ -284,7 +284,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="8" y2="11.01"/><line x1="12" y1="11" x2="12" y2="11.01"/><line x1="16" y1="11" x2="16" y2="11.01"/><line x1="8" y1="15" x2="8" y2="15.01"/><line x1="12" y1="15" x2="12" y2="15.01"/><line x1="16" y1="15" x2="16" y2="15.01"/><line x1="8" y1="19" x2="8" y2="19.01"/><line x1="12" y1="19" x2="12" y2="19.01"/></svg>
     Calculadora Shopee
   </a>
-  <button class="area-btn area-link" data-area="administrativo" data-tab-destino="rotulos" title="Abrir a impressão de rótulos com lote/validade">
+  <button class="area-btn area-link" data-area="rotulos" title="Abrir a impressão de rótulos com lote/validade">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" stroke="none"/></svg>
     Rótulos
   </button>
@@ -391,10 +391,6 @@
       <button class="tab-btn" data-tab="analises">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="12" width="3" height="6"/><rect x="12.5" y="8" width="3" height="10"/><rect x="18" y="5" width="3" height="13"/></svg>
         Análises
-      </button>
-      <button class="tab-btn" data-tab="rotulos">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.4" fill="currentColor" stroke="none"/></svg>
-        Rótulos
       </button>
     </div>
 
@@ -668,66 +664,6 @@
     </div>
   </div>
 
-  <div id="tabRotulos" class="tabpanel">
-    <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Cadastrar rótulo</h2>
-      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Suba o arquivo do rótulo pronto pra impressão (PDF ou imagem) uma vez por produto/tamanho — fica salvo aqui pra usar sempre que for imprimir.
-      </div>
-      <div class="compra-form">
-        <input type="text" id="inputRotuloNome" placeholder="Nome do rótulo (ex: Camomila Flor 250g)" style="flex:2; min-width:220px;">
-        <input type="file" id="inputRotuloArquivo" accept=".pdf,application/pdf,image/png,image/jpeg">
-      </div>
-      <div class="compra-form" id="rotuloLarguraMmGrupo" style="display:none; margin-top:8px;">
-        <input type="number" id="inputRotuloLarguraMm" step="0.1" min="1" placeholder="Largura real do rótulo (mm)">
-        <span style="font-size:12px; color:var(--texto-suave); align-self:center;">Só pra imagem — o PDF já traz o tamanho certo.</span>
-      </div>
-      <div class="actions" style="margin:8px 0 0">
-        <button class="secondary" id="btnSalvarRotulo">📎 Salvar rótulo</button>
-      </div>
-      <div style="border-top:1px solid var(--linha); margin:16px 0 12px;"></div>
-      <div id="listaRotulos"></div>
-    </div>
-
-    <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Posição do lote/fabricação/validade</h2>
-      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Mesma posição pra todos os rótulos (pensado pra você já deixar a caixinha de "Fabricado" sempre no mesmo lugar no design). Y é sempre medido a partir da borda inferior; X pode ser medido a partir da direita (padrão) ou da esquerda.
-      </div>
-      <div class="compra-form">
-        <select id="selCarimboAlinhamento">
-          <option value="direita">Distância a partir da direita</option>
-          <option value="esquerda">Distância a partir da esquerda</option>
-        </select>
-        <input type="number" id="inputCarimboOffsetX" step="0.5" min="0" placeholder="Distância horizontal (mm)">
-        <input type="number" id="inputCarimboOffsetY" step="0.5" min="0" placeholder="Distância da borda inferior (mm)">
-        <input type="number" id="inputCarimboFonte" step="0.5" min="4" placeholder="Tamanho da fonte (pt)">
-        <input type="number" id="inputCarimboEspacamento" step="0.5" min="4" placeholder="Espaço entre linhas (pt)">
-        <button class="secondary" id="btnSalvarCarimboConfig">💾 Salvar posição</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Imprimir rótulo</h2>
-      <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
-        Escolha o rótulo e a quantidade — o sistema gera um lote novo (aleatório), usa a data de hoje como fabricação e validade de 6 meses depois, imprime já carimbado em todas as cópias e registra no histórico.
-      </div>
-      <div class="compra-form">
-        <div class="produto-picker">
-          <input type="text" id="buscaRotuloImprimir" placeholder="Pesquisar rótulo…" autocomplete="off">
-          <select id="selRotuloImprimir"></select>
-        </div>
-        <input type="number" id="inputQtdImprimir" step="1" min="1" value="1" placeholder="Quantidade">
-        <button class="secondary" id="btnGerarImpressao">🖨 Gerar PDF e registrar lote</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2 class="section" style="margin:0 0 8px">Histórico de lotes impressos</h2>
-      <input type="search" id="buscaHistoricoLotes" placeholder="Pesquisar rótulo ou lote…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
-      <div id="listaHistoricoLotes"></div>
-    </div>
-  </div>
   </main>
     </div>
 
@@ -745,6 +681,91 @@
       Restaurar apaga TODO o estoque e movimentações atuais e substitui pelo conteúdo do arquivo — use só em emergência (ex: dado apagado sem querer).
     </div>
   </div>
+  </div>
+</div>
+
+<div id="areaRotulos" class="area">
+  <p class="area-sub">Impressão de rótulos de produto já com lote, fabricação e validade carimbados.</p>
+
+  <div id="loginGateRotulos" class="card" style="display:none">
+    <h2 class="section" style="margin:0 0 8px">Entrar</h2>
+    <div style="font-size:12px; color:var(--texto-suave); margin-bottom:10px;">
+      Mesmo login da área Administrativo — fica conectado neste aparelho até você sair.
+    </div>
+    <div class="compra-form">
+      <input type="email" id="loginEmailRotulos" placeholder="E-mail" autocomplete="username" style="flex:1; min-width:180px;">
+      <input type="password" id="loginSenhaRotulos" placeholder="Senha" autocomplete="current-password" style="flex:1; min-width:140px;">
+      <button class="primary" id="btnLoginRotulos">Entrar</button>
+    </div>
+    <div class="pasta-status" id="loginStatusRotulos"></div>
+  </div>
+
+  <div id="areaRotulosConteudo" style="display:none">
+    <div class="conta-bar">
+      <span id="contaStatusRotulos">—</span>
+      <button class="secondary" id="btnLogoutRotulos">Sair</button>
+    </div>
+
+    <main style="max-width:700px; margin:16px auto 0; padding:0 16px;">
+      <div class="card">
+        <h2 class="section" style="margin:0 0 8px">Cadastrar rótulo</h2>
+        <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+          Suba o arquivo do rótulo pronto pra impressão (PDF ou imagem) uma vez por produto/tamanho — fica salvo aqui pra usar sempre que for imprimir.
+        </div>
+        <div class="compra-form">
+          <input type="text" id="inputRotuloNome" placeholder="Nome do rótulo (ex: Camomila Flor 250g)" style="flex:2; min-width:220px;">
+          <input type="file" id="inputRotuloArquivo" accept=".pdf,application/pdf,image/png,image/jpeg">
+        </div>
+        <div class="compra-form" id="rotuloLarguraMmGrupo" style="display:none; margin-top:8px;">
+          <input type="number" id="inputRotuloLarguraMm" step="0.1" min="1" placeholder="Largura real do rótulo (mm)">
+          <span style="font-size:12px; color:var(--texto-suave); align-self:center;">Só pra imagem — o PDF já traz o tamanho certo.</span>
+        </div>
+        <div class="actions" style="margin:8px 0 0">
+          <button class="secondary" id="btnSalvarRotulo">📎 Salvar rótulo</button>
+        </div>
+        <div style="border-top:1px solid var(--linha); margin:16px 0 12px;"></div>
+        <div id="listaRotulos"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="section" style="margin:0 0 8px">Posição do lote/fabricação/validade</h2>
+        <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+          Mesma posição pra todos os rótulos (pensado pra você já deixar a caixinha de "Fabricado" sempre no mesmo lugar no design). Y é sempre medido a partir da borda inferior; X pode ser medido a partir da direita (padrão) ou da esquerda.
+        </div>
+        <div class="compra-form">
+          <select id="selCarimboAlinhamento">
+            <option value="direita">Distância a partir da direita</option>
+            <option value="esquerda">Distância a partir da esquerda</option>
+          </select>
+          <input type="number" id="inputCarimboOffsetX" step="0.5" min="0" placeholder="Distância horizontal (mm)">
+          <input type="number" id="inputCarimboOffsetY" step="0.5" min="0" placeholder="Distância da borda inferior (mm)">
+          <input type="number" id="inputCarimboFonte" step="0.5" min="4" placeholder="Tamanho da fonte (pt)">
+          <input type="number" id="inputCarimboEspacamento" step="0.5" min="4" placeholder="Espaço entre linhas (pt)">
+          <button class="secondary" id="btnSalvarCarimboConfig">💾 Salvar posição</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section" style="margin:0 0 8px">Imprimir rótulo</h2>
+        <div style="font-size:12px; color:var(--texto-suave); margin-bottom:8px;">
+          Escolha o rótulo e a quantidade — o sistema gera um lote novo (aleatório), usa a data de hoje como fabricação e validade de 6 meses depois, imprime já carimbado em todas as cópias e registra no histórico.
+        </div>
+        <div class="compra-form">
+          <div class="produto-picker">
+            <input type="text" id="buscaRotuloImprimir" placeholder="Pesquisar rótulo…" autocomplete="off">
+            <select id="selRotuloImprimir"></select>
+          </div>
+          <input type="number" id="inputQtdImprimir" step="1" min="1" value="1" placeholder="Quantidade">
+          <button class="secondary" id="btnGerarImpressao">🖨 Gerar PDF e registrar lote</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="section" style="margin:0 0 8px">Histórico de lotes impressos</h2>
+        <input type="search" id="buscaHistoricoLotes" placeholder="Pesquisar rótulo ou lote…" style="width:100%; border:1px solid var(--linha); border-radius:6px; padding:8px 9px; font-size:13px; font-family:inherit; margin-bottom:8px;">
+        <div id="listaHistoricoLotes"></div>
+      </div>
+    </main>
   </div>
 </div>
 
@@ -1617,9 +1638,7 @@ document.querySelectorAll('.area-btn').forEach(btn => {
     document.querySelectorAll('.area').forEach(a => a.classList.remove('ativa'));
     btn.classList.add('ativo');
     document.getElementById('area' + btn.dataset.area[0].toUpperCase() + btn.dataset.area.slice(1)).classList.add('ativa');
-    if (btn.dataset.tabDestino) {
-      document.querySelector(`.tab-btn[data-tab="${btn.dataset.tabDestino}"]`)?.click();
-    }
+    if (btn.dataset.area === 'rotulos' && auth?.currentUser) renderRotulos();
   });
 });
 
@@ -1634,7 +1653,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'producao') renderProducao();
     if (btn.dataset.tab === 'precos') renderPrecos();
     if (btn.dataset.tab === 'analises') renderAnalise();
-    if (btn.dataset.tab === 'rotulos') renderRotulos();
   });
 });
 
@@ -1766,8 +1784,8 @@ function analiseAtiva() {
 }
 
 function rotulosAtivo() {
-  const el = document.getElementById('tabRotulos');
-  return el && el.classList.contains('ativo');
+  const el = document.getElementById('areaRotulos');
+  return el && el.classList.contains('ativa');
 }
 
 // Liga os "ouvintes" em tempo real: qualquer alteração feita neste ou em
@@ -1871,10 +1889,10 @@ function traduzErroAuth(code) {
 }
 
 if (FIREBASE_CONFIGURADO) {
-  document.getElementById('btnLogin').addEventListener('click', async () => {
-    const email = document.getElementById('loginEmail').value.trim();
-    const senha = document.getElementById('loginSenha').value;
-    const status = document.getElementById('loginStatus');
+  async function tentarLogin(emailId, senhaId, statusId) {
+    const email = document.getElementById(emailId).value.trim();
+    const senha = document.getElementById(senhaId).value;
+    const status = document.getElementById(statusId);
     if (!email || !senha) { status.textContent = 'Preencha e-mail e senha.'; return; }
     status.textContent = 'Entrando…';
     try {
@@ -1883,9 +1901,12 @@ if (FIREBASE_CONFIGURADO) {
     } catch (err) {
       status.textContent = 'Não consegui entrar: ' + traduzErroAuth(err.code);
     }
-  });
+  }
+  document.getElementById('btnLogin').addEventListener('click', () => tentarLogin('loginEmail', 'loginSenha', 'loginStatus'));
+  document.getElementById('btnLoginRotulos').addEventListener('click', () => tentarLogin('loginEmailRotulos', 'loginSenhaRotulos', 'loginStatusRotulos'));
 
   document.getElementById('btnLogout').addEventListener('click', () => signOut(auth));
+  document.getElementById('btnLogoutRotulos').addEventListener('click', () => signOut(auth));
 
   document.getElementById('btnBackup').addEventListener('click', () => {
     const dump = { geradoEm: new Date().toISOString(), estoque, movimentos, configProducao };
@@ -1939,6 +1960,9 @@ if (FIREBASE_CONFIGURADO) {
     document.getElementById('loginGate').style.display = user ? 'none' : 'block';
     document.getElementById('areaAdminConteudo').style.display = user ? 'block' : 'none';
     document.getElementById('contaStatus').textContent = user ? `Conectado: ${user.email}` : 'Não conectado.';
+    document.getElementById('loginGateRotulos').style.display = user ? 'none' : 'block';
+    document.getElementById('areaRotulosConteudo').style.display = user ? 'block' : 'none';
+    document.getElementById('contaStatusRotulos').textContent = user ? `Conectado: ${user.email}` : 'Não conectado.';
     if (user) {
       iniciarSincronizacao();
     } else {
@@ -1949,6 +1973,8 @@ if (FIREBASE_CONFIGURADO) {
 } else {
   document.getElementById('loginGate').style.display = 'block';
   document.getElementById('loginGate').innerHTML = '<div class="pasta-status">Configuração da nuvem ainda não concluída neste site.</div>';
+  document.getElementById('loginGateRotulos').style.display = 'block';
+  document.getElementById('loginGateRotulos').innerHTML = '<div class="pasta-status">Configuração da nuvem ainda não concluída neste site.</div>';
 }
 
 function renderTotaisEstoque() {
@@ -2745,42 +2771,64 @@ document.getElementById('btnSalvarRotulo').addEventListener('click', async () =>
   const existente = rotulosEtiqueta.find(r => r.nome.toLowerCase() === nome.toLowerCase());
   if (existente && !confirm(`Já existe um rótulo chamado "${nome}". Substituir o arquivo?`)) return;
 
-  const bytes = await file.arrayBuffer();
-  let larguraMm, alturaMm;
+  const btn = document.getElementById('btnSalvarRotulo');
+  btn.disabled = true;
+  btn.textContent = '⏳ Salvando…';
+  try {
+    const bytes = await file.arrayBuffer();
+    let larguraMm, alturaMm;
 
-  if (ehPdf) {
-    const { PDFDocument } = PDFLib;
-    const srcDoc = await PDFDocument.load(bytes.slice(0));
-    const tam = srcDoc.getPage(0).getSize();
-    larguraMm = Math.round(ptParaMm(tam.width) * 10) / 10;
-    alturaMm = Math.round(ptParaMm(tam.height) * 10) / 10;
-  } else {
-    const larguraDigitada = parseFloat(document.getElementById('inputRotuloLarguraMm').value);
-    if (isNaN(larguraDigitada) || larguraDigitada <= 0) { alert('Informe a largura real do rótulo em mm (pra imagem, o sistema não sabe o tamanho físico sozinho).'); return; }
-    const bitmap = await createImageBitmap(new Blob([bytes]));
-    larguraMm = larguraDigitada;
-    alturaMm = Math.round((bitmap.height / bitmap.width) * larguraDigitada * 10) / 10;
-    bitmap.close?.();
+    if (ehPdf) {
+      const { PDFDocument } = PDFLib;
+      let srcDoc;
+      try {
+        srcDoc = await PDFDocument.load(bytes.slice(0));
+      } catch (e) {
+        throw new Error('Não consegui ler esse PDF — confirma que não está corrompido ou protegido por senha. (' + e.message + ')');
+      }
+      const tam = srcDoc.getPage(0).getSize();
+      larguraMm = Math.round(ptParaMm(tam.width) * 10) / 10;
+      alturaMm = Math.round(ptParaMm(tam.height) * 10) / 10;
+    } else {
+      const larguraDigitada = parseFloat(document.getElementById('inputRotuloLarguraMm').value);
+      if (isNaN(larguraDigitada) || larguraDigitada <= 0) { alert('Informe a largura real do rótulo em mm (pra imagem, o sistema não sabe o tamanho físico sozinho).'); return; }
+      const bitmap = await createImageBitmap(new Blob([bytes]));
+      larguraMm = larguraDigitada;
+      alturaMm = Math.round((bitmap.height / bitmap.width) * larguraDigitada * 10) / 10;
+      bitmap.close?.();
+    }
+
+    const ext = ehPdf ? 'pdf' : (file.type === 'image/png' ? 'png' : 'jpg');
+    const id = existente?.id || doc(collection(db, 'rotulosEtiqueta')).id;
+    const storagePath = `rotulos/${id}.${ext}`;
+
+    // Se trocar de tipo (ex: era PDF, virou imagem) o arquivo antigo fica
+    // órfão no Storage — apaga primeiro se o caminho for diferente.
+    if (existente && existente.storagePath && existente.storagePath !== storagePath) {
+      try { await deleteObject(ref(storage, existente.storagePath)); } catch (e) {}
+    }
+
+    try {
+      await uploadBytes(ref(storage, storagePath), new Uint8Array(bytes), { contentType: ehPdf ? 'application/pdf' : file.type });
+    } catch (e) {
+      if (e.code === 'storage/unauthorized') {
+        throw new Error('Sem permissão pra salvar no Storage — confirma se o Firebase Storage está ativado e com as regras de acesso configuradas no console do Firebase (Build → Storage).');
+      }
+      throw new Error('Falha ao subir o arquivo pro Storage: ' + (e.code || e.message));
+    }
+    await setDoc(doc(db, 'rotulosEtiqueta', id), { nome, tipo: ehPdf ? 'pdf' : 'imagem', storagePath, larguraMm, alturaMm });
+
+    document.getElementById('inputRotuloNome').value = '';
+    document.getElementById('inputRotuloArquivo').value = '';
+    document.getElementById('inputRotuloLarguraMm').value = '';
+    document.getElementById('rotuloLarguraMmGrupo').style.display = 'none';
+    alert(`Rótulo "${nome}" salvo (${larguraMm.toFixed(1)} × ${alturaMm.toFixed(1)} mm).`);
+  } catch (err) {
+    alert('Não consegui salvar o rótulo: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📎 Salvar rótulo';
   }
-
-  const ext = ehPdf ? 'pdf' : (file.type === 'image/png' ? 'png' : 'jpg');
-  const id = existente?.id || doc(collection(db, 'rotulosEtiqueta')).id;
-  const storagePath = `rotulos/${id}.${ext}`;
-
-  // Se trocar de tipo (ex: era PDF, virou imagem) o arquivo antigo fica
-  // órfão no Storage — apaga primeiro se o caminho for diferente.
-  if (existente && existente.storagePath && existente.storagePath !== storagePath) {
-    try { await deleteObject(ref(storage, existente.storagePath)); } catch (e) {}
-  }
-
-  await uploadBytes(ref(storage, storagePath), new Uint8Array(bytes), { contentType: ehPdf ? 'application/pdf' : file.type });
-  await setDoc(doc(db, 'rotulosEtiqueta', id), { nome, tipo: ehPdf ? 'pdf' : 'imagem', storagePath, larguraMm, alturaMm });
-
-  document.getElementById('inputRotuloNome').value = '';
-  document.getElementById('inputRotuloArquivo').value = '';
-  document.getElementById('inputRotuloLarguraMm').value = '';
-  document.getElementById('rotuloLarguraMmGrupo').style.display = 'none';
-  alert(`Rótulo "${nome}" salvo (${larguraMm.toFixed(1)} × ${alturaMm.toFixed(1)} mm).`);
 });
 
 function renderCarimboConfigForm() {
